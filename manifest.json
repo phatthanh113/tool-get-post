@@ -1,0 +1,20 @@
+{
+  "manifest_version": 3,
+  "name": "Auto Fill Post from Xopboo Not Popup",
+  "version": "1.0",
+  "description": "Lấy dữ liệu từ wp.xopboo.com và điền vào trang tạo bài viết.",
+  "permissions": ["tabs", "scripting"],
+  "host_permissions": [
+    "https://wp.xopboo.com/*",
+    "https://linatoysdochoitreem.com/wp-admin/*",
+    "file:///*",
+    "http://localhost:3000",
+    "http://localhost:3000/*",
+    "https://localhost:3000",
+    "https://localhost:3000/*"
+  ],
+  "action": {},
+  "background": {
+    "service_worker": "background.js"
+  }
+}
