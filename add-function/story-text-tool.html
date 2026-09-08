@@ -1,0 +1,434 @@
+<!doctype html>
+<html lang="vi">
+    <head>
+        <meta charset="UTF-8" />
+        <title>Story Text Tool</title>
+        <style>
+            body {
+                font-family: Arial, sans-serif;
+                background: #f2f2f2;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                padding: 24px;
+            }
+            textarea {
+                width: 100%;
+                max-width: 500px;
+                padding: 10px;
+                font-size: 15px;
+                border-radius: 8px;
+                border: 1px solid #ccc;
+                margin-bottom: 16px;
+            }
+            .controls {
+                display: flex;
+                align-items: center;
+                gap: 12px;
+                width: 100%;
+                max-width: 500px;
+                margin-bottom: 10px;
+            }
+            .controls input[type="range"] {
+                flex: 1;
+            }
+            .buttons {
+                display: flex;
+                gap: 8px;
+                width: 100%;
+                max-width: 500px;
+                margin-bottom: 20px;
+            }
+            .buttons button {
+                flex: 1;
+                padding: 8px;
+                border-radius: 8px;
+                border: 1px solid #999;
+                background: white;
+                cursor: pointer;
+            }
+            .buttons button:hover {
+                background: #eee;
+            }
+            .frame-outer {
+                width: 942px;
+                height: 1672px;
+                background: linear-gradient(135deg, #e8d9b8, #d8c39a);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                box-sizing: border-box;
+                padding: 60px;
+                transform-origin: top center;
+            }
+            .frame-scaler {
+                width: 942px;
+                height: 1672px;
+                overflow: visible;
+            }
+            #preview {
+                width: 822px;
+                max-height: 1552px;
+                background: #000;
+                border-radius: 36px;
+                padding: 60px 40px;
+                text-align: center;
+                line-height: 1.45;
+                letter-spacing: 0.5px;
+                box-sizing: border-box;
+            }
+            #preview div {
+                font-weight: 900;
+                margin-bottom: 4px;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="controls" style="flex-wrap: wrap; gap: 12px; justify-content: center">
+            <label>Cỡ chữ</label>
+            <input type="range" min="14" max="70" value="42" step="1" id="fontSize" />
+            <span id="fontOut">42</span>
+        </div>
+
+        <textarea
+            id="titlesTextarea"
+            rows="5"
+            placeholder="Nhập 1 tiêu đề mỗi dòng..."
+            style="width: 100%; max-width: 500px; min-height: 120px; padding: 12px; border: 1px solid #ccc; border-radius: 12px; background: #fff; resize: vertical; font-size: 14px"
+        ></textarea>
+
+        <div style="width: 330px; height: 585px; overflow: hidden; border: 1px solid #ccc; border-radius: 8px">
+            <div class="frame-outer" id="frameOuter" style="transform: scale(0.35); transform-origin: top left">
+                <div id="preview"></div>
+            </div>
+        </div>
+
+        <div class="actions" style="margin-top: 18px; display: flex; gap: 10px; flex-wrap: wrap; justify-content: center">
+            <button id="createImagesBtn" style="padding: 10px 16px; border-radius: 8px; border: 1px solid #3498db; background: #3498db; color: white; cursor: pointer">Create Images</button>
+            <button id="sendToConverterBtn" style="padding: 10px 16px; border-radius: 8px; border: 1px solid #2ecc71; background: #2ecc71; color: white; cursor: pointer">
+                Create & Send to Converter
+            </button>
+        </div>
+        <p id="noteText" style="font-size: 13px; color: #666; margin-top: 8px; text-align: center; max-width: 500px">Nhập mỗi tiêu đề trên một dòng. Mỗi dòng sẽ tạo ra một ảnh riêng.</p>
+
+        <p id="message" style="font-size: 14px; color: #333; margin-top: 12px; text-align: center"></p>
+
+        <div id="batchPreview" style="margin-top: 16px; display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px"></div>
+
+        <canvas id="exportCanvas" width="942" height="1672" style="display: none"></canvas>
+
+        <script>
+            const fontSizeEl = document.getElementById("fontSize");
+            const fontOut = document.getElementById("fontOut");
+            const preview = document.getElementById("preview");
+            const createImagesBtn = document.getElementById("createImagesBtn");
+            const sendToConverterBtn = document.getElementById("sendToConverterBtn");
+            const messageEl = document.getElementById("message");
+            const batchPreview = document.getElementById("batchPreview");
+            const exportCanvas = document.getElementById("exportCanvas");
+            const ctx = exportCanvas.getContext("2d");
+            const titlesTextarea = document.getElementById("titlesTextarea");
+            let lineColors = {};
+
+            function getText() {
+                return titlesTextarea.value.trim();
+            }
+
+            function render() {
+                const text = getText();
+                const size = parseInt(fontSizeEl.value, 10) || 42;
+                fontOut.textContent = size;
+                preview.innerHTML = "";
+
+                if (!text) {
+                    return;
+                }
+
+                const escaped = text.replace(/</g, "&lt;").replace(/\n/g, "<br />");
+                preview.innerHTML = `<div style="color:#fff; font-size:${size}px; font-weight:900; text-align:center; line-height:1.2; word-break:break-word; white-space:pre-wrap;">${escaped}</div>`;
+            }
+
+            function getLineColor(index) {
+                return lineColors[index] || "#fff";
+            }
+
+            function wrapText(context, text, x, y, maxWidth, lineHeight) {
+                const words = text.split(" ");
+                let line = "";
+                let currentY = y;
+
+                for (let n = 0; n < words.length; n++) {
+                    const testLine = line + words[n] + " ";
+                    const metrics = context.measureText(testLine);
+                    const testWidth = metrics.width;
+                    if (testWidth > maxWidth && n > 0) {
+                        context.fillText(line.trim(), x, currentY);
+                        line = words[n] + " ";
+                        currentY += lineHeight;
+                    } else {
+                        line = testLine;
+                    }
+                }
+
+                if (line.length > 0) {
+                    context.fillText(line.trim(), x, currentY);
+                }
+            }
+
+            function splitTextByDot(text) {
+                const regex = /[^.]+\.?/g;
+                return text.match(regex) || [];
+            }
+
+            function drawRoundedRect(ctx, x, y, width, height, radius) {
+                ctx.beginPath();
+                ctx.moveTo(x + radius, y);
+                ctx.lineTo(x + width - radius, y);
+                ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+                ctx.lineTo(x + width, y + height - radius);
+                ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+                ctx.lineTo(x + radius, y + height);
+                ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+                ctx.lineTo(x, y + radius);
+                ctx.quadraticCurveTo(x, y, x + radius, y);
+                ctx.closePath();
+            }
+
+            function drawImage(line, color, fontSize) {
+                const width = exportCanvas.width;
+                const height = exportCanvas.height;
+
+                ctx.clearRect(0, 0, width, height);
+
+                // Background
+                const gradient = ctx.createLinearGradient(0, 0, width, height);
+                gradient.addColorStop(0, "#e8d9b8");
+                gradient.addColorStop(1, "#d8c39a");
+                ctx.fillStyle = gradient;
+                ctx.fillRect(0, 0, width, height);
+
+                // Frame card
+                const cardX = 60;
+                const cardY = 60;
+                const cardW = width - 120;
+                const cardH = height - 120;
+                const radius = 36;
+                ctx.fillStyle = "#000";
+                ctx.strokeStyle = "rgba(255,255,255,0.12)";
+                ctx.lineWidth = 4;
+                drawRoundedRect(ctx, cardX, cardY, cardW, cardH, radius);
+                ctx.fill();
+                ctx.stroke();
+
+                // Text
+                ctx.font = `900 ${fontSize}px Arial, sans-serif`;
+                ctx.textAlign = "left";
+                ctx.textBaseline = "top";
+                const maxWidth = cardW - 80;
+                const lineHeight = fontSize * 1.2;
+                const lines = buildTextLines(line, maxWidth, lineHeight);
+                const totalHeight = lines.length * lineHeight;
+                const startY = cardY + (cardH - totalHeight) / 2;
+
+                lines.forEach((lineTokens, lineIndex) => {
+                    let x = cardX + cardW / 2 - measureLineWidth(lineTokens) / 2;
+                    const y = startY + lineIndex * lineHeight;
+                    lineTokens.forEach((token) => {
+                        ctx.fillStyle = token.color;
+                        ctx.fillText(token.text, x, y);
+                        x += ctx.measureText(token.text).width;
+                    });
+                });
+            }
+
+            function createImageBlob(line, color, fontSize) {
+                return new Promise((resolve) => {
+                    drawImage(line, color, fontSize);
+                    exportCanvas.toBlob((blob) => {
+                        resolve(blob);
+                    }, "image/png");
+                });
+            }
+
+            function createPreviewDataURL(line, color, fontSize) {
+                drawImage(line, color, fontSize);
+                return exportCanvas.toDataURL("image/png");
+            }
+
+            function buildTextLines(text, maxWidth, lineHeight) {
+                const segments = splitTextByDot(text).map((segment, index) => ({
+                    text: segment.trim() + (segment.endsWith(".") ? "" : ""),
+                    color: index % 2 === 0 ? "#ffffff" : "#ffc800",
+                }));
+
+                const words = [];
+                segments.forEach((segment) => {
+                    const splitWords = segment.text.split(" ").filter(Boolean);
+                    splitWords.forEach((word, index) => {
+                        const hasSpace = index < splitWords.length - 1;
+                        words.push({ text: word + (hasSpace ? " " : ""), color: segment.color });
+                    });
+                });
+
+                const lines = [];
+                let currentLine = [];
+                let currentWidth = 0;
+
+                words.forEach((word) => {
+                    const width = ctx.measureText(word.text).width;
+                    if (currentLine.length > 0 && currentWidth + width > maxWidth) {
+                        lines.push(currentLine);
+                        currentLine = [];
+                        currentWidth = 0;
+                    }
+                    currentLine.push(word);
+                    currentWidth += width;
+                });
+
+                if (currentLine.length > 0) {
+                    lines.push(currentLine);
+                }
+
+                return lines;
+            }
+
+            function measureLineWidth(lineTokens) {
+                return lineTokens.reduce((sum, token) => sum + ctx.measureText(token.text).width, 0);
+            }
+
+            async function createAllImages() {
+                const text = getText();
+                if (!text) {
+                    updateMessage("Please enter text to create an image.", true);
+                    return [];
+                }
+
+                const fontSize = parseInt(fontSizeEl.value, 10) || 42;
+                const blob = await createImageBlob(text, getLineColor(0), fontSize);
+                const result = [{ blob, name: `story-image.png`, text }];
+
+                updateBatchPreview(result);
+                updateMessage(`Created 1 image. Ready to send to converter.`);
+                return result;
+            }
+
+            function updateBatchPreview(blobs) {
+                if (!batchPreview) return;
+                batchPreview.innerHTML = "";
+
+                blobs.forEach((item) => {
+                    const url = URL.createObjectURL(item.blob);
+                    const thumb = document.createElement("div");
+                    thumb.style.border = "1px solid #ccc";
+                    thumb.style.borderRadius = "8px";
+                    thumb.style.overflow = "hidden";
+                    thumb.style.background = "#fff";
+                    thumb.style.padding = "8px";
+
+                    const img = document.createElement("img");
+                    img.src = url;
+                    img.style.width = "100%";
+                    img.style.height = "auto";
+                    img.style.display = "block";
+                    img.style.borderRadius = "6px";
+
+                    const label = document.createElement("div");
+                    label.textContent = item.name;
+                    label.style.fontSize = "12px";
+                    label.style.marginTop = "8px";
+                    label.style.wordBreak = "break-all";
+                    label.style.color = "#333";
+
+                    thumb.appendChild(img);
+                    thumb.appendChild(label);
+                    batchPreview.appendChild(thumb);
+                });
+            }
+
+            function updateMessage(text, isError = false) {
+                if (!messageEl) return;
+                messageEl.textContent = text;
+                messageEl.style.color = isError ? "#e74c3c" : "#2c3e50";
+            }
+
+            async function sendToServer(blobs) {
+                if (blobs.length === 0) {
+                    updateMessage("No images to send.", true);
+                    return;
+                }
+
+                const formData = new FormData();
+                blobs.forEach((item) => {
+                    formData.append("files", item.blob, item.name);
+                });
+                formData.append("randomDuration", "true");
+
+                updateMessage("Converting to video and preparing download...", false);
+
+                try {
+                    const response = await fetch("/convert-download", {
+                        method: "POST",
+                        body: formData,
+                    });
+
+                    if (!response.ok) {
+                        const errorData = await response.json().catch(() => ({}));
+                        throw new Error(errorData.error || "Conversion failed");
+                    }
+
+                    const disposition = response.headers.get("Content-Disposition");
+                    const filenameMatch = disposition && disposition.match(/filename="?([^";]+)"?/);
+                    const filename = (filenameMatch && filenameMatch[1]) || "converted-video.mp4";
+                    const blob = await response.blob();
+                    const url = URL.createObjectURL(blob);
+                    const link = document.createElement("a");
+                    link.href = url;
+                    link.download = filename;
+                    document.body.appendChild(link);
+                    link.click();
+                    link.remove();
+                    URL.revokeObjectURL(url);
+
+                    updateMessage(`Video converted successfully. Save dialog should appear shortly.`, false);
+                    return { success: true, filename };
+                } catch (err) {
+                    updateMessage(err.message, true);
+                    return null;
+                }
+            }
+
+            createImagesBtn.addEventListener("click", async () => {
+                await createAllImages();
+            });
+
+            sendToConverterBtn.addEventListener("click", async () => {
+                const blobs = await createAllImages();
+                if (blobs.length > 0) {
+                    await sendToServer(blobs);
+                }
+            });
+
+            fontSizeEl.addEventListener("input", render);
+            titlesTextarea.addEventListener("input", render);
+
+            const colorWhiteBtn = document.getElementById("colorWhite");
+            const colorAmberBtn = document.getElementById("colorAmber");
+
+            if (colorWhiteBtn) {
+                colorWhiteBtn.addEventListener("click", () => {
+                    lineColors[0] = "#fff";
+                    render();
+                });
+            }
+
+            if (colorAmberBtn) {
+                colorAmberBtn.addEventListener("click", () => {
+                    lineColors[0] = "#ffc800";
+                    render();
+                });
+            }
+
+            render();
+        </script>
+    </body>
+</html>

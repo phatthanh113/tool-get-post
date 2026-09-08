@@ -27,6 +27,14 @@
                 box-sizing: border-box;
             }
 
+            @font-face {
+                font-family: "SVN Arial";
+                src: url("/font/SVN-ArialBold.ttf") format("truetype");
+                font-weight: 900;
+                font-style: normal;
+                font-display: swap;
+            }
+
             body {
                 font-family: "Inter", sans-serif;
                 background-color: var(--bg-main);
@@ -292,17 +300,317 @@
             .loading-overlay {
                 display: none;
                 position: fixed;
-                top: 0;
-                left: 0;
-                width: 100%;
-                height: 100%;
-                background: rgba(255, 255, 255, 0.9);
+                top: 16px;
+                right: 16px;
+                width: auto;
+                min-width: 240px;
+                max-width: min(90vw, 320px);
+                height: auto;
+                padding: 12px 16px;
+                border-radius: 14px;
+                background: rgba(255, 255, 255, 0.96);
+                border: 1px solid rgba(148, 163, 184, 0.25);
+                box-shadow: 0 12px 32px rgba(15, 23, 42, 0.16);
                 backdrop-filter: blur(8px);
-                z-index: 1000;
-                flex-direction: column;
+                z-index: 60;
+                flex-direction: row;
+                gap: 12px;
+                align-items: center;
+                justify-content: flex-start;
+                animation: fadeIn 0.3s ease;
+                pointer-events: none;
+            }
+
+            .story-modal {
+                display: none;
+                position: fixed;
+                inset: 0;
+                background: rgba(15, 23, 42, 0.78);
+                z-index: 1500;
+                align-items: flex-start;
+                justify-content: center;
+                padding: 40px 20px 20px;
+                overflow-y: auto;
+            }
+
+            .story-modal.open {
+                display: flex;
+            }
+
+            .story-modal-card {
+                width: min(100%, 1000px);
+                max-height: 90vh;
+                overflow: auto;
+                background: #ffffff;
+                border-radius: 24px;
+                padding: 24px;
+                box-shadow: 0 30px 80px rgba(15, 23, 42, 0.18);
+            }
+
+            .story-modal-header {
+                position: sticky;
+                top: 0;
+                z-index: 10;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                gap: 12px;
+                margin: -24px -24px 20px;
+                padding: 24px;
+                background: #ffffff;
+                border-bottom: 1px solid rgba(226, 232, 240, 0.8);
+            }
+
+            .story-modal-header h3 {
+                margin: 0;
+                font-size: 1.2rem;
+                color: #1e293b;
+            }
+
+            .story-modal-close {
+                border: none;
+                background: transparent;
+                color: #475569;
+                font-size: 1.4rem;
+                cursor: pointer;
+            }
+
+            .story-modal-body {
+                display: grid;
+                grid-template-columns: minmax(240px, 1fr) minmax(300px, 1.2fr) minmax(300px, 1.4fr);
+                gap: 18px;
+                align-items: start;
+                grid-template-areas:
+                    "navigation navigation navigation"
+                    "controls controls controls"
+                    "storyThumbnailSelector storyPreview storyPreview"
+                    "storyTextarea storyTextarea storyTextarea"
+                    "actions actions actions"
+                    "message message message"
+                    "batch batch batch"
+                    "canvas canvas canvas";
+            }
+
+            .story-modal-body > .story-modal-navigation {
+                grid-area: navigation;
+                grid-column: 1 / -1;
+                display: grid;
+                grid-template-columns: auto 1fr auto;
+                align-items: center;
+                gap: 10px;
+            }
+
+            .story-modal-body > .story-modal-navigation button {
+                width: 44px;
+                height: 44px;
+                border-radius: 9999px;
+                padding: 0;
+                font-size: 1.25rem;
+                display: inline-flex;
                 align-items: center;
                 justify-content: center;
-                animation: fadeIn 0.3s ease;
+            }
+
+            .story-nav-buttons {
+                display: flex;
+                gap: 6px;
+                align-items: center;
+            }
+
+            .card-controls {
+                position: absolute;
+                top: 12px;
+                right: 12px;
+                display: flex;
+                gap: 8px;
+                z-index: 5;
+            }
+
+            .card-controls .icon-btn {
+                width: 36px;
+                height: 36px;
+                border-radius: 8px;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                background: rgba(255, 255, 255, 0.9);
+                border: 1px solid rgba(15, 23, 42, 0.06);
+                cursor: pointer;
+                font-size: 16px;
+                color: #475569;
+            }
+
+            .card-controls .icon-btn.delete {
+                background: #fee2e2;
+                color: #b91c1c;
+                border-color: rgba(239, 68, 68, 0.12);
+            }
+
+            .card-controls .icon-btn.copy {
+                background: #eff6ff;
+                color: #1e40af;
+                border-color: rgba(59, 130, 246, 0.08);
+            }
+
+            .story-modal-body > .story-modal-navigation #storyArticleCounter {
+                justify-self: center;
+                font-weight: 700;
+                color: #334155;
+                font-size: 0.95rem;
+            }
+
+            .story-modal-body > .story-modal-full.controls {
+                grid-area: controls;
+            }
+
+            #storyThumbnailSelector {
+                grid-area: storyThumbnailSelector;
+                min-width: 0;
+                max-width: 260px;
+                width: 100%;
+                display: grid;
+                gap: 14px;
+                align-self: start;
+                min-height: auto;
+            }
+
+            #storyThumbnailSelector select,
+            #storyThumbnailSelector button {
+                width: 100%;
+                box-sizing: border-box;
+            }
+
+            #storyPreview {
+                grid-area: storyPreview;
+                align-self: start;
+            }
+
+            #storyTextInput {
+                grid-area: storyTextarea;
+            }
+
+            .story-modal-body > .story-modal-actions {
+                grid-area: actions;
+            }
+
+            #storyMessage {
+                grid-area: message;
+            }
+
+            #storyBatchPreview {
+                grid-area: batch;
+            }
+
+            #storyExportCanvas {
+                grid-area: canvas;
+            }
+
+            .story-modal-body textarea,
+            .story-modal-body > .story-modal-actions,
+            .story-modal-body > #storyMessage,
+            .story-modal-body > #storyBatchPreview,
+            .story-modal-body > #storyExportCanvas {
+                grid-column: 1 / -1;
+            }
+
+            #storyPreview {
+                width: 100%;
+                max-width: 100%;
+                min-height: 560px;
+                border-radius: 28px;
+                padding: 18px;
+                background: linear-gradient(180deg, #111827 0%, #1f2937 100%);
+                box-shadow:
+                    inset 0 0 0 1px rgba(255, 255, 255, 0.06),
+                    0 18px 45px rgba(15, 23, 42, 0.18);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+
+            #storyPreview img {
+                border-radius: 24px;
+            }
+
+            #storyThumbnailSelector {
+                padding: 18px;
+                border-radius: 20px;
+                background: #f8fafc;
+                box-shadow: 0 12px 30px rgba(15, 23, 42, 0.08);
+            }
+
+            @media screen and (max-width: 920px) {
+                .story-modal-body {
+                    grid-template-columns: 1fr;
+                }
+
+                #storyPreview,
+                #storyThumbnailSelector {
+                    grid-column: 1 / -1;
+                }
+            }
+
+            .story-modal-actions {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 12px;
+            }
+
+            .story-modal-actions button {
+                flex: 1;
+                min-width: 160px;
+            }
+
+            #storyPreview {
+                width: 360px;
+                max-width: 100%;
+                aspect-ratio: 942 / 1672;
+                min-height: 620px;
+                /*  background: linear-gradient(135deg, #e8d9b8, #d8c39a); */
+                background: url("bg.png") center/cover no-repeat;
+                border-radius: 36px;
+                padding: 20px;
+                color: #ffffff;
+                text-align: center;
+                line-height: 1.3;
+                overflow: hidden;
+                box-sizing: border-box;
+                display: flex;
+                align-items: flex-start;
+                justify-content: center;
+            }
+
+            #storyPreview img {
+                width: 100%;
+                height: auto;
+                border-radius: 28px;
+                display: block;
+                align-self: flex-start;
+            }
+
+            #storyPreview .story-preview-text {
+                color: #ffffff;
+                text-align: center;
+                line-height: 1.2;
+                word-break: break-word;
+                white-space: normal;
+                font-weight: 900;
+                font-family: Arial, sans-serif;
+            }
+
+            #storyBatchPreview {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+                gap: 12px;
+            }
+
+            #storyMessage {
+                font-size: 0.95rem;
+                color: #334155;
+            }
+
+            #storyExportCanvas {
+                display: none;
             }
 
             .spinner {
@@ -383,7 +691,7 @@
 
             <div class="form-section">
                 <div class="input-group full-width">
-                    <label for="youtubeUrl">YouTube Video URLs (One per line)</label>
+                    <label for="youtubeUrl" id="youtubeUrlLabel" title="Click to add a sample article card">YouTube Video URLs (One per line)</label>
                     <textarea
                         id="youtubeUrl"
                         class="w-full"
@@ -391,6 +699,48 @@
                         placeholder="Paste multiple YouTube links here (Nhập URL video TikTok)&#10;https://youtube.com/watch?v=...&#10;https://youtube.com/watch?v=..."
                         required
                     ></textarea>
+                </div>
+
+                <div class="input-group">
+                    <label for="videoPrefixInput">Video filename prefix</label>
+                    <input
+                        id="videoPrefixInput"
+                        type="text"
+                        class="w-full"
+                        placeholder="Enter prefix, e.g. t"
+                        value=""
+                        style="padding: 12px; border-radius: 12px; border: 1px solid #cbd5e1; width: 100%"
+                    />
+                    <p style="margin-top: 8px; color: var(--text-muted); font-size: 0.9rem">
+                        Enter a prefix like
+                        <strong>t</strong>
+                        , then the files will become
+                        <strong>t1</strong>
+                        ,
+                        <strong>t2</strong>
+                        , etc.
+                    </p>
+                </div>
+                <div class="input-group">
+                    <label for="videoStartNumberInput">Starting video number</label>
+                    <input
+                        id="videoStartNumberInput"
+                        type="number"
+                        class="w-full"
+                        min="1"
+                        placeholder="1"
+                        value="1"
+                        style="padding: 12px; border-radius: 12px; border: 1px solid #cbd5e1; width: 100%"
+                    />
+                    <p style="margin-top: 8px; color: var(--text-muted); font-size: 0.9rem">
+                        Enter the starting number for the first article. If prefix is
+                        <strong>t</strong>
+                        and you enter
+                        <strong>11</strong>
+                        , names will start at
+                        <strong>t11</strong>
+                        .
+                    </p>
                 </div>
 
                 <div class="input-group" style="display: none">
@@ -420,12 +770,12 @@
                     </select>
                 </div>
 
-                <div class="input-group" style="display: none">
-                    <label for="ai-model">AI Engine</label>
-                    <select id="ai-model">
-                        <option value="gpt-4">GPT-4 Turbo</option>
-                        <option value="deepseek-chat">DeepSeek V3</option>
-                        <option value="claude-3">Claude 3.5 Sonnet</option>
+                <div class="input-group">
+                    <label for="ai-provider">AI Engine</label>
+                    <select id="ai-provider">
+                        <option value="groq" selected>Groq (Smart Fallback to OpenRouter)</option>
+                        <option value="openrouter">OpenRouter (Gemini 2.0 Flash)</option>
+                        <option value="local">Local AI (Qwen3.7-Plus)</option>
                     </select>
                 </div>
 
@@ -433,10 +783,23 @@
                     <input type="checkbox" id="_r_0_" checked />
                     <label for="_r_0_">Enable advanced processing & SEO optimization</label>
                 </div>
+
+                <div class="input-group">
+                    <label for="generation-mode">Generation Mode</label>
+                    <select id="generation-mode" style="padding: 12px; border-radius: 12px; border: 1px solid #cbd5e1; width: 100%">
+                        <option value="story">Story</option>
+                        <option value="sports" selected>Thể thao</option>
+                        <option value="buzz-thumbnail">Buzz thumbnail only</option>
+                    </select>
+                </div>
             </div>
 
-            <div class="button-group">
+            <div class="button-group" style="display: flex; gap: 10px; flex-wrap: wrap">
                 <button id="textModeBtn" onclick="toggleView()" class="btn-secondary bg-green-600">Chế độ text</button>
+                <button onclick="restoreArticlesFromLocalStorage()" class="btn-secondary" style="background-color: #6366f1; border-color: #6366f1; color: white">💾 Khôi phục bài viết</button>
+                <button onclick="sortResultCards()" class="btn-secondary" title="Sắp xếp các bài theo thứ tự ban đầu">🔃 Sắp xếp bài</button>
+                <button onclick="clearLocalStorageArticles()" class="btn-secondary" style="background-color: #ef4444; border-color: #ef4444; color: white">🗑️ Xóa localStorage</button>
+                <button onclick="generateThumbnailOnly()" class="btn-secondary" style="background-color: #f59e0b; border-color: #f59e0b; color: white">🖼️ Thumbnail</button>
                 <button onclick="generate()" id="buzzBtn" class="btn-primary button-primary-custom">Buzz</button>
             </div>
 
@@ -455,13 +818,783 @@
             <div id="resultSection" class="result-section">
                 <h3 id="resultTitle" style="margin-bottom: 16px">✅ HTML Editor Mode</h3>
                 <div id="editorContainer" class="result-card">
+                    <div style="display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 20px">
+                        <span style="color: #475569; font-size: 0.95rem">Result cards appear here after generation.</span>
+                        <div style="display: flex; gap: 8px; align-items: center">
+                            <button id="downloadSelectedBtn" type="button" class="btn-primary" style="padding: 8px 10px; font-size: 0.9rem" onclick="downloadSelectedArticles()">
+                                Download Selected
+                            </button>
+                            <button id="selectAllBtn" type="button" class="btn-secondary" style="padding: 8px 10px; font-size: 0.9rem" onclick="toggleSelectAll()">Select All</button>
+                        </div>
+                    </div>
                     <div id="output"></div>
                 </div>
                 <div id="previewContainer"></div>
             </div>
         </div>
-
+        <div id="storyModal" class="story-modal" role="dialog" aria-modal="true">
+            <div class="story-modal-card">
+                <div class="story-modal-header">
+                    <h3>Video Story Creator</h3>
+                    <div style="display: flex; gap: 8px; align-items: center">
+                        <button id="storyCopyAllButton" type="button" class="btn-secondary" style="padding: 8px 10px; font-size: 0.9rem" onclick="storyCopyAll()">Copy All</button>
+                        <button type="button" class="story-modal-close" onclick="closeStoryTool()">✕</button>
+                    </div>
+                </div>
+                <div class="story-modal-body">
+                    <div class="story-modal-navigation story-modal-full" style="margin-bottom: 12px">
+                        <div class="story-nav-buttons">
+                            <button id="storyPrevButton" type="button" class="btn-secondary" style="padding: 8px 12px; font-size: 1rem" onclick="goToStoryCard(-1)" aria-label="Previous">‹</button>
+                            <button id="storyNextButton" type="button" class="btn-secondary" style="padding: 8px 12px; font-size: 1rem" onclick="goToStoryCard(1)" aria-label="Next">›</button>
+                            <button
+                                id="storyDownloadButton"
+                                type="button"
+                                class="btn-secondary"
+                                style="padding: 8px 10px; font-size: 0.95rem; width: 44px; height: 44px"
+                                onclick="storyDownload()"
+                                title="Download video"
+                            >
+                                ⬇
+                            </button>
+                        </div>
+                        <div id="storyArticleCounter">Article 1</div>
+                    </div>
+                    <div class="story-modal-full controls" style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap">
+                        <label style="font-weight: 600; color: #475569">Template</label>
+                        <select id="storyModeSelect" style="padding: 8px 10px; border-radius: 10px; border: 1px solid #cbd5e1; min-width: 140px">
+                            <option value="story">Story</option>
+                            <option value="sports" selected>Thể thao</option>
+                        </select>
+                        <label style="font-weight: 600; color: #475569">Accent</label>
+                        <select id="storyAccentColorSelect" style="padding: 8px 10px; border-radius: 10px; border: 1px solid #cbd5e1; min-width: 120px">
+                            <option value="#efca19">Yellow</option>
+                            <option value="#F245E4" selected>Purple</option>
+                        </select>
+                        <label style="font-weight: 600; color: #475569">Font size</label>
+                        <input id="storyFontSize" type="range" min="14" max="90" value="40" step="1" aria-label="Story font size" />
+                        <span id="storyFontOut">60</span>
+                    </div>
+                    <textarea
+                        id="storyTextInput"
+                        rows="5"
+                        style="width: 100%; min-height: 120px; padding: 12px; border-radius: 12px; border: 1px solid #cbd5e1; font-size: 0.95rem"
+                        placeholder="Enter the story text here or use thumbnail text from the article."
+                    ></textarea>
+                    <div id="storyPreview" class="story-modal-preview"></div>
+                    <div id="storyThumbnailSelector" style="margin-top: 0; padding: 16px; border: 1px solid #e2e8f0; border-radius: 16px; background: #f8fafc">
+                        <label style="display: block; margin-bottom: 8px; color: #475569; font-weight: 600">Thumbnail source</label>
+                        <div style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 12px">
+                            <select
+                                id="storyThumbnailVariantSelect"
+                                onchange="handleStoryModalThumbnailVariantChange(this.value)"
+                                style="padding: 8px 10px; border-radius: 10px; border: 1px solid #cbd5e1; min-width: 140px; width: auto"
+                            >
+                                <option value="maxresdefault">maxresdefault.jpg</option>
+                                <option value="maxres1">maxres1.jpg</option>
+                                <option value="maxres2">maxres2.jpg</option>
+                                <option value="custom">Tải ảnh ngoài</option>
+                            </select>
+                            <button type="button" class="btn-secondary" style="padding: 10px 14px; font-size: 0.9rem" onclick="document.getElementById('storyThumbnailFileInput').click()">
+                                Chọn file
+                            </button>
+                            <input id="storyThumbnailFileInput" type="file" accept="image/*" style="display: none" onchange="handleStoryModalThumbnailFileChange(event)" />
+                        </div>
+                        <div id="storyThumbnailPreview" style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 10px">
+                            <img
+                                id="storyThumbnailPreviewImg"
+                                src=""
+                                alt="Thumbnail preview"
+                                style="max-width: 200px; width: 100%; max-height: 120px; object-fit: contain; border-radius: 12px; border: 1px solid #cbd5e1"
+                            />
+                            <span id="storyThumbnailPreviewLabel" style="color: #64748b; font-size: 0.95rem; min-width: 140px"></span>
+                        </div>
+                        <p style="margin-top: 10px; color: var(--text-muted); font-size: 0.95rem">
+                            <a id="storyThumbnailPreviewLink" href="#" target="_blank" style="color: var(--primary); text-decoration: none">Thumbnail image</a>
+                        </p>
+                    </div>
+                    <div class="story-modal-actions">
+                        <button type="button" class="btn-secondary" onclick="storyCreateAllImages()">Create Story Image</button>
+                        <button type="button" class="btn-primary" onclick="storySendToServer()">Create & Send to Converter</button>
+                    </div>
+                    <p id="storyMessage">Use the story text from the thumbnail or your own phrase.</p>
+                    <div id="storyBatchPreview"></div>
+                    <canvas id="storyExportCanvas" width="942" height="1672"></canvas>
+                </div>
+            </div>
+        </div>
         <script>
+            function getStoryModeForCard(card) {
+                return getActiveStoryMode();
+            }
+
+            function showStoryRetryButton(index) {
+                const card = document.getElementById(`card-${index}`);
+                const retryButton = card?.querySelector(".story-retry-btn");
+                if (retryButton) {
+                    retryButton.style.display = "inline-flex";
+                }
+            }
+
+            function handleStoryActionButtonClick(index) {
+                openStoryTool(index);
+            }
+
+            function getStoryArticleIndexes() {
+                return Array.from(document.querySelectorAll('#output .result-card[id^="card-"]'))
+                    .map((card) => Number(card.id.replace("card-", "")))
+                    .filter((value) => Number.isFinite(value))
+                    .sort((a, b) => a - b);
+            }
+
+            function updateStoryNavigationButtons() {
+                const prevButton = document.getElementById("storyPrevButton");
+                const nextButton = document.getElementById("storyNextButton");
+                const counter = document.getElementById("storyArticleCounter");
+                const indexes = getStoryArticleIndexes();
+
+                if (!prevButton || !nextButton || !counter) return;
+
+                if (indexes.length === 0) {
+                    prevButton.disabled = true;
+                    nextButton.disabled = true;
+                    counter.textContent = "No article";
+                    return;
+                }
+
+                const currentPosition = indexes.indexOf(activeStoryCardIndex);
+                const safePosition = currentPosition >= 0 ? currentPosition : 0;
+                prevButton.disabled = safePosition <= 0;
+                nextButton.disabled = safePosition >= indexes.length - 1;
+                counter.textContent = `Article ${safePosition + 1}/${indexes.length}`;
+            }
+
+            function goToStoryCard(direction) {
+                const indexes = getStoryArticleIndexes();
+                if (indexes.length === 0) return;
+
+                const currentPosition = indexes.indexOf(activeStoryCardIndex);
+                const safePosition = currentPosition >= 0 ? currentPosition : 0;
+                const targetPosition = Math.min(indexes.length - 1, Math.max(0, safePosition + direction));
+                const targetIndex = indexes[targetPosition];
+                if (targetIndex !== undefined) {
+                    openStoryTool(targetIndex);
+                }
+            }
+
+            function buildStoryActionMarkup(index, url, selectedMode = "story") {
+                return `
+                    <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-top:12px;">
+                        <button type="button" onclick="handleStoryActionButtonClick(${index})" class="btn-secondary" style="padding: 10px 16px; font-size: 0.92rem;">🎬 Create Story</button>
+                        <button type="button" onclick="retrySingle('${url}', ${index})" class="btn-secondary story-retry-btn" style="display:none; padding: 10px 16px; font-size: 0.92rem; background-color: #3b82f6; border-color: #3b82f6; color: white;">🔄</button>
+                    </div>
+                `;
+            }
+
+            function getSavedArticleByUrl(url) {
+                let saved = [];
+                try {
+                    saved = JSON.parse(localStorage.getItem("saved_articles")) || [];
+                } catch (e) {
+                    saved = [];
+                }
+                return saved.find((item) => item.url === url) || null;
+            }
+
+            function getThumbnailVariantUrl(videoId, variant) {
+                const normalized = variant === "maxres1" || variant === "maxres2" ? variant : "maxresdefault";
+                return `https://i.ytimg.com/vi/${videoId}/${normalized}.jpg`;
+            }
+
+            function escapeAttributeValue(value) {
+                return String(value || "")
+                    .replace(/'/g, "\\'")
+                    .replace(/"/g, "&quot;");
+            }
+
+            function buildThumbnailControls(item) {
+                const safeUrl = escapeAttributeValue(item.url);
+                const variant = item.thumbnailVariant || "maxresdefault";
+                const customUrl = item.customThumbnailUrl || "";
+                const previewUrl = customUrl || getThumbnailVariantUrl(item.videoId, variant);
+                const variantLabel = variant === "custom" ? "Custom image loaded" : `${variant}.jpg`;
+                return `
+                    <div style="margin-bottom: 15px;">
+                        <label style="display:block; margin-bottom:8px; color:var(--text-muted);">Thumbnail source</label>
+                        <div style="display:none; gap:10px; flex-wrap:wrap; align-items:center; margin-bottom:10px;" >
+                            <select onchange="updateThumbnailVariant('${safeUrl}', this.value, ${item.index})" style="padding: 8px 10px; border-radius: 10px; border: 1px solid #cbd5e1; min-width: 180px;">
+                                <option value="maxresdefault" ${variant === "maxresdefault" ? "selected" : ""}>maxresdefault.jpg</option>
+                                <option value="maxres1" ${variant === "maxres1" ? "selected" : ""}>maxres1.jpg</option>
+                                <option value="maxres2" ${variant === "maxres2" ? "selected" : ""}>maxres2.jpg</option>
+                                <option value="custom" ${variant === "custom" ? "selected" : ""}>Tải ảnh ngoài</option>
+                            </select>
+                            <button type="button" class="btn-secondary" style="padding: 10px 14px; font-size: 0.9rem;" onclick="document.getElementById('thumbnail-file-${item.index}').click()">Chọn file</button>
+                            <input id="thumbnail-file-${item.index}" type="file" accept="image/*" style="display:none" onchange="handleThumbnailFileChange(this, '${safeUrl}', ${item.index})" />
+                        </div>
+                        <div id="thumbnail-preview-${item.index}" style="display:none; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:10px;">
+                            <img src="${previewUrl}" alt="Thumbnail preview" style="max-width: 200px; width: 100%; max-height: 120px; object-fit: contain; border-radius: 12px; border: 1px solid #cbd5e1;" />
+                            <span style="color:#64748b; font-size:0.95rem;">${variantLabel}</span>
+                        </div>
+                        <p style="margin-top: 10px; color: var(--text-muted); font-size: 0.95rem;">
+                            ${customUrl ? '<span style="color:#10b981;">Custom thumbnail selected</span>' : `<a id="thumbnail-link-${item.index}" href="${previewUrl}" target="_blank" style="color: var(--primary); text-decoration: none;">Thumbnail image</a>`}
+                        </p>
+                    </div>
+                `;
+            }
+
+            function saveArticleToLocalStorage(index, url, title, players, videoId, article, options = {}) {
+                let saved = [];
+                try {
+                    saved = JSON.parse(localStorage.getItem("saved_articles")) || [];
+                } catch (e) {
+                    saved = [];
+                }
+                const existingIndex = saved.findIndex((item) => item.url === url);
+                const existing = existingIndex > -1 ? saved[existingIndex] : null;
+                const item = {
+                    index,
+                    url,
+                    title,
+                    players,
+                    videoId,
+                    article,
+                    thumbnailVariant: options.thumbnailVariant ?? existing?.thumbnailVariant ?? "maxresdefault",
+                    customThumbnailUrl: options.customThumbnailUrl ?? existing?.customThumbnailUrl ?? "",
+                    timestamp: Date.now(),
+                };
+                if (existingIndex > -1) {
+                    saved[existingIndex] = item;
+                } else {
+                    saved.push(item);
+                }
+                localStorage.setItem("saved_articles", JSON.stringify(saved));
+            }
+
+            function getSavedArticleByIndex(index) {
+                let saved = [];
+                try {
+                    saved = JSON.parse(localStorage.getItem("saved_articles")) || [];
+                } catch (e) {
+                    saved = [];
+                }
+                return saved.find((item) => item.index === index) || null;
+            }
+
+            function updateCardThumbnailPreview(index, item) {
+                const preview = document.getElementById(`thumbnail-preview-${index}`);
+                const link = document.getElementById(`thumbnail-link-${index}`);
+                if (!item) return;
+                const imageUrl = item.customThumbnailUrl || getThumbnailVariantUrl(item.videoId, item.thumbnailVariant);
+                const labelText = item.thumbnailVariant === "custom" ? "Custom image loaded" : `${item.thumbnailVariant}.jpg`;
+                const img = preview?.querySelector("img");
+                const label = preview?.querySelector("span");
+                if (img) img.src = imageUrl;
+                if (label) label.textContent = labelText;
+                if (link) link.href = imageUrl;
+            }
+
+            function syncArticleThumbnailVariant(articleHtml, videoId, variant) {
+                const imageUrl = getThumbnailVariantUrl(videoId, variant || "maxresdefault");
+                const imgTag = `<img style="max-width: 100%; margin-top: 20px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.2);" src="${imageUrl}" />`;
+                const imgRegex = /<img[^>]*src=["'][^"']*["'][^>]*>/i;
+                if (!articleHtml || !videoId) return articleHtml;
+                if (imgRegex.test(articleHtml)) {
+                    return articleHtml.replace(imgRegex, imgTag);
+                }
+                return injectImage(articleHtml, videoId, variant);
+            }
+
+            function updateThumbnailVariant(url, variant, index, customUrl = "") {
+                let saved = [];
+                try {
+                    saved = JSON.parse(localStorage.getItem("saved_articles")) || [];
+                } catch (e) {
+                    saved = [];
+                }
+                const idx = saved.findIndex((item) => item.url === url);
+                if (idx === -1) return;
+                saved[idx].thumbnailVariant = variant;
+                if (variant === "custom") {
+                    saved[idx].customThumbnailUrl = customUrl || saved[idx].customThumbnailUrl || "";
+                } else {
+                    saved[idx].customThumbnailUrl = "";
+                }
+
+                const articleCard = document.getElementById(`card-${index}`);
+                const articleTextArea = articleCard?.querySelector("textarea.w-full.min-h-52");
+                if (articleTextArea && saved[idx].article) {
+                    const updatedArticle = syncArticleThumbnailVariant(saved[idx].article, saved[idx].videoId, variant);
+                    saved[idx].article = updatedArticle;
+                    articleTextArea.value = updatedArticle;
+                }
+
+                localStorage.setItem("saved_articles", JSON.stringify(saved));
+                storyCoverImagePromise = null;
+                updateCardThumbnailPreview(index, saved[idx]);
+                renderThumbnailSelectorForActiveCard();
+                renderStoryPreview();
+            }
+
+            function handleThumbnailFileChange(input, url, index) {
+                const file = input?.files?.[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = () => {
+                    updateThumbnailVariant(url, "custom", index, reader.result);
+                };
+                reader.readAsDataURL(file);
+            }
+
+            function renderThumbnailSelectorForActiveCard() {
+                const select = document.getElementById("storyThumbnailVariantSelect");
+                const previewImg = document.getElementById("storyThumbnailPreviewImg");
+                const previewLabel = document.getElementById("storyThumbnailPreviewLabel");
+                const previewLink = document.getElementById("storyThumbnailPreviewLink");
+                const article = getSavedArticleByIndex(activeStoryCardIndex);
+                if (!article || !select || !previewImg || !previewLabel || !previewLink) return;
+                select.value = article.thumbnailVariant || "maxresdefault";
+                const imageUrl = article.customThumbnailUrl || getThumbnailVariantUrl(article.videoId, article.thumbnailVariant || "maxresdefault");
+                previewImg.src = imageUrl;
+                previewLabel.textContent = article.thumbnailVariant === "custom" ? "Custom image loaded" : `${article.thumbnailVariant || "maxresdefault"}.jpg`;
+                previewLink.href = imageUrl;
+            }
+
+            function handleStoryModalThumbnailVariantChange(value) {
+                const article = getSavedArticleByIndex(activeStoryCardIndex);
+                if (!article) return;
+                updateThumbnailVariant(article.url, value, activeStoryCardIndex);
+            }
+
+            function handleStoryModalThumbnailFileChange(event) {
+                const article = getSavedArticleByIndex(activeStoryCardIndex);
+                if (!article) return;
+                const input = event.target;
+                handleThumbnailFileChange(input, article.url, activeStoryCardIndex);
+            }
+
+            function deleteArticle(index, url) {
+                if (!confirm("Bạn có chắc chắn muốn xóa bài viết này không?")) return;
+                let saved = [];
+                try {
+                    saved = JSON.parse(localStorage.getItem("saved_articles")) || [];
+                } catch (e) {
+                    saved = [];
+                }
+                saved = saved.filter((item) => item.url !== url);
+                localStorage.setItem("saved_articles", JSON.stringify(saved));
+                const card = document.getElementById(`card-${index}`);
+                if (card) card.remove();
+                if (activeStoryCardIndex === index) {
+                    closeStoryTool();
+                }
+                updateStoryNavigationButtons();
+            }
+
+            function updateSavedArticle(idOrUrl, field, value) {
+                let saved = [];
+                try {
+                    saved = JSON.parse(localStorage.getItem("saved_articles")) || [];
+                } catch (e) {
+                    return;
+                }
+
+                if (idOrUrl === null || idOrUrl === undefined) return;
+
+                let idx = -1;
+                // Accept either numeric index or URL string
+                if (typeof idOrUrl === "number" || /^\d+$/.test(String(idOrUrl))) {
+                    const num = Number(idOrUrl);
+                    idx = saved.findIndex((item) => Number(item.index) === num);
+                } else {
+                    idx = saved.findIndex((item) => item.url === idOrUrl);
+                }
+
+                if (idx > -1) {
+                    saved[idx][field] = value;
+                    localStorage.setItem("saved_articles", JSON.stringify(saved));
+                }
+            }
+
+            function restoreArticlesFromLocalStorage() {
+                let saved = [];
+                try {
+                    saved = JSON.parse(localStorage.getItem("saved_articles")) || [];
+                } catch (e) {
+                    saved = [];
+                }
+                if (saved.length === 0) {
+                    alert("Không có bài viết nào được lưu trong localStorage!");
+                    return;
+                }
+                const resultSection = document.getElementById("resultSection");
+                const output = document.getElementById("output");
+                resultSection.style.display = "block";
+                output.innerHTML = "";
+
+                saved.sort((a, b) => a.index - b.index);
+                saved.forEach((item) => {
+                    const articleCard = document.createElement("div");
+                    articleCard.className = "result-card";
+                    articleCard.id = `card-${item.index}`;
+                    articleCard.style.marginBottom = "20px";
+                    articleCard.innerHTML = `
+                        <div class="card-controls">
+                            <button id="select-btn-${item.index}" class="icon-btn select" onclick="toggleSelectArticle(${item.index})" title="Select">⬜</button>
+                            <button class="icon-btn copy" onclick="copyArticle(${item.index})" title="Copy article">📋</button>
+                            <button class="icon-btn delete" onclick="deleteArticle(${item.index}, '${item.url}')" title="Delete article">🗑</button>
+                        </div>
+                        <div style="margin-bottom: 20px;">
+                            <label style="display:block; margin-bottom:8px; color:var(--text-muted);">Article ${item.index + 1} Title</label>
+                            <input type="text" class="flex-1 border" value="${item.title || ""}" style="margin-bottom:15px; width: 100%;" oninput="updateSavedArticle('${item.url}', 'title', this.value)">
+                            
+                            <div style="display: grid; grid-template-columns: 1fr; gap: 10px; margin-bottom: 15px;">
+                                <div>
+                                    <label style="display:block; margin-bottom:8px; color:var(--text-muted);">Thumbnail Text</label>
+                                    <textarea class="player-input border" style="width: 100%; min-height: 80px; font-family: monospace; font-size: 0.85rem;" placeholder="Thumbnail text from OCR..." oninput="updateSavedArticle('${item.url}', 'players', this.value)">${item.players || ""}</textarea>
+                                    ${buildThumbnailControls(item)}
+                                    ${buildStoryActionMarkup(item.index, item.url, "story")}
+                                </div>
+                            </div>
+
+                            <label style="display:block; margin-bottom:8px; color:var(--text-muted); cursor:pointer;" ondblclick="showStoryRetryButton(${item.index})">Article ${item.index + 1} Content (HTML)</label>
+                            <textarea class="w-full min-h-52" style="min-height: 400px; font-family: 'Inter', monospace; font-size: 0.9rem;" oninput="updateSavedArticle('${item.url}', 'article', this.value)">${item.article}</textarea>
+                        </div>
+                    `;
+                    output.appendChild(articleCard);
+                });
+                updateStoryNavigationButtons();
+                alert(`Đã khôi phục thành công ${saved.length} bài viết!`);
+            }
+
+            async function copyArticle(index) {
+                try {
+                    let saved = JSON.parse(localStorage.getItem("saved_articles")) || [];
+                    const item = saved.find((s) => s.index === index);
+                    if (!item) {
+                        storyUpdateMessage("Không tìm thấy bài viết để copy.", true);
+                        return;
+                    }
+                    const text = `${item.title || ""}\n\n${item.players || ""}\n\n${(item.article || "").replace(/<[^>]+>/g, "\n").replace(/&nbsp;/g, " ")}`;
+                    await navigator.clipboard.writeText(text);
+                    storyUpdateMessage("Đã copy bài viết vào clipboard.");
+                } catch (err) {
+                    storyUpdateMessage("Không thể copy bài viết.", true);
+                }
+            }
+
+            async function copySampleArticle(sampleIndex) {
+                try {
+                    const sample = sampleArticles[sampleIndex % sampleArticles.length];
+                    if (!sample) return;
+                    const text = `${sample.title}\n\n${sample.players}\n\n${sample.body}`;
+                    await navigator.clipboard.writeText(text);
+                    storyUpdateMessage("Đã copy sample vào clipboard.");
+                } catch (err) {
+                    storyUpdateMessage("Không thể copy sample.", true);
+                }
+            }
+
+            // Selection state for batch download
+            const selectedArticleIndexes = new Set();
+
+            function toggleSelectArticle(index) {
+                if (selectedArticleIndexes.has(index)) {
+                    selectedArticleIndexes.delete(index);
+                    const btn = document.getElementById(`select-btn-${index}`) || document.getElementById(`select-sample-${index}`);
+                    if (btn) btn.textContent = "⬜";
+                } else {
+                    selectedArticleIndexes.add(index);
+                    const btn = document.getElementById(`select-btn-${index}`) || document.getElementById(`select-sample-${index}`);
+                    if (btn) btn.textContent = "✅";
+                }
+                const selectAllBtn = document.getElementById("selectAllBtn");
+                if (selectAllBtn) selectAllBtn.textContent = selectedArticleIndexes.size > 0 ? "Clear" : "Select All";
+            }
+
+            function toggleSelectAll() {
+                const output = document.getElementById("output");
+                const cards = output ? Array.from(output.querySelectorAll('[id^="card-"]')) : [];
+                if (selectedArticleIndexes.size > 0) {
+                    // clear
+                    selectedArticleIndexes.clear();
+                    cards.forEach((c) => {
+                        const id = Number(c.id.replace("card-", ""));
+                        const btn = document.getElementById(`select-btn-${id}`);
+                        if (btn) btn.textContent = "⬜";
+                    });
+                    const selectAllBtn = document.getElementById("selectAllBtn");
+                    if (selectAllBtn) selectAllBtn.textContent = "Select All";
+                    return;
+                }
+                // select all
+                cards.forEach((c) => {
+                    const id = Number(c.id.replace("card-", ""));
+                    selectedArticleIndexes.add(id);
+                    const btn = document.getElementById(`select-btn-${id}`);
+                    if (btn) btn.textContent = "✅";
+                });
+                const selectAllBtn = document.getElementById("selectAllBtn");
+                if (selectAllBtn) selectAllBtn.textContent = "Clear";
+            }
+
+            function getSelectedIndexes() {
+                return Array.from(selectedArticleIndexes).sort((a, b) => a - b);
+            }
+
+            async function downloadArticleByIndex(index) {
+                const article = getSavedArticleByIndex(index);
+                if (!article) return false;
+                // Prepare story image for this article
+                activeStoryCardIndex = index;
+                storyCoverImagePromise = null;
+                const mode = setActiveStoryMode(getActiveStoryMode());
+                const text = article.players || buildSportsThumbnailText(article.article || "");
+                document.getElementById("storyTextInput").value = text;
+                const fontSize = storyGetAutoFontSize(text, mode);
+
+                const imgBlob = await storyCreateImageBlob(text, "#ffffff", fontSize);
+
+                const formData = new FormData();
+                formData.append("files", imgBlob, getImageFileName(index));
+                formData.append("randomDuration", "true");
+
+                const response = await fetch("/convert-download", { method: "POST", body: formData });
+                if (!response.ok) {
+                    const err = await response.text().catch(() => "Conversion failed");
+                    throw new Error(err || "Conversion failed");
+                }
+                const mp4 = await response.blob();
+                const url = URL.createObjectURL(mp4);
+                const link = document.createElement("a");
+                link.href = url;
+                link.download = getVideoDownloadFileName(index);
+                document.body.appendChild(link);
+                link.click();
+                link.remove();
+                URL.revokeObjectURL(url);
+                return true;
+            }
+
+            async function downloadSelectedArticles() {
+                const indexes = getSelectedIndexes();
+                if (!indexes || indexes.length === 0) {
+                    alert("Please select one or more articles to download.");
+                    return;
+                }
+                const btn = document.getElementById("downloadSelectedBtn");
+                btn.disabled = true;
+                try {
+                    for (let i = 0; i < indexes.length; i++) {
+                        const idx = indexes[i];
+                        storyUpdateMessage(`Converting article ${i + 1}/${indexes.length}...`);
+                        setStoryButtonsLoading(true);
+                        await downloadArticleByIndex(idx);
+                    }
+                    storyUpdateMessage("All selected downloads completed.", false);
+                } catch (err) {
+                    storyUpdateMessage(err.message || "Batch download failed", true);
+                } finally {
+                    setStoryButtonsLoading(false);
+                    if (btn) btn.disabled = false;
+                }
+            }
+
+            function sortResultCards() {
+                let saved = [];
+                try {
+                    saved = JSON.parse(localStorage.getItem("saved_articles")) || [];
+                } catch (e) {
+                    saved = [];
+                }
+                if (saved.length === 0) {
+                    alert("Không có bài để sắp xếp!");
+                    return;
+                }
+
+                saved.sort((a, b) => a.index - b.index);
+
+                const output = document.getElementById("output");
+                if (!output) return;
+                output.innerHTML = "";
+
+                saved.forEach((item) => {
+                    const articleCard = document.createElement("div");
+                    articleCard.className = "result-card";
+                    articleCard.id = `card-${item.index}`;
+                    articleCard.style.marginBottom = "20px";
+                    articleCard.innerHTML = `
+                        <div class="card-controls">
+                            <button id="select-btn-${item.index}" class="icon-btn select" onclick="toggleSelectArticle(${item.index})" title="Select">⬜</button>
+                            <button class="icon-btn copy" onclick="copyArticle(${item.index})" title="Copy article">📋</button>
+                            <button class="icon-btn delete" onclick="deleteArticle(${item.index}, '${item.url}')" title="Delete article">🗑</button>
+                        </div>
+                        <div style="margin-bottom: 20px;">
+                            <label style="display:block; margin-bottom:8px; color:var(--text-muted);">Article ${item.index + 1} Title</label>
+                            <input type="text" class="flex-1 border" value="${item.title || ""}" style="margin-bottom:15px; width: 100%;" oninput="updateSavedArticle('${item.url}', 'title', this.value)">
+                            
+                            <div style="display: grid; grid-template-columns: 1fr; gap: 10px; margin-bottom: 15px;">
+                                <div>
+                                    <label style="display:block; margin-bottom:8px; color:var(--text-muted);">Thumbnail Text</label>
+                                    <textarea class="player-input border" style="width: 100%; min-height: 80px; font-family: monospace; font-size: 0.85rem;" placeholder="Thumbnail text from OCR..." oninput="updateSavedArticle('${item.url}', 'players', this.value)">${item.players || ""}</textarea>
+                                    ${buildThumbnailControls(item)}
+                                    ${buildStoryActionMarkup(item.index, item.url, "story")}
+                                </div>
+                            </div>
+
+                            <label style="display:block; margin-bottom:8px; color:var(--text-muted); cursor:pointer;" ondblclick="showStoryRetryButton(${item.index})">Article ${item.index + 1} Content (HTML)</label>
+                            <textarea class="w-full min-h-52" style="min-height: 400px; font-family: 'Inter', monospace; font-size: 0.9rem;" oninput="updateSavedArticle('${item.url}', 'article', this.value)">${item.article}</textarea>
+                        </div>
+                    `;
+                    output.appendChild(articleCard);
+                });
+
+                updateStoryNavigationButtons();
+            }
+
+            function clearLocalStorageArticles() {
+                if (confirm("Bạn có chắc chắn muốn xóa toàn bộ bài viết đã lưu trong localStorage không?")) {
+                    localStorage.removeItem("saved_articles");
+                    alert("Đã xóa xong!");
+                }
+            }
+
+            function buildSportsThumbnailText(articleText) {
+                const cleanText = (articleText || "")
+                    .replace(/<[^>]+>/g, " ")
+                    .replace(/&nbsp;/g, " ")
+                    .replace(/\s+/g, " ")
+                    .trim();
+
+                // Prefer word-based trimming so we can reach ~60-70 words
+                const words = cleanText ? cleanText.split(/\s+/).filter(Boolean) : [];
+                let source = words.join(" ");
+                if (words.length > 70) {
+                    source = words.slice(0, 70).join(" ") + "...";
+                }
+
+                const fallbackText = source || "This story is about to explode across the sports world";
+                return `⚡ ${fallbackText} — A jaw-dropping twist is about to shake the whole game!`;
+            }
+
+            async function generateThumbnailOnly() {
+                const urlInput = document.getElementById("youtubeUrl");
+                const urls = urlInput.value
+                    .split("\n")
+                    .map((u) => u.trim())
+                    .filter((u) => u !== "");
+
+                if (urls.length === 0) {
+                    alert("Please enter at least one YouTube URL");
+                    return;
+                }
+
+                const loading = document.getElementById("loading");
+                const resultSection = document.getElementById("resultSection");
+                const output = document.getElementById("output");
+
+                loading.style.display = "flex";
+                resultSection.style.display = "block";
+                output.innerHTML = "";
+                // Clear previous saved articles so new Thumbnail run doesn't append
+                try {
+                    localStorage.removeItem("saved_articles");
+                } catch (e) {
+                    console.warn("Failed to clear saved_articles:", e);
+                }
+
+                const provider = document.getElementById("ai-provider").value;
+                const selectedMode = document.getElementById("generation-mode")?.value || "story";
+                const total = urls.length;
+                let completedCount = 0;
+
+                return new Promise((resolve) => {
+                    const processNext = async (index, url) => {
+                        try {
+                            const res = await fetch("/generate-article", {
+                                method: "POST",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({
+                                    youtubeUrl: url,
+                                    provider,
+                                    generationMode: "thumbnail",
+                                    thumbnailMode: selectedMode,
+                                }),
+                            });
+
+                            const data = await res.json();
+
+                            if (data.error) {
+                                output.innerHTML += `
+                                    <div class="result-card" id="card-${index}" style="border-color: #ef4444; margin-bottom: 20px;">
+                                        <p style="color: #ef4444; font-weight: bold;">❌ Thumbnail failed [${index + 1}]: ${url}</p>
+                                        <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 15px;">${data.error}</p>
+                                    </div>
+                                `;
+                            } else {
+                                const finalArticle = injectImage("", data.videoId);
+                                saveArticleToLocalStorage(index, url, data.title, data.players, data.videoId, finalArticle);
+                                const articleCard = document.createElement("div");
+                                articleCard.className = "result-card";
+                                articleCard.id = `card-${index}`;
+                                articleCard.style.marginBottom = "20px";
+                                articleCard.innerHTML = `
+                                    <div class="card-controls">
+                                        <button id="select-btn-${index}" class="icon-btn select" onclick="toggleSelectArticle(${index})" title="Select">⬜</button>
+                                        <button class="icon-btn copy" onclick="copyArticle(${index})" title="Copy article">📋</button>
+                                        <button class="icon-btn delete" onclick="deleteArticle(${index}, '${url}')" title="Delete article">🗑</button>
+                                    </div>
+                                    <div style="margin-bottom: 20px;">
+                                        <label style="display:block; margin-bottom:8px; color:var(--text-muted);">Article ${index + 1} Title</label>
+                                        <input type="text" class="flex-1 border" value="${(data.title || "").replace(/"/g, "&quot;")}" style="margin-bottom:15px; width: 100%;" />
+                                        <div style="display: grid; grid-template-columns: 1fr; gap: 10px; margin-bottom: 15px;">
+                                            <div>
+                                                <label style="display:block; margin-bottom:8px; color:var(--text-muted);">Thumbnail Text</label>
+                                                <textarea class="player-input border" style="width: 100%; min-height: 80px; font-family: monospace; font-size: 0.85rem;">${(data.players || "").replace(/</g, "&lt;").replace(/>/g, "&gt;")}</textarea>
+                                                ${buildThumbnailControls({
+                                                    index,
+                                                    url,
+                                                    title: data.title,
+                                                    players: data.players,
+                                                    videoId: data.videoId,
+                                                    thumbnailVariant: "maxresdefault",
+                                                    customThumbnailUrl: "",
+                                                })}
+                                                ${buildStoryActionMarkup(index, url, selectedMode)}
+                                            </div>
+                                        </div>
+                                        <label style="display:block; margin-bottom:8px; color:var(--text-muted); cursor:pointer;" ondblclick="showStoryRetryButton(${index})">Article ${index + 1} Content (HTML)</label>
+                                        <textarea class="w-full min-h-52" style="min-height: 400px; font-family: 'Inter', monospace; font-size: 0.9rem;">${finalArticle}</textarea>
+                                    </div>
+                                `;
+                                output.appendChild(articleCard);
+                                updateStoryNavigationButtons();
+                            }
+                        } catch (err) {
+                            output.innerHTML += `
+                                <div class="result-card" id="card-${index}" style="border-color: #ef4444; margin-bottom: 20px;">
+                                    <p style="color: #ef4444; font-weight: bold;">❌ Thumbnail failed [${index + 1}]: ${url}</p>
+                                    <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 15px;">Network error during thumbnail generation.</p>
+                                </div>
+                            `;
+                        } finally {
+                            completedCount++;
+                            if (completedCount === total) {
+                                loading.style.display = "none";
+                                loading.style.pointerEvents = "";
+                                resolve();
+                            } else {
+                                // Give the API a short cooldown before the next thumbnail request.
+                                console.log("⏳ Waiting 3s for API cooldown...");
+                                setTimeout(() => {
+                                    processNext(index + 1, urls[index + 1]);
+                                }, 3000);
+                            }
+                        }
+                    };
+
+                    processNext(0, urls[0]);
+                });
+            }
+
             async function generate() {
                 const urlInput = document.getElementById("youtubeUrl");
                 const urls = urlInput.value
@@ -481,11 +1614,18 @@
                 const output = document.getElementById("output");
 
                 loading.style.display = "flex";
+                loading.style.pointerEvents = "none";
                 resultSection.style.display = "block";
                 output.innerHTML = "";
+                // Clear previous saved articles so new Buzz run doesn't append
+                try {
+                    localStorage.removeItem("saved_articles");
+                } catch (e) {
+                    console.warn("Failed to clear saved_articles:", e);
+                }
 
                 // Concurrency control: limit to 3 parallel requests
-                const concurrencyLimit = 2;
+                const concurrencyLimit = 1;
                 let nextIndex = 0;
                 let completedCount = 0;
                 const total = urls.length;
@@ -499,10 +1639,16 @@
                         console.log(`📡 Thread active: Processing [${currentIndex + 1}/${total}]:`, url);
 
                         try {
+                            const provider = document.getElementById("ai-provider").value;
+                            const generationMode = document.getElementById("generation-mode")?.value || "story";
                             const res = await fetch("/generate-article", {
                                 method: "POST",
                                 headers: { "Content-Type": "application/json" },
-                                body: JSON.stringify({ youtubeUrl: url }),
+                                body: JSON.stringify({
+                                    youtubeUrl: url,
+                                    provider: provider,
+                                    generationMode: generationMode,
+                                }),
                             });
 
                             const data = await res.json();
@@ -516,20 +1662,37 @@
                                     </div>
                                 `;
                             } else {
-                                const finalArticle = injectImage(data.article, data.videoId);
+                                const finalArticle = generationMode === "buzz-thumbnail" ? injectImage("", data.videoId) : injectImage(data.article, data.videoId);
+                                saveArticleToLocalStorage(currentIndex, url, data.title, data.players, data.videoId, finalArticle);
                                 const articleCard = document.createElement("div");
                                 articleCard.className = "result-card";
                                 articleCard.id = `card-${currentIndex}`;
                                 articleCard.style.marginBottom = "20px";
                                 articleCard.innerHTML = `
+                                    <div class="card-controls">
+                                        <button id="select-btn-${currentIndex}" class="icon-btn select" onclick="toggleSelectArticle(${currentIndex})" title="Select">⬜</button>
+                                        <button class="icon-btn copy" onclick="copyArticle(${currentIndex})" title="Copy article">📋</button>
+                                        <button class="icon-btn delete" onclick="deleteArticle(${currentIndex}, '${url}')" title="Delete article">🗑</button>
+                                    </div>
                                     <div style="margin-bottom: 20px;">
                                         <label style="display:block; margin-bottom:8px; color:var(--text-muted);">Article ${currentIndex + 1} Title</label>
-                                        <input type="text" class="flex-1 border" value="${data.title || ""}" style="margin-bottom:15px; width: 100%;">
-                                        <label style="display:block; margin-bottom:8px; color:var(--text-muted);">Article ${currentIndex + 1} Content (HTML)</label>
-                                        <textarea class="w-full min-h-52" style="min-height: 400px; font-family: 'Inter', monospace; font-size: 0.9rem;">${finalArticle}</textarea>
+                                        <input type="text" class="flex-1 border" value="${data.title || ""}" style="margin-bottom:15px; width: 100%;" oninput="updateSavedArticle(${currentIndex}, 'title', this.value)">
+                                        
+                                        <div style="display: grid; grid-template-columns: 1fr; gap: 10px; margin-bottom: 15px;">
+                                            <div>
+                                                <label style="display:block; margin-bottom:8px; color:var(--text-muted);">Thumbnail Text</label>
+                                                <textarea class="player-input border" style="width: 100%; min-height: 80px; font-family: monospace; font-size: 0.85rem;" placeholder="Thumbnail text from OCR..." oninput="updateSavedArticle(${currentIndex}, 'players', this.value)">${data.players || ""}</textarea>
+                                                ${buildThumbnailControls({ index: currentIndex, url, videoId: data.videoId })}
+                                                ${buildStoryActionMarkup(currentIndex, url, "story")}
+                                            </div>
+                                        </div>
+
+                                        <label style="display:block; margin-bottom:8px; color:var(--text-muted); cursor:pointer;" ondblclick="showStoryRetryButton(${currentIndex})">Article ${currentIndex + 1} Content (HTML)</label>
+                                        <textarea class="w-full min-h-52" style="min-height: 400px; font-family: 'Inter', monospace; font-size: 0.9rem;" oninput="updateSavedArticle(${currentIndex}, 'article', this.value)">${finalArticle}</textarea>
                                     </div>
                                 `;
                                 output.appendChild(articleCard);
+                                updateStoryNavigationButtons();
                             }
                         } catch (err) {
                             output.innerHTML += `
@@ -542,6 +1705,7 @@
                             completedCount++;
                             if (completedCount === total) {
                                 loading.style.display = "none";
+                                loading.style.pointerEvents = "";
                                 console.log("🏁 Batch process completed.");
                                 resolve();
                             } else {
@@ -564,16 +1728,23 @@
             async function retrySingle(url, index) {
                 const card = document.getElementById(`card-${index}`);
                 const originalHTML = card.innerHTML;
+                const currentMode = getStoryModeForCard(card);
 
                 // Show local loading
                 card.innerHTML = `<div style="text-align:center; padding: 20px;">⏳ Đang thử lại bài ${index + 1}...</div>`;
                 card.style.borderColor = "var(--primary)";
 
                 try {
+                    const provider = document.getElementById("ai-provider").value;
+                    const generationMode = document.getElementById("generation-mode")?.value || "story";
                     const res = await fetch("/generate-article", {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ youtubeUrl: url }),
+                        body: JSON.stringify({
+                            youtubeUrl: url,
+                            provider: provider,
+                            generationMode: generationMode,
+                        }),
                     });
 
                     const data = await res.json();
@@ -586,13 +1757,29 @@
                         `;
                         card.style.borderColor = "#ef4444";
                     } else {
-                        const finalArticle = injectImage(data.article, data.videoId);
+                        const finalArticle = generationMode === "buzz-thumbnail" ? injectImage("", data.videoId) : injectImage(data.article, data.videoId);
+                        saveArticleToLocalStorage(index, url, data.title, data.players, data.videoId, finalArticle);
                         card.innerHTML = `
+                            <div class="card-controls">
+                                <button id="select-btn-${index}" class="icon-btn select" onclick="toggleSelectArticle(${index})" title="Select">⬜</button>
+                                <button class="icon-btn copy" onclick="copyArticle(${index})" title="Copy article">📋</button>
+                                <button class="icon-btn delete" onclick="deleteArticle(${index}, '${url}')" title="Delete article">🗑</button>
+                            </div>
                             <div style="margin-bottom: 20px;">
                                 <label style="display:block; margin-bottom:8px; color:var(--text-muted);">Article ${index + 1} Title</label>
-                                <input type="text" class="flex-1 border" value="${data.title || ""}" style="margin-bottom:15px; width: 100%;">
-                                <label style="display:block; margin-bottom:8px; color:var(--text-muted);">Article ${index + 1} Content (HTML)</label>
-                                <textarea class="w-full min-h-52" style="min-height: 400px; font-family: 'Inter', monospace; font-size: 0.9rem;">${finalArticle}</textarea>
+                                <input type="text" class="flex-1 border" value="${data.title || ""}" style="margin-bottom:15px; width: 100%;" oninput="updateSavedArticle(${index}, 'title', this.value)">
+                                
+                                <div style="display: grid; grid-template-columns: 1fr; gap: 10px; margin-bottom: 15px;">
+                                    <div>
+                                        <label style="display:block; margin-bottom:8px; color:var(--text-muted);">Thumbnail Text</label>
+                                        <textarea class="player-input border" style="width: 100%; min-height: 80px; font-family: monospace; font-size: 0.85rem;" placeholder="Thumbnail text from OCR..." oninput="updateSavedArticle(${index}, 'players', this.value)">${data.players || ""}</textarea>
+                                        ${buildThumbnailControls({ index, url, videoId: data.videoId })}
+                                        ${buildStoryActionMarkup(index, url, getStoryModeForCard(card))}
+                                    </div>
+                                </div>
+
+                                <label style="display:block; margin-bottom:8px; color:var(--text-muted); cursor:pointer;" ondblclick="showStoryRetryButton(${index})">Article ${index + 1} Content (HTML)</label>
+                                <textarea class="w-full min-h-52" style="min-height: 400px; font-family: 'Inter', monospace; font-size: 0.9rem;" oninput="updateSavedArticle(${index}, 'article', this.value)">${finalArticle}</textarea>
                             </div>
                         `;
                         card.style.borderColor = "var(--border)";
@@ -619,8 +1806,9 @@
                 }, 1000);
             }
 
-            function injectImage(article, videoId) {
-                const imgTag = `<img style="max-width: 100%; margin-top: 20px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.2);" src="https://i.ytimg.com/vi/${videoId}/maxresdefault.jpg" />`;
+            function injectImage(article, videoId, thumbnailVariant = "maxresdefault") {
+                const imageUrl = getThumbnailVariantUrl(videoId, thumbnailVariant || "maxresdefault");
+                const imgTag = `<img style="max-width: 100%; margin-top: 20px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.2);" src="${imageUrl}" />`;
                 const iframeTag = `<div style="margin-top: 20px; position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; border-radius: 12px;">
                     <iframe src="https://www.youtube.com/embed/${videoId}" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;" frameborder="0" allowfullscreen></iframe>
                 </div>`;
@@ -631,6 +1819,865 @@
                 }
                 return imgTag + "\n" + article + "\n" + iframeTag;
             }
+
+            const VIDEO_PREFIX_STORAGE_KEY = "videoFileNamePrefix";
+            const VIDEO_START_NUMBER_STORAGE_KEY = "videoFileStartNumber";
+            let activeStoryCardIndex = 0;
+            let storyCoverImagePromise = null;
+
+            function loadVideoFileNamePrefix() {
+                const stored = localStorage.getItem(VIDEO_PREFIX_STORAGE_KEY);
+                return stored !== null ? stored : "";
+            }
+
+            function saveVideoFileNamePrefix(value) {
+                localStorage.setItem(VIDEO_PREFIX_STORAGE_KEY, value || "");
+            }
+
+            function loadVideoFileStartNumber() {
+                const stored = localStorage.getItem(VIDEO_START_NUMBER_STORAGE_KEY);
+                return stored !== null ? stored : "1";
+            }
+
+            function saveVideoFileStartNumber(value) {
+                const normalized = value && value.trim() !== "" ? value.trim() : "1";
+                localStorage.setItem(VIDEO_START_NUMBER_STORAGE_KEY, normalized);
+            }
+
+            function getVideoFilePrefixValue() {
+                const input = document.getElementById("videoPrefixInput");
+                if (input) {
+                    const value = input.value.trim();
+                    return value !== "" ? value : loadVideoFileNamePrefix();
+                }
+                return loadVideoFileNamePrefix();
+            }
+
+            function getVideoStartNumber() {
+                const input = document.getElementById("videoStartNumberInput");
+                const raw = input ? input.value.trim() : loadVideoFileStartNumber();
+                const parsed = parseInt(raw, 10);
+                return Number.isFinite(parsed) && parsed > 0 ? parsed : 1;
+            }
+
+            function getVideoBaseName(index) {
+                const prefix = getVideoFilePrefixValue();
+                const start = getVideoStartNumber();
+                const numberPart = start + index;
+                if (prefix) {
+                    return `${prefix}${numberPart}`;
+                }
+                return `${numberPart}`;
+            }
+
+            function getVideoDownloadFileName(index) {
+                const baseName = getVideoBaseName(index);
+                return `${baseName}.mp4`;
+            }
+
+            function getImageFileName(index) {
+                const baseName = getVideoBaseName(index);
+                return `${baseName}.png`;
+            }
+
+            function lockBodyScroll() {
+                document.body.style.overflow = "hidden";
+                document.body.style.position = "relative";
+            }
+
+            function unlockBodyScroll() {
+                document.body.style.overflow = "";
+                document.body.style.position = "";
+            }
+
+            function getActiveStoryMode() {
+                return document.getElementById("storyModeSelect")?.value || "story";
+            }
+
+            function setActiveStoryMode(mode) {
+                const modeSelect = document.getElementById("storyModeSelect");
+                const generationModeSelect = document.getElementById("generation-mode");
+                const effectiveMode = mode || generationModeSelect?.value || "story";
+
+                if (modeSelect) {
+                    modeSelect.value = effectiveMode;
+                }
+                if (generationModeSelect) {
+                    generationModeSelect.value = effectiveMode;
+                }
+                return effectiveMode;
+            }
+
+            function getCurrentThumbnailUrl() {
+                const currentItem = getSavedArticleByIndex(activeStoryCardIndex);
+                if (!currentItem) {
+                    return "https://i.ytimg.com/vi/4u3a4u5d5w/maxresdefault.jpg";
+                }
+                if (currentItem.thumbnailVariant === "custom" && currentItem.customThumbnailUrl) {
+                    return currentItem.customThumbnailUrl;
+                }
+                return getThumbnailVariantUrl(currentItem.videoId, currentItem.thumbnailVariant || "maxresdefault");
+            }
+
+            function loadStoryCoverImage() {
+                if (storyCoverImagePromise) return storyCoverImagePromise;
+                storyCoverImagePromise = new Promise((resolve) => {
+                    const img = new Image();
+                    img.crossOrigin = "anonymous";
+                    img.src = getCurrentThumbnailUrl();
+                    img.onload = () => resolve(img);
+                    img.onerror = () => resolve(null);
+                });
+                return storyCoverImagePromise;
+            }
+
+            function openStoryTool(cardIndex) {
+                activeStoryCardIndex = cardIndex;
+                storyCoverImagePromise = null;
+                const card = document.getElementById(`card-${cardIndex}`);
+                const mode = setActiveStoryMode(getStoryModeForCard(card));
+                const textArea = card?.querySelector("textarea.player-input");
+                const articleTextArea = card?.querySelector("textarea.w-full.min-h-52");
+                const storyTextInput = document.getElementById("storyTextInput");
+                const modalTitle = document.querySelector("#storyModal .story-modal-header h3");
+
+                if (mode === "sports") {
+                    storyTextInput.value = textArea?.value.trim() || buildSportsThumbnailText(articleTextArea?.value || "");
+                    if (modalTitle) modalTitle.textContent = "Sports Hook Creator";
+                    storyTextInput.placeholder = "Enter the sports hook text or use the generated clickbait.";
+                    storyUpdateMessage("Use the sports hook text from the generated article or enter your own high-impact caption.");
+                } else {
+                    storyTextInput.value = textArea?.value.trim() || "";
+                    if (modalTitle) modalTitle.textContent = "Video Story Creator";
+                    storyTextInput.placeholder = "Enter the story text here or use thumbnail text from the article.";
+                    storyUpdateMessage("Use the story text from the thumbnail or enter your own narrative.");
+                }
+
+                lockBodyScroll();
+                document.getElementById("storyModal").classList.add("open");
+                updateStoryThumbnailSelectorVisibility(mode);
+                renderThumbnailSelectorForActiveCard();
+                renderStoryPreview();
+                updateStoryNavigationButtons();
+            }
+
+            function updateStoryThumbnailSelectorVisibility(mode) {
+                const selector = document.getElementById("storyThumbnailSelector");
+                if (!selector) return;
+                selector.style.display = mode === "sports" ? "grid" : "none";
+            }
+
+            function closeStoryTool() {
+                document.getElementById("storyModal").classList.remove("open");
+                unlockBodyScroll();
+            }
+
+            function storyGetAutoFontSize(text, mode = getActiveStoryMode()) {
+                if (!text || !text.trim()) return 42;
+
+                const canvas = document.getElementById("storyExportCanvas");
+                const ctx = canvas.getContext("2d");
+                const lineHeightRatio = mode === "sports" ? CELEB_STORY_THEME.layout.summaryLineHeight : 1.2;
+                const width = canvas.width;
+                const height = canvas.height;
+                const maxWidth = mode === "sports" ? width - CELEB_STORY_THEME.layout.textSidePadding * 2 - CELEB_STORY_THEME.layout.summaryBoxPaddingX * 2 : width - 120;
+                const sportsImageBottomEstimate = CELEB_STORY_THEME.layout.frameTop + CELEB_STORY_THEME.layout.frameFullWidthHeight * CELEB_STORY_THEME.layout.imageZoom + 40;
+                const maxHeight = mode === "sports" ? height - sportsImageBottomEstimate - CELEB_STORY_THEME.layout.summaryBoxPaddingY * 2 - 16 : height - 120;
+                let bestSize = 42;
+
+                for (let size = 90; size >= 14; size -= 1) {
+                    const fontFamily = CELEB_STORY_THEME.layout.fontFamily;
+                    ctx.font = `900 ${size}px ${fontFamily}`;
+                    const lines = storyBuildTextLines(text, maxWidth, size * lineHeightRatio, ctx);
+                    const totalHeight = lines.length * size * lineHeightRatio;
+
+                    if (totalHeight <= maxHeight) {
+                        bestSize = size;
+                        break;
+                    }
+                }
+
+                return bestSize;
+            }
+
+            function syncStoryTextInputToSavedArticle() {
+                const storyTextInput = document.getElementById("storyTextInput");
+                if (!storyTextInput || !Number.isFinite(activeStoryCardIndex)) return;
+
+                const value = storyTextInput.value;
+                if (!value && !getSavedArticleByIndex(activeStoryCardIndex)) return;
+
+                updateSavedArticle(activeStoryCardIndex, "players", value);
+
+                const card = document.getElementById(`card-${activeStoryCardIndex}`);
+                const playerTextArea = card?.querySelector("textarea.player-input");
+                if (playerTextArea && playerTextArea.value !== value) {
+                    playerTextArea.value = value;
+                }
+            }
+
+            let storyFontSizeOverride = false;
+
+            async function renderStoryPreview() {
+                const preview = document.getElementById("storyPreview");
+                const storyTextInput = document.getElementById("storyTextInput");
+                const text = storyTextInput.value.trim();
+                const mode = getActiveStoryMode();
+                const autoFontSize = storyGetAutoFontSize(text, mode);
+
+                const fontSizeInput = document.getElementById("storyFontSize");
+                let fontSize = autoFontSize;
+                if (fontSizeInput) {
+                    if (storyFontSizeOverride) {
+                        fontSize = Number.parseInt(fontSizeInput.value, 10) || autoFontSize;
+                    } else {
+                        fontSizeInput.value = String(autoFontSize);
+                        fontSize = autoFontSize;
+                    }
+                }
+                const fontSizeOut = document.getElementById("storyFontOut");
+                if (fontSizeOut) {
+                    fontSizeOut.textContent = String(fontSize);
+                }
+                preview.innerHTML = "";
+
+                if (!text) {
+                    preview.innerHTML = `
+                        <div class="story-preview-frame">
+                            <div class="story-preview-card">
+                                <p style="color:#94a3b8; font-size: 1rem; max-width: 280px; margin: 0;">Story preview appears here once you type or paste text.</p>
+                            </div>
+                        </div>
+                    `;
+                    return;
+                }
+
+                const dataUrl = await storyCreatePreviewDataURL(text, fontSize);
+                preview.innerHTML = `
+                    <img src="${dataUrl}" alt="Story preview" />
+                `;
+            }
+
+            function storyWrapTextLines(text, maxWidth, ctx, fontSize) {
+                const words = text.split(/\s+/).filter(Boolean);
+                const lines = [];
+                let currentLine = "";
+
+                words.forEach((word) => {
+                    const candidate = currentLine ? `${currentLine} ${word}` : word;
+                    if (ctx.measureText(candidate).width > maxWidth && currentLine) {
+                        lines.push(currentLine);
+                        currentLine = word;
+                    } else {
+                        currentLine = candidate;
+                    }
+                });
+
+                if (currentLine) {
+                    lines.push(currentLine);
+                }
+
+                return lines;
+            }
+
+            function storyDrawRoundedRect(ctx, x, y, width, height, radius) {
+                ctx.beginPath();
+                ctx.moveTo(x + radius, y);
+                ctx.lineTo(x + width - radius, y);
+                ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+                ctx.lineTo(x + width, y + height - radius);
+                ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+                ctx.lineTo(x + radius, y + height);
+                ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+                ctx.lineTo(x, y + radius);
+                ctx.quadraticCurveTo(x, y, x + radius, y);
+                ctx.closePath();
+            }
+
+            const STORY_ALT_COLOR_DEFAULT = "#F245E4";
+            const STORY_ALT_COLORS = ["#ffffff", STORY_ALT_COLOR_DEFAULT];
+
+            function storyGetAltColor(index) {
+                const custom = window.storyAltColors;
+                const palette = Array.isArray(custom) && custom.length > 0 ? custom : STORY_ALT_COLORS;
+                return palette[index % palette.length] || STORY_ALT_COLOR_DEFAULT;
+            }
+
+            function storySetAltColors(colors) {
+                if (!Array.isArray(colors) || colors.length === 0) {
+                    window.storyAltColors = [...STORY_ALT_COLORS];
+                    return window.storyAltColors;
+                }
+
+                const cleaned = colors.map((color) => String(color || "").trim()).filter(Boolean);
+
+                window.storyAltColors = cleaned.length > 0 ? cleaned : [...STORY_ALT_COLORS];
+                return window.storyAltColors;
+            }
+
+            function storyApplyAccentColor(color) {
+                const safeColor = /^#[0-9a-fA-F]{3,6}$/.test(String(color || "")) ? color : STORY_ALT_COLOR_DEFAULT;
+                storySetAltColors(["#ffffff", safeColor]);
+
+                const colorSelect = document.getElementById("storyAccentColorSelect");
+                if (colorSelect && colorSelect.value !== safeColor) {
+                    colorSelect.value = safeColor;
+                }
+
+                renderStoryPreview();
+            }
+
+            window.storyAltColors = [...STORY_ALT_COLORS];
+
+            function storySplitTextByPunctuation(text) {
+                const regex = /[^.!?]+(?:[.!?]+|$)/g;
+                return (text.match(regex) || []).map((segment) => segment.trim()).filter(Boolean);
+            }
+
+            function storyBuildTextLines(text, maxWidth, lineHeight, ctx) {
+                const segments = storySplitTextByPunctuation(text).map((segment, index) => ({
+                    text: segment,
+                    color: index % 2 === 0 ? storyGetAltColor(0) : storyGetAltColor(1),
+                }));
+
+                const words = [];
+                segments.forEach((segment) => {
+                    const splitWords = segment.text.split(/\s+/).filter(Boolean);
+                    splitWords.forEach((word, index) => {
+                        const hasSpace = index < splitWords.length - 1;
+                        words.push({ text: word + (hasSpace ? " " : ""), color: segment.color });
+                    });
+                });
+
+                const lines = [];
+                let currentLine = [];
+                let currentWidth = 0;
+
+                words.forEach((word) => {
+                    const width = ctx.measureText(word.text).width;
+                    if (currentLine.length > 0 && currentWidth + width > maxWidth) {
+                        lines.push(currentLine);
+                        currentLine = [];
+                        currentWidth = 0;
+                    }
+                    currentLine.push(word);
+                    currentWidth += width;
+                });
+
+                if (currentLine.length > 0) {
+                    lines.push(currentLine);
+                }
+
+                return lines;
+            }
+
+            function storyMeasureLineWidth(lineTokens, ctx) {
+                return lineTokens.reduce((sum, token) => sum + ctx.measureText(token.text).width, 0);
+            }
+
+            let storyBackgroundImagePromise = null;
+            function loadStoryBackgroundImage() {
+                if (storyBackgroundImagePromise) return storyBackgroundImagePromise;
+                storyBackgroundImagePromise = new Promise((resolve) => {
+                    const img = new Image();
+                    img.crossOrigin = "anonymous";
+                    img.src = "bg.png";
+                    img.onload = () => resolve(img);
+                    img.onerror = () => resolve(null);
+                });
+                return storyBackgroundImagePromise;
+            }
+
+            const CELEB_STORY_THEME = {
+                name: "Celeb",
+                colors: {
+                    backgroundColor: "#000000",
+                    textColor: "#FFFFFF",
+                    accentColor: "#E4BB49",
+                    summaryBoxColor: "#5C2886",
+                    summaryBoxOpacity: 1,
+                },
+                layout: {
+                    fontFamily: "Arial, sans-serif",
+                    fontSize: 36,
+                    summaryLineHeight: 1.46,
+                    summaryBoxEnabled: true,
+                    summaryBoxPaddingX: 24,
+                    summaryBoxPaddingY: 21,
+                    summaryBoxRadius: 19,
+                    frameTop: 50,
+                    frameFullWidth: true,
+                    frameFullWidthHeight: 420,
+                    frameSideInset: 0,
+                    imageZoom: 1,
+                    imageOffsetX: 0,
+                    imageOffsetY: 0,
+                    textTop: 445,
+                    textSidePadding: 44,
+                },
+            };
+
+            function storyRoundRectPath(ctx, x, y, width, height, radius) {
+                ctx.beginPath();
+                ctx.moveTo(x + radius, y);
+                ctx.lineTo(x + width - radius, y);
+                ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+                ctx.lineTo(x + width, y + height - radius);
+                ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+                ctx.lineTo(x + radius, y + height);
+                ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+                ctx.lineTo(x, y + radius);
+                ctx.quadraticCurveTo(x, y, x + radius, y);
+                ctx.closePath();
+            }
+
+            async function storyDrawImage(line, color, fontSize) {
+                const canvas = document.getElementById("storyExportCanvas");
+                const ctx = canvas.getContext("2d");
+                const width = canvas.width;
+                const height = canvas.height;
+                ctx.clearRect(0, 0, width, height);
+
+                const theme = CELEB_STORY_THEME;
+                const themeFontSize = fontSize || theme.layout.fontSize;
+
+                if (document.fonts?.load) {
+                    await document.fonts.load(`900 ${themeFontSize}px ${theme.layout.fontFamily}`);
+                }
+
+                const mode = getActiveStoryMode();
+                if (mode === "sports") {
+                    ctx.fillStyle = theme.colors.backgroundColor;
+                    ctx.fillRect(0, 0, width, height);
+
+                    let imageBottom = theme.layout.frameTop + theme.layout.frameFullWidthHeight;
+                    const coverImage = await loadStoryCoverImage();
+                    if (coverImage) {
+                        const sourceWidth = coverImage.naturalWidth || coverImage.width;
+                        const sourceHeight = coverImage.naturalHeight || coverImage.height;
+                        const frameX = theme.layout.frameFullWidth ? 0 : theme.layout.frameSideInset;
+                        const frameY = theme.layout.frameTop;
+                        const frameW = theme.layout.frameFullWidth ? width : width - theme.layout.frameSideInset * 2;
+                        const frameH = theme.layout.frameFullWidthHeight;
+                        const scale = Math.max(frameW / sourceWidth, frameH / sourceHeight) * theme.layout.imageZoom;
+                        const drawWidth = sourceWidth * scale;
+                        const drawHeight = sourceHeight * scale;
+                        const offsetX = frameX + (frameW - drawWidth) / 2 + theme.layout.imageOffsetX;
+                        const offsetY = frameY + (frameH - drawHeight) / 2 + theme.layout.imageOffsetY;
+                        imageBottom = offsetY + drawHeight;
+                        ctx.drawImage(coverImage, offsetX, offsetY, drawWidth, drawHeight);
+                    }
+
+                    ctx.font = `900 ${themeFontSize}px ${theme.layout.fontFamily}`;
+                    ctx.textAlign = "left";
+                    ctx.textBaseline = "top";
+                    const maxWidth = width - theme.layout.textSidePadding * 2 - theme.layout.summaryBoxPaddingX * 2;
+                    const lineHeight = themeFontSize * theme.layout.summaryLineHeight;
+                    const lines = storyBuildTextLines(line, maxWidth, lineHeight, ctx);
+                    const textHeight = lines.length * lineHeight;
+                    const boxX = theme.layout.textSidePadding;
+                    const boxY = Math.max(theme.layout.textTop, imageBottom + 16);
+                    const boxW = width - theme.layout.textSidePadding * 2;
+                    const boxH = textHeight + theme.layout.summaryBoxPaddingY * 2;
+
+                    if (theme.layout.summaryBoxEnabled) {
+                        storyRoundRectPath(ctx, boxX, boxY, boxW, boxH, theme.layout.summaryBoxRadius);
+                        ctx.fillStyle = theme.colors.summaryBoxColor;
+                        ctx.globalAlpha = theme.colors.summaryBoxOpacity;
+                        ctx.fill();
+                        ctx.globalAlpha = 1;
+                    }
+
+                    let y = boxY + theme.layout.summaryBoxPaddingY;
+                    lines.forEach((lineTokens) => {
+                        let x = boxX + theme.layout.summaryBoxPaddingX;
+                        lineTokens.forEach((token) => {
+                            ctx.fillStyle = token.color === storyGetAltColor(1) ? theme.colors.accentColor : theme.colors.textColor;
+                            ctx.fillText(token.text, x, y);
+                            x += ctx.measureText(token.text).width;
+                        });
+                        y += lineHeight;
+                    });
+                    return;
+                }
+
+                ctx.fillStyle = theme.colors.backgroundColor;
+                ctx.fillRect(0, 0, width, height);
+
+                const frameX = theme.layout.frameFullWidth ? 0 : theme.layout.frameSideInset;
+                const frameY = theme.layout.frameTop;
+                const frameW = theme.layout.frameFullWidth ? width : width - theme.layout.frameSideInset * 2;
+                const frameH = theme.layout.frameFullWidthHeight;
+                const coverImage = await loadStoryCoverImage();
+                if (coverImage) {
+                    const sourceWidth = coverImage.naturalWidth || coverImage.width;
+                    const sourceHeight = coverImage.naturalHeight || coverImage.height;
+                    const scale = Math.max(frameW / sourceWidth, frameH / sourceHeight) * theme.layout.imageZoom;
+                    const drawWidth = sourceWidth * scale;
+                    const drawHeight = sourceHeight * scale;
+                    const offsetX = frameX + (frameW - drawWidth) / 2 + theme.layout.imageOffsetX;
+                    const offsetY = frameY + (frameH - drawHeight) / 2 + theme.layout.imageOffsetY;
+                    ctx.drawImage(coverImage, offsetX, offsetY, drawWidth, drawHeight);
+                }
+
+                ctx.font = `900 ${themeFontSize}px ${theme.layout.fontFamily}`;
+                ctx.textAlign = "left";
+                ctx.textBaseline = "top";
+                const maxWidth = width - theme.layout.textSidePadding * 2 - theme.layout.summaryBoxPaddingX * 2;
+                const lineHeight = themeFontSize * theme.layout.summaryLineHeight;
+                const lines = storyBuildTextLines(line, maxWidth, lineHeight, ctx);
+                const textHeight = lines.length * lineHeight;
+                const boxX = theme.layout.textSidePadding;
+                const boxY = theme.layout.textTop;
+                const boxW = width - theme.layout.textSidePadding * 2;
+                const boxH = textHeight + theme.layout.summaryBoxPaddingY * 2;
+
+                if (theme.layout.summaryBoxEnabled) {
+                    storyRoundRectPath(ctx, boxX, boxY, boxW, boxH, theme.layout.summaryBoxRadius);
+                    ctx.fillStyle = theme.colors.summaryBoxColor;
+                    ctx.globalAlpha = theme.colors.summaryBoxOpacity;
+                    ctx.fill();
+                    ctx.globalAlpha = 1;
+                }
+
+                ctx.fillStyle = theme.colors.textColor;
+                let y = boxY + theme.layout.summaryBoxPaddingY;
+                lines.forEach((lineTokens) => {
+                    let x = boxX + theme.layout.summaryBoxPaddingX;
+                    lineTokens.forEach((token) => {
+                        ctx.fillStyle = token.color === storyGetAltColor(1) ? theme.colors.accentColor : theme.colors.textColor;
+                        ctx.fillText(token.text, x, y);
+                        x += ctx.measureText(token.text).width;
+                    });
+                    y += lineHeight;
+                });
+            }
+
+            function storyCreateImageBlob(line, color, fontSize) {
+                return new Promise(async (resolve) => {
+                    await storyDrawImage(line, color, fontSize);
+                    const canvas = document.getElementById("storyExportCanvas");
+                    canvas.toBlob((blob) => {
+                        resolve(blob);
+                    }, "image/png");
+                });
+            }
+
+            async function storyCreatePreviewDataURL(line, fontSize) {
+                await storyDrawImage(line, "#ffffff", fontSize);
+                const canvas = document.getElementById("storyExportCanvas");
+                return canvas.toDataURL("image/png");
+            }
+
+            async function storyCreateAllImages() {
+                const line = document.getElementById("storyTextInput").value.trim();
+                if (!line) {
+                    storyUpdateMessage("Please enter text to create an image.", true);
+                    return [];
+                }
+                const fontSize = parseInt(document.getElementById("storyFontSize").value, 10) || 42;
+                const blob = await storyCreateImageBlob(line, "#ffffff", fontSize);
+                const name = getImageFileName(activeStoryCardIndex || 0);
+                const result = [{ blob, name, text: line }];
+                storyUpdateBatchPreview(result);
+                storyUpdateMessage("Created 1 image. Ready to send to converter.", false);
+                return result;
+            }
+
+            function storyUpdateBatchPreview(blobs) {
+                const batchPreview = document.getElementById("storyBatchPreview");
+                batchPreview.innerHTML = "";
+                blobs.forEach((item) => {
+                    const url = URL.createObjectURL(item.blob);
+                    const thumb = document.createElement("div");
+                    thumb.style.border = "1px solid #cbd5e1";
+                    thumb.style.borderRadius = "8px";
+                    thumb.style.overflow = "hidden";
+                    thumb.style.background = "#fff";
+                    thumb.style.padding = "8px";
+
+                    const img = document.createElement("img");
+                    img.src = url;
+                    img.style.width = "100%";
+                    img.style.height = "auto";
+                    img.style.display = "block";
+                    img.style.borderRadius = "6px";
+
+                    const label = document.createElement("div");
+                    label.textContent = item.name;
+                    label.style.fontSize = "12px";
+                    label.style.marginTop = "8px";
+                    label.style.wordBreak = "break-all";
+                    label.style.color = "#334155";
+
+                    thumb.appendChild(img);
+                    thumb.appendChild(label);
+                    batchPreview.appendChild(thumb);
+                });
+            }
+
+            function storyUpdateMessage(text, isError = false) {
+                const messageEl = document.getElementById("storyMessage");
+                messageEl.textContent = text;
+                messageEl.style.color = isError ? "#dc2626" : "#334155";
+            }
+
+            async function storyConvertAndDownload() {
+                const blobs = await storyCreateAllImages();
+                if (blobs.length === 0) return false;
+
+                const formData = new FormData();
+                blobs.forEach((item) => {
+                    formData.append("files", item.blob, item.name);
+                });
+                formData.append("randomDuration", "true");
+
+                try {
+                    const response = await fetch("/convert-download", {
+                        method: "POST",
+                        body: formData,
+                    });
+
+                    if (!response.ok) {
+                        const errorData = await response.json().catch(() => ({}));
+                        throw new Error(errorData.error || "Conversion failed");
+                    }
+
+                    const defaultDownloadName = getVideoDownloadFileName(activeStoryCardIndex || 0);
+                    const blob = await response.blob();
+                    const url = URL.createObjectURL(blob);
+                    const link = document.createElement("a");
+                    link.href = url;
+                    link.download = defaultDownloadName;
+                    document.body.appendChild(link);
+                    link.click();
+                    link.remove();
+                    URL.revokeObjectURL(url);
+
+                    return true;
+                } catch (err) {
+                    throw err;
+                }
+            }
+
+            function setStoryButtonsLoading(isLoading) {
+                const primary = document.querySelector(".story-modal-actions .btn-primary");
+                const secondary = document.getElementById("storyDownloadButton");
+                const copyBtn = document.getElementById("storyCopyAllButton");
+                const prevBtn = document.getElementById("storyPrevButton");
+                const nextBtn = document.getElementById("storyNextButton");
+                if (primary) {
+                    primary.disabled = !!isLoading;
+                    primary.style.opacity = isLoading ? "0.7" : "1";
+                    primary.innerText = isLoading ? "⏳ Converting..." : "Create & Send to Converter";
+                }
+                if (secondary) {
+                    secondary.disabled = !!isLoading;
+                    secondary.style.opacity = isLoading ? "0.7" : "1";
+                    secondary.innerText = isLoading ? "⏳" : "⬇";
+                }
+                if (copyBtn) {
+                    copyBtn.disabled = !!isLoading;
+                }
+                if (prevBtn) {
+                    prevBtn.disabled = !!isLoading;
+                    prevBtn.style.opacity = isLoading ? "0.7" : "1";
+                }
+                if (nextBtn) {
+                    nextBtn.disabled = !!isLoading;
+                    nextBtn.style.opacity = isLoading ? "0.7" : "1";
+                }
+            }
+
+            async function storySendToServer() {
+                setStoryButtonsLoading(true);
+                storyUpdateMessage("Converting to video and preparing download...");
+                try {
+                    await storyConvertAndDownload();
+                    storyUpdateMessage(`Video converted successfully. Download should start shortly.`, false);
+                } catch (err) {
+                    storyUpdateMessage(err.message || "Conversion failed", true);
+                } finally {
+                    setStoryButtonsLoading(false);
+                }
+            }
+
+            async function storyDownload() {
+                setStoryButtonsLoading(true);
+                storyUpdateMessage("Preparing quick download...");
+                try {
+                    await storyConvertAndDownload();
+                    storyUpdateMessage(`Download initiated.`, false);
+                } catch (err) {
+                    storyUpdateMessage(err.message || "Download failed", true);
+                } finally {
+                    setStoryButtonsLoading(false);
+                }
+            }
+
+            async function storyCopyAll() {
+                const saved = getSavedArticleByIndex(activeStoryCardIndex);
+                let content = saved?.article || "";
+                if (!content) {
+                    const card = document.getElementById(`card-${activeStoryCardIndex}`);
+                    const ta = card?.querySelector("textarea.w-full.min-h-52");
+                    content = ta?.value || "";
+                }
+                if (!content) {
+                    storyUpdateMessage("No article content to copy.", true);
+                    return;
+                }
+                try {
+                    await navigator.clipboard.writeText(content);
+                    storyUpdateMessage("Copied article content to clipboard.", false);
+                } catch (err) {
+                    storyUpdateMessage("Copy failed. Try selecting and copying manually.", true);
+                }
+            }
+
+            const videoPrefixInput = document.getElementById("videoPrefixInput");
+            const videoStartNumberInput = document.getElementById("videoStartNumberInput");
+            if (videoPrefixInput) {
+                videoPrefixInput.value = loadVideoFileNamePrefix();
+                videoPrefixInput.addEventListener("input", (event) => {
+                    saveVideoFileNamePrefix(event.target.value.trim());
+                });
+            }
+            if (videoStartNumberInput) {
+                videoStartNumberInput.value = loadVideoFileStartNumber();
+                videoStartNumberInput.addEventListener("input", (event) => {
+                    saveVideoFileStartNumber(event.target.value);
+                });
+            }
+
+            const generationModeSelect = document.getElementById("generation-mode");
+            const storyModeSelect = document.getElementById("storyModeSelect");
+
+            const syncStoryModeSelection = (event) => {
+                const sourceSelect = event?.target;
+                const selectedMode = sourceSelect?.value || generationModeSelect?.value || storyModeSelect?.value || "story";
+                const mode = setActiveStoryMode(selectedMode);
+                const card = document.getElementById(`card-${activeStoryCardIndex}`);
+                const textArea = card?.querySelector("textarea.player-input");
+                const articleTextArea = card?.querySelector("textarea.w-full.min-h-52");
+                const storyTextInput = document.getElementById("storyTextInput");
+                const modalTitle = document.querySelector("#storyModal .story-modal-header h3");
+
+                if (mode === "sports") {
+                    storyTextInput.value = buildSportsThumbnailText(articleTextArea?.value || "");
+                    storyTextInput.placeholder = "Enter the sports hook text or use the generated clickbait.";
+                    if (modalTitle) modalTitle.textContent = "Sports Hook Creator";
+                } else {
+                    storyTextInput.value = textArea?.value.trim() || storyTextInput.value.trim() || "";
+                    storyTextInput.placeholder = "Enter the story text here or use thumbnail text from the article.";
+                    if (modalTitle) modalTitle.textContent = "Video Story Creator";
+                }
+
+                updateStoryThumbnailSelectorVisibility(mode);
+                renderStoryPreview();
+            };
+
+            generationModeSelect?.addEventListener("change", syncStoryModeSelection);
+            storyModeSelect?.addEventListener("change", syncStoryModeSelection);
+            syncStoryModeSelection();
+
+            const youtubeUrlLabel = document.getElementById("youtubeUrlLabel");
+            let sampleArticleIndex = 0;
+            const sampleArticles = [
+                {
+                    title: "Sample Article: 5 bước tăng traffic nhanh",
+                    players: "Tăng traffic, Nội dung hấp dẫn, SEO YouTube",
+                    body: "<p>Đây là nội dung bài viết mẫu để bạn kiểm tra giao diện và chỉnh sửa. Sử dụng cấu trúc này để tạo ra các bài viết chất lượng từ video.</p>",
+                },
+                {
+                    title: "Sample Article: Bí quyết tối ưu hóa video",
+                    players: "Tối ưu thumbnail, Tăng lượt xem, Thu hút người xem",
+                    body: "<p>Đây là một bài viết mẫu khác, với các đoạn văn bản demo để giúp bạn thấy rõ định dạng và mẫu bài viết.</p>",
+                },
+                {
+                    title: "Sample Article: Kỹ thuật viết nội dung AI",
+                    players: "AI, nội dung, tự động hóa, tối ưu hóa",
+                    body: "<p>Bài viết mẫu này giúp bạn kiểm tra chức năng xem trước và chỉnh sửa nội dung HTML trong card.</p>",
+                },
+            ];
+
+            function openSampleStory(sampleText) {
+                activeStoryCardIndex = 0;
+                const storyTextInput = document.getElementById("storyTextInput");
+                storyTextInput.value = sampleText;
+                document.getElementById("storyModal").classList.add("open");
+                renderStoryPreview();
+                storyUpdateMessage("Use the story text from the thumbnail or enter your own narrative.");
+            }
+
+            function appendSampleArticleCard() {
+                const output = document.getElementById("output");
+                const resultSection = document.getElementById("resultSection");
+                if (!output || !resultSection) return;
+
+                resultSection.style.display = "block";
+                const sample = sampleArticles[sampleArticleIndex % sampleArticles.length];
+                const articleCard = document.createElement("div");
+                articleCard.className = "result-card";
+                articleCard.style.marginBottom = "20px";
+                articleCard.innerHTML = `
+                    <div class="card-controls">
+                        <button id="select-sample-${sampleArticleIndex}" class="icon-btn select" onclick="toggleSelectArticle(${sampleArticleIndex})" title="Select">⬜</button>
+                        <button class="icon-btn copy" onclick="copySampleArticle(${sampleArticleIndex})" title="Copy sample">📋</button>
+                    </div>
+                    <div style="margin-bottom: 20px;">
+                        <label style="display:block; margin-bottom:8px; color:var(--text-muted);">Sample Article Title</label>
+                        <input type="text" class="flex-1 border" value="${sample.title}" style="margin-bottom:15px; width: 100%;">
+                        <div style="display: grid; grid-template-columns: 1fr; gap: 10px; margin-bottom: 15px;">
+                            <div>
+                                <label style="display:block; margin-bottom:8px; color:var(--text-muted);">Sample Thumbnail Text</label>
+                                <textarea class="player-input border sample-player-text" style="width: 100%; min-height: 80px; font-family: monospace; font-size: 0.85rem;">${sample.players}</textarea>
+                                <p style="margin-top: 10px; color: var(--text-muted); font-size: 0.95rem;">Sample thumbnail information.</p>
+                                <button type="button" class="btn-secondary sample-story-btn" style="margin-top:12px; padding: 10px 16px; font-size: 0.92rem;">🎬 Create Story</button>
+                            </div>
+                        </div>
+                        <label style="display:block; margin-bottom:8px; color:var(--text-muted);">Sample Article Content (HTML)</label>
+                        <textarea class="w-full min-h-52" style="min-height: 200px; font-family: 'Inter', monospace; font-size: 0.9rem;">${sample.body}</textarea>
+                    </div>
+                `;
+                output.appendChild(articleCard);
+
+                const storyButton = articleCard.querySelector(".sample-story-btn");
+                const playerText = articleCard.querySelector(".sample-player-text")?.value || sample.players;
+                if (storyButton) {
+                    storyButton.addEventListener("click", () => openSampleStory(playerText));
+                }
+
+                sampleArticleIndex += 1;
+            }
+
+            if (youtubeUrlLabel) {
+                youtubeUrlLabel.style.cursor = "pointer";
+                youtubeUrlLabel.title = "Click to add a sample article card";
+                youtubeUrlLabel.addEventListener("click", appendSampleArticleCard);
+            }
+
+            const storyAccentColorSelect = document.getElementById("storyAccentColorSelect");
+            storyAccentColorSelect?.addEventListener("change", (event) => {
+                storyApplyAccentColor(event.target.value || STORY_ALT_COLOR_DEFAULT);
+            });
+
+            document.getElementById("storyFontSize")?.addEventListener("input", (event) => {
+                storyFontSizeOverride = true;
+                const value = Number.parseInt(event.target.value, 10);
+                if (Number.isFinite(value)) {
+                    const fontSizeOut = document.getElementById("storyFontOut");
+                    if (fontSizeOut) {
+                        fontSizeOut.textContent = String(value);
+                    }
+                }
+                renderStoryPreview();
+            });
+            document.getElementById("storyTextInput").addEventListener("input", () => {
+                storyFontSizeOverride = false;
+                syncStoryTextInputToSavedArticle();
+                renderStoryPreview();
+            });
 
             function toggleView() {
                 const editor = document.getElementById("editorContainer");
