@@ -1226,6 +1226,28 @@
                 }
             }
 
+            function updateThumbnailText(idOrUrl, value) {
+                let saved = [];
+                try {
+                    saved = JSON.parse(localStorage.getItem("saved_articles")) || [];
+                } catch (e) {
+                    return;
+                }
+
+                const savedIndex = saved.findIndex((item) => {
+                    if (typeof idOrUrl === "number" || /^\d+$/.test(String(idOrUrl))) {
+                        return Number(item.index) === Number(idOrUrl);
+                    }
+                    return item.url === idOrUrl;
+                });
+                if (savedIndex === -1) return;
+
+                const article = saved[savedIndex];
+                article.players = value;
+                article.storyText = value;
+                localStorage.setItem("saved_articles", JSON.stringify(saved));
+            }
+
             function restoreArticlesFromLocalStorage() {
                 let saved = [];
                 try {
@@ -1261,7 +1283,7 @@
                                         <div style="display: grid; grid-template-columns: 1fr; gap: 10px; margin-bottom: 15px;">
                                             <div>
                                                 <label style="display:block; margin-bottom:8px; color:var(--text-muted);">Thumbnail Text</label>
-                                                <textarea class="player-input border" style="width: 100%; min-height: 80px; font-family: monospace; font-size: 0.85rem;" placeholder="Thumbnail text from OCR..." oninput="updateSavedArticle('${item.url}', 'players', this.value)">${item.players || ""}</textarea>
+                                                <textarea class="player-input border" style="width: 100%; min-height: 80px; font-family: monospace; font-size: 0.85rem;" placeholder="Thumbnail text from OCR..." oninput="updateThumbnailText('${item.url}', this.value)">${item.players || ""}</textarea>
                                                 ${buildThumbnailControls(item)}
                                                 ${buildStoryActionMarkup(item.index, item.url, "story")}
                                             </div>
@@ -1447,7 +1469,7 @@
                                         <div style="display: grid; grid-template-columns: 1fr; gap: 10px; margin-bottom: 15px;">
                                             <div>
                                                 <label style="display:block; margin-bottom:8px; color:var(--text-muted);">Thumbnail Text</label>
-                                                <textarea class="player-input border" style="width: 100%; min-height: 80px; font-family: monospace; font-size: 0.85rem;" placeholder="Thumbnail text from OCR..." oninput="updateSavedArticle('${item.url}', 'players', this.value)">${item.players || ""}</textarea>
+                                                <textarea class="player-input border" style="width: 100%; min-height: 80px; font-family: monospace; font-size: 0.85rem;" placeholder="Thumbnail text from OCR..." oninput="updateThumbnailText('${item.url}', this.value)">${item.players || ""}</textarea>
                                                 ${buildThumbnailControls(item)}
                                                 ${buildStoryActionMarkup(item.index, item.url, "story")}
                                             </div>
@@ -1561,7 +1583,7 @@
                                                     <div style="display: grid; grid-template-columns: 1fr; gap: 10px; margin-bottom: 15px;">
                                                         <div>
                                                             <label style="display:block; margin-bottom:8px; color:var(--text-muted);">Thumbnail Text</label>
-                                                            <textarea class="player-input border" style="width: 100%; min-height: 80px; font-family: monospace; font-size: 0.85rem;">${(data.players || "").replace(/</g, "&lt;").replace(/>/g, "&gt;")}</textarea>
+                                                            <textarea class="player-input border" style="width: 100%; min-height: 80px; font-family: monospace; font-size: 0.85rem;" oninput="updateThumbnailText(${index}, this.value)">${(data.players || "").replace(/</g, "&lt;").replace(/>/g, "&gt;")}</textarea>
                                                             ${buildThumbnailControls({
                                                                 index,
                                                                 url,
@@ -1694,7 +1716,7 @@
                                                     <div style="display: grid; grid-template-columns: 1fr; gap: 10px; margin-bottom: 15px;">
                                                         <div>
                                                             <label style="display:block; margin-bottom:8px; color:var(--text-muted);">Thumbnail Text</label>
-                                                            <textarea class="player-input border" style="width: 100%; min-height: 80px; font-family: monospace; font-size: 0.85rem;" placeholder="Thumbnail text from OCR..." oninput="updateSavedArticle(${currentIndex}, 'players', this.value)">${data.players || ""}</textarea>
+                                                            <textarea class="player-input border" style="width: 100%; min-height: 80px; font-family: monospace; font-size: 0.85rem;" placeholder="Thumbnail text from OCR..." oninput="updateThumbnailText(${currentIndex}, this.value)">${data.players || ""}</textarea>
                                                             ${buildThumbnailControls({ index: currentIndex, url, videoId: data.videoId })}
                                                             ${buildStoryActionMarkup(currentIndex, url, "story")}
                                                         </div>
@@ -1785,7 +1807,7 @@
                                             <div style="display: grid; grid-template-columns: 1fr; gap: 10px; margin-bottom: 15px;">
                                                 <div>
                                                     <label style="display:block; margin-bottom:8px; color:var(--text-muted);">Thumbnail Text</label>
-                                                    <textarea class="player-input border" style="width: 100%; min-height: 80px; font-family: monospace; font-size: 0.85rem;" placeholder="Thumbnail text from OCR..." oninput="updateSavedArticle(${index}, 'players', this.value)">${data.players || ""}</textarea>
+                                                    <textarea class="player-input border" style="width: 100%; min-height: 80px; font-family: monospace; font-size: 0.85rem;" placeholder="Thumbnail text from OCR..." oninput="updateThumbnailText(${index}, this.value)">${data.players || ""}</textarea>
                                                     ${buildThumbnailControls({ index, url, videoId: data.videoId })}
                                                     ${buildStoryActionMarkup(index, url, getStoryModeForCard(card))}
                                                 </div>
@@ -1873,11 +1895,12 @@
 
             function refreshActiveStorySuffix() {
                 const storyTextInput = document.getElementById("storyTextInput");
-                if (!storyTextInput) return;
+                const storyModal = document.getElementById("storyModal");
+                if (!storyTextInput || !storyModal?.classList.contains("open")) return;
                 activeStoryBaseText = removeStorySuffix(storyTextInput.value);
                 activeStorySuffix = getStorySuffixText();
                 storyTextInput.value = applyStorySuffix(activeStoryBaseText);
-                syncStoryTextInputToSavedArticle();
+                syncStoryTextInputToSavedArticle(false);
                 renderStoryPreview();
             }
 
@@ -2011,13 +2034,12 @@
                 if (mode === "sports") {
                     const generatedSportsText = buildSportsThumbnailText(articleTextArea?.value || "");
                     const savedStoryText = savedArticle?.storyText?.trim();
-                    const isStaleGeneratedText = savedStoryText && savedStoryText === generatedSportsText;
-                    activeStoryBaseText = isStaleGeneratedText ? textArea?.value.trim() || generatedSportsText : savedStoryText || textArea?.value.trim() || generatedSportsText;
+                    activeStoryBaseText = textArea?.value.trim() || savedStoryText || generatedSportsText;
                     if (modalTitle) modalTitle.textContent = "Sports Hook Creator";
                     storyTextInput.placeholder = "Enter the sports hook text or use the generated clickbait.";
                     storyUpdateMessage("Use the sports hook text from the generated article or enter your own high-impact caption.");
                 } else {
-                    activeStoryBaseText = savedArticle?.storyText || textArea?.value.trim() || "";
+                    activeStoryBaseText = textArea?.value.trim() || savedArticle?.storyText || "";
                     if (modalTitle) modalTitle.textContent = "Video Story Creator";
                     storyTextInput.placeholder = "Enter the story text here or use thumbnail text from the article.";
                     storyUpdateMessage("Use the story text from the thumbnail or enter your own narrative.");
@@ -2073,7 +2095,7 @@
                 return bestSize;
             }
 
-            function syncStoryTextInputToSavedArticle() {
+            function syncStoryTextInputToSavedArticle(markAsCustomized = true) {
                 const storyTextInput = document.getElementById("storyTextInput");
                 if (!storyTextInput || !Number.isFinite(activeStoryCardIndex)) return;
 
@@ -2081,13 +2103,16 @@
                 activeStoryBaseText = removeStorySuffix(value);
                 if (!value && !getSavedArticleByIndex(activeStoryCardIndex)) return;
 
-                updateSavedArticle(activeStoryCardIndex, "players", value);
+                updateSavedArticle(activeStoryCardIndex, "players", activeStoryBaseText);
                 updateSavedArticle(activeStoryCardIndex, "storyText", activeStoryBaseText);
+                if (markAsCustomized) {
+                    updateSavedArticle(activeStoryCardIndex, "storyTextCustomized", true);
+                }
 
                 const card = document.getElementById(`card-${activeStoryCardIndex}`);
                 const playerTextArea = card?.querySelector("textarea.player-input");
-                if (playerTextArea && playerTextArea.value !== value) {
-                    playerTextArea.value = value;
+                if (playerTextArea && playerTextArea.value !== activeStoryBaseText) {
+                    playerTextArea.value = activeStoryBaseText;
                 }
             }
 
