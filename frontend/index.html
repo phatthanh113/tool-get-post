@@ -2075,9 +2075,13 @@
                 const lineHeightRatio = mode === "sports" ? CELEB_STORY_THEME.layout.summaryLineHeight : 1.2;
                 const width = canvas.width;
                 const height = canvas.height;
-                const maxWidth = mode === "sports" ? width - CELEB_STORY_THEME.layout.textSidePadding * 2 - CELEB_STORY_THEME.layout.summaryBoxPaddingX * 2 : width - 120;
+                const boxSideInset = CELEB_STORY_THEME.layout.summaryBoxSideInset ?? CELEB_STORY_THEME.layout.textSidePadding;
+                const maxWidth = mode === "sports" ? width - boxSideInset * 2 - CELEB_STORY_THEME.layout.summaryBoxPaddingX * 2 : width - 120;
                 const sportsImageBottomEstimate = CELEB_STORY_THEME.layout.frameTop + CELEB_STORY_THEME.layout.frameFullWidthHeight * CELEB_STORY_THEME.layout.imageZoom + 40;
-                const maxHeight = mode === "sports" ? height - sportsImageBottomEstimate - CELEB_STORY_THEME.layout.summaryBoxPaddingY * 2 - 16 : height - 120;
+                const summaryBoxPaddingTop = CELEB_STORY_THEME.layout.summaryBoxPaddingTop ?? CELEB_STORY_THEME.layout.summaryBoxPaddingY;
+                const summaryBoxPaddingBottom = CELEB_STORY_THEME.layout.summaryBoxPaddingBottom ?? CELEB_STORY_THEME.layout.summaryBoxPaddingY;
+                const summaryBoxOffsetY = CELEB_STORY_THEME.layout.summaryBoxOffsetY || 0;
+                const maxHeight = mode === "sports" ? height - sportsImageBottomEstimate - summaryBoxOffsetY - summaryBoxPaddingTop - summaryBoxPaddingBottom - 40 : height - 120;
                 let bestSize = 42;
 
                 for (let size = 90; size >= 14; size -= 1) {
@@ -2307,28 +2311,38 @@
                 name: "Celeb",
                 colors: {
                     backgroundColor: "#000000",
+                    backgroundMode: "image",
+                    backgroundImage: "bg.png",
                     textColor: "#FFFFFF",
                     accentColor: "#E4BB49",
-                    summaryBoxColor: "#5C2886",
+                    summaryBoxColor: "#922136",
                     summaryBoxOpacity: 1,
+                    titleColor: "#ffffff",
+                    titleBoxColor: "#CD0001",
                 },
                 layout: {
                     fontFamily: "Arial, sans-serif",
-                    fontSize: 36,
-                    summaryLineHeight: 1.46,
+                    titleSize: 28,
+                    fontSize: 27,
+                    summaryLineHeight: 1.58,
+                    summaryLineGap: 3,
                     summaryBoxEnabled: true,
-                    summaryBoxPaddingX: 24,
-                    summaryBoxPaddingY: 21,
+                    summaryBoxPaddingX: 16,
+                    summaryBoxPaddingY: 32,
+                    summaryBoxPaddingTop: 30,
+                    summaryBoxPaddingBottom: 28,
                     summaryBoxRadius: 19,
+                    summaryBoxOffsetY: 24,
                     frameTop: 50,
                     frameFullWidth: true,
                     frameFullWidthHeight: 420,
                     frameSideInset: 0,
-                    imageZoom: 1,
+                    imageZoom: 0.98,
                     imageOffsetX: 0,
-                    imageOffsetY: 0,
-                    textTop: 445,
-                    textSidePadding: 44,
+                    imageOffsetY: 30,
+                    textTop: 486,
+                    textSidePadding: 10,
+                    summaryBoxSideInset: 35,
                 },
             };
 
@@ -2344,6 +2358,47 @@
                 ctx.lineTo(x, y + radius);
                 ctx.quadraticCurveTo(x, y, x + radius, y);
                 ctx.closePath();
+            }
+
+            async function storyDrawSummaryBoxBackdrop(ctx, x, y, width, height, theme) {
+                const radius = theme.layout.summaryBoxRadius || 19;
+
+                ctx.beginPath();
+                storyRoundRectPath(ctx, x, y, width, height, radius);
+                ctx.fillStyle = theme.colors.summaryBoxColor;
+                ctx.globalAlpha = theme.colors.summaryBoxOpacity || 1;
+                ctx.fill();
+                ctx.globalAlpha = 1;
+            }
+
+            async function storyDrawLowerBackground(ctx, y, width, height) {
+                const coverImage = await loadStoryCoverImage();
+                if (!coverImage || y >= height) return;
+
+                const regionHeight = height - y;
+                const sourceWidth = coverImage.naturalWidth || coverImage.width;
+                const sourceHeight = coverImage.naturalHeight || coverImage.height;
+                const scale = Math.max(width / sourceWidth, regionHeight / sourceHeight) * 1.15;
+                const drawWidth = sourceWidth * scale;
+                const drawHeight = sourceHeight * scale;
+                const drawX = (width - drawWidth) / 2;
+                const drawY = y + (regionHeight - drawHeight) / 2;
+
+                ctx.save();
+                ctx.beginPath();
+                ctx.rect(0, y, width, regionHeight);
+                ctx.clip();
+                ctx.filter = "blur(8px) brightness(0.48) saturate(0.75)";
+                ctx.drawImage(coverImage, drawX, drawY, drawWidth, drawHeight);
+                ctx.filter = "none";
+
+                const overlay = ctx.createLinearGradient(0, y, 0, height);
+                overlay.addColorStop(0, "rgba(4, 12, 9, 0.45)");
+                overlay.addColorStop(0.5, "rgba(10, 12, 8, 0.52)");
+                overlay.addColorStop(1, "rgba(55, 36, 14, 0.68)");
+                ctx.fillStyle = overlay;
+                ctx.fillRect(0, y, width, regionHeight);
+                ctx.restore();
             }
 
             async function storyDrawImage(line, color, fontSize) {
@@ -2364,6 +2419,8 @@
                 if (mode === "sports") {
                     ctx.fillStyle = theme.colors.backgroundColor;
                     ctx.fillRect(0, 0, width, height);
+
+                    await storyDrawLowerBackground(ctx, 0, width, height);
 
                     let imageBottom = theme.layout.frameTop + theme.layout.frameFullWidthHeight;
                     const coverImage = await loadStoryCoverImage();
@@ -2386,24 +2443,23 @@
                     ctx.font = `900 ${themeFontSize}px ${theme.layout.fontFamily}`;
                     ctx.textAlign = "left";
                     ctx.textBaseline = "top";
-                    const maxWidth = width - theme.layout.textSidePadding * 2 - theme.layout.summaryBoxPaddingX * 2;
+                    const boxSideInset = theme.layout.summaryBoxSideInset ?? theme.layout.textSidePadding;
+                    const maxWidth = width - boxSideInset * 2 - theme.layout.summaryBoxPaddingX * 2;
                     const lineHeight = themeFontSize * theme.layout.summaryLineHeight;
                     const lines = storyBuildTextLines(line, maxWidth, lineHeight, ctx);
                     const textHeight = lines.length * lineHeight;
-                    const boxX = theme.layout.textSidePadding;
-                    const boxY = Math.max(theme.layout.textTop, imageBottom + 16);
-                    const boxW = width - theme.layout.textSidePadding * 2;
-                    const boxH = textHeight + theme.layout.summaryBoxPaddingY * 2;
+                    const summaryBoxPaddingTop = theme.layout.summaryBoxPaddingTop ?? theme.layout.summaryBoxPaddingY;
+                    const summaryBoxPaddingBottom = theme.layout.summaryBoxPaddingBottom ?? theme.layout.summaryBoxPaddingY;
+                    const boxX = boxSideInset;
+                    const boxY = Math.max(theme.layout.textTop, imageBottom + 16) + (theme.layout.summaryBoxOffsetY || 0);
+                    const boxW = width - boxSideInset * 2;
+                    const boxH = textHeight + summaryBoxPaddingTop + summaryBoxPaddingBottom;
 
                     if (theme.layout.summaryBoxEnabled) {
-                        storyRoundRectPath(ctx, boxX, boxY, boxW, boxH, theme.layout.summaryBoxRadius);
-                        ctx.fillStyle = theme.colors.summaryBoxColor;
-                        ctx.globalAlpha = theme.colors.summaryBoxOpacity;
-                        ctx.fill();
-                        ctx.globalAlpha = 1;
+                        await storyDrawSummaryBoxBackdrop(ctx, boxX, boxY, boxW, boxH, theme);
                     }
 
-                    let y = boxY + theme.layout.summaryBoxPaddingY;
+                    let y = boxY + summaryBoxPaddingTop;
                     lines.forEach((lineTokens) => {
                         let x = boxX + theme.layout.summaryBoxPaddingX;
                         lineTokens.forEach((token) => {
@@ -2448,11 +2504,7 @@
                 const boxH = textHeight + theme.layout.summaryBoxPaddingY * 2;
 
                 if (theme.layout.summaryBoxEnabled) {
-                    storyRoundRectPath(ctx, boxX, boxY, boxW, boxH, theme.layout.summaryBoxRadius);
-                    ctx.fillStyle = theme.colors.summaryBoxColor;
-                    ctx.globalAlpha = theme.colors.summaryBoxOpacity;
-                    ctx.fill();
-                    ctx.globalAlpha = 1;
+                    await storyDrawSummaryBoxBackdrop(ctx, boxX, boxY, boxW, boxH, theme);
                 }
 
                 ctx.fillStyle = theme.colors.textColor;
