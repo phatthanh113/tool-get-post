@@ -819,7 +819,7 @@
                 <h3 id="resultTitle" style="margin-bottom: 16px">✅ HTML Editor Mode</h3>
                 <div class="checkbox-group" style="grid-column: auto; margin: 0 0 16px; flex-wrap: wrap">
                     <input type="checkbox" id="storySuffixEnabled" />
-                    <label for="storySuffixEnabled" style="cursor: pointer">Thêm dòng cuối vào story trong modal</label>
+                    <label for="storySuffixEnabled" style="cursor: pointer">Thêm dòng cuối vào story (preview và video tải về)</label>
                     <input
                         type="text"
                         id="storySuffixInput"
@@ -1381,7 +1381,7 @@
                 activeStoryCardIndex = index;
                 storyCoverImagePromise = null;
                 const mode = setActiveStoryMode(getActiveStoryMode());
-                const text = article.players || buildSportsThumbnailText(article.article || "");
+                const text = applyStorySuffix(article.players || buildSportsThumbnailText(article.article || ""));
                 document.getElementById("storyTextInput").value = text;
                 const savedFontSize = Number(article.storyFontSize);
                 const fontSize = Number.isFinite(savedFontSize) && savedFontSize >= 14 && savedFontSize <= 90 ? savedFontSize : storyGetAutoFontSize(text, mode);
@@ -2068,7 +2068,7 @@
             }
 
             function storyGetAutoFontSize(text, mode = getActiveStoryMode()) {
-                if (!text || !text.trim()) return 42;
+                if (!text || !text.trim()) return 38;
 
                 const canvas = document.getElementById("storyExportCanvas");
                 const ctx = canvas.getContext("2d");
@@ -2096,7 +2096,7 @@
                     }
                 }
 
-                return bestSize;
+                return Math.max(14, bestSize - 4);
             }
 
             function syncStoryTextInputToSavedArticle(markAsCustomized = true) {
@@ -2236,7 +2236,7 @@
             window.storyAltColors = [...STORY_ALT_COLORS];
 
             function storySplitTextByPunctuation(text) {
-                const regex = /[^.!?]+(?:[.!?]+|$)/g;
+                const regex = /[^.!?]+?(?:\band\b|[.!?]+|$)/gi;
                 return (text.match(regex) || []).map((segment) => segment.trim()).filter(Boolean);
             }
 

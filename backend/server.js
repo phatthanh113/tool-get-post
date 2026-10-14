@@ -231,6 +231,8 @@ Transform this YouTube video into a highly dramatic sports article with a strong
 - The paragraph must be a short, dramatic sports clickbait paragraph in English ONLY, and must be EXACTLY 99–110 words. Return a single smooth paragraph with no bullets or lists.
 - If your first draft is shorter than 90 words, expand it by adding vivid, concrete detail until it reaches at least 99 words; do not exceed 110 words.
 - Focus on the key athlete, team, or moment; make the language urgent, explosive, and impossible to ignore.
+- Structure the paragraph in this exact order: shocking hook → the most striking detail or statistic → explain why the event is serious → escalate the conflict or drama → reveal the consequence or imminent risk → end with a cliffhanger question.
+- Blend all six beats naturally into one continuous paragraph. Do not add labels, arrows, or bullet points, and do not invent facts or statistics.
 `;
   } else {
     roleInstruction = `
@@ -476,7 +478,7 @@ function isVietnameseText(text) {
 
 function buildSportsClickbaitPrompt(sourceText, title) {
   const safeSource = (sourceText || title || "This story").trim();
-  return `Rewrite the content below into a short, highly dramatic, clickbait-style description of about 99-110 words. Use the same cinematic, urgent, franchise-altering tone as the article prompt. Return only one single smooth paragraph, no bullets, no list formatting. IMPORTANT: Write the entire description in English only. Do not use Vietnamese or any other language. Keep it to 99-110 words and make the key athlete, team, or event feel massive and unforgettable. At the end of the response, add one exact marker line in this format: [[THUMBNAIL_TEXT: <your paragraph here>]]. The title is: "${title}".\n\nOriginal content:\n${safeSource}`;
+  return `Rewrite the content below into a short, highly dramatic, clickbait-style description of about 99-110 words. Use the same cinematic, urgent, franchise-altering tone as the article prompt. Return only one single smooth paragraph, no bullets, no list formatting. IMPORTANT: Write the entire description in English only. Do not use Vietnamese or any other language. Keep it to 99-110 words and make the key athlete, team, or event feel massive and unforgettable. Structure the paragraph in this exact order: shocking hook → the most striking detail or statistic → explain why the event is serious → escalate the conflict or drama → reveal the consequence or imminent risk → end with a cliffhanger question. Blend all six beats naturally into one continuous paragraph; do not add labels, arrows, or bullet points, and do not invent facts or statistics. At the end of the response, add one exact marker line in this format: [[THUMBNAIL_TEXT: <your paragraph here>]]. The title is: "${title}".\n\nOriginal content:\n${safeSource}`;
 }
 
 function extractSportsThumbnailText(articleText = "") {
@@ -1175,7 +1177,7 @@ If there is no text, return an empty string.
             );
             // Reinforce strict length requirement in case the model ignores lighter instructions
             clickbaitPrompt +=
-              "\n\nIMPORTANT: The thumbnail paragraph must be EXACTLY 90-110 words. If shorter, expand it (add vivid, concrete detail) until it reaches at least 99 words; do not exceed 110 words. Return only one paragraph and include the marker [[THUMBNAIL_TEXT: <your paragraph>]] at the end.";
+              "\n\nIMPORTANT: The thumbnail paragraph must be EXACTLY 90-110 words. If shorter, expand it (add vivid, concrete detail) until it reaches at least 99 words; do not exceed 110 words. Follow this beat order: shocking hook → most striking detail/statistic → why it is serious → escalate the conflict/drama → consequence or imminent risk → cliffhanger question. Blend the beats into one paragraph without labels or arrows, do not invent facts/statistics, and include the marker [[THUMBNAIL_TEXT: <your paragraph>]] at the end.";
             const clickbaitTimeoutMs = DEFAULT_CLICKBAIT_TIMEOUT;
             const cbResult = await runWithTimeout(
               () => generateClickbaitText(clickbaitPrompt, title, provider),
