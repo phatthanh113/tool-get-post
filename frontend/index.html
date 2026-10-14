@@ -2236,8 +2236,8 @@
             window.storyAltColors = [...STORY_ALT_COLORS];
 
             function storySplitTextByPunctuation(text) {
-                const regex = /[^.!?]+?(?:\band\b|[.!?]+|$)/gi;
-                return (text.match(regex) || []).map((segment) => segment.trim()).filter(Boolean);
+                const regex = /[^.!?]+?(?:\band\b\s*|[.!?]+\s*|$)/gi;
+                return (text.match(regex) || []).filter((segment) => segment.trim());
             }
 
             function storyBuildTextLines(text, maxWidth, lineHeight, ctx) {
@@ -2250,9 +2250,11 @@
                     }));
 
                     segments.forEach((segment) => {
-                        const splitWords = segment.text.split(/\s+/).filter(Boolean);
+                        const segmentText = segment.text.trim();
+                        const splitWords = segmentText.split(/\s+/).filter(Boolean);
+                        const hasTrailingSpace = /\s$/.test(segment.text);
                         splitWords.forEach((word, index) => {
-                            const hasSpace = index < splitWords.length - 1;
+                            const hasSpace = index < splitWords.length - 1 || (index === splitWords.length - 1 && hasTrailingSpace);
                             words.push({ text: word + (hasSpace ? " " : ""), color: segment.color });
                         });
                     });
