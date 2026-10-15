@@ -198,6 +198,19 @@ function extractVideoId(url) {
   return match ? match[1] : null;
 }
 
+const SPORTS_THUMBNAIL_TEXT_REQUIREMENT = `
+### THUMBNAIL_TEXT_REQUIREMENT:
+- At the very end of the response, include one marker block in this format:
+  [[THUMBNAIL_TEXT: <headline>
+  <body paragraph>]]
+- Write the headline first on its own line, followed by the body on the next line. Keep the body as one paragraph with no line breaks.
+- Headline formula: [Team/Character Name]'s [Plan/Season/Future] Just COLLAPSED—[Shocking Event] Could Change Everything!
+- Make the headline approximately 8–15 words, powerful, dramatic, and attention-grabbing.
+- Write the body in approximately 100-110 words. In order, cover: [SHOCK] the main shocking development in one sentence; [EVIDENCE] 1–2 of the strongest supported details, facts, or numbers; [STAKES] why this could have serious consequences; [CONFLICT] escalating tension, conflict, or pressure; [CONSEQUENCE] what could happen next; and [CLIFFHANGER] a suspenseful question.
+- Use a dramatic, high-impact storytelling style with emotional hooks, urgency, escalating tension, and curiosity. Do not print the bracketed beat labels.
+- Keep the headline and body in English. Do not invent facts, details, or statistics.
+`;
+
 function getPrompt(
   youtubeUrl,
   title,
@@ -224,16 +237,7 @@ Transform this YouTube video into a highly dramatic sports article with a strong
     languageInstruction = `
   - The article MUST be written entirely in English. Do not write in Spanish, Vietnamese, or any other language, even if the video title uses another language.`;
 
-    taskInstruction += `
-### THUMBNAIL_TEXT_REQUIREMENT:
-- At the very end of the article response, include exactly one final marker line in this format (on its own line):
-  [[THUMBNAIL_TEXT: <one English paragraph here>]]
-- The paragraph must be a short, dramatic sports clickbait paragraph in English ONLY, and must be EXACTLY 120–130 words. Return a single smooth paragraph with no bullets or lists.
-- If your first draft is shorter than 120 words, expand it by adding vivid, concrete detail until it reaches at least 120 words; do not exceed 130 words.
-- Focus on the key athlete, team, or moment; make the language urgent, explosive, and impossible to ignore.
-- Structure the paragraph in this exact order: shocking hook → the most striking detail or statistic → explain why the event is serious → escalate the conflict or drama → reveal the consequence or imminent risk → end with a cliffhanger question.
-- Blend all six beats naturally into one continuous paragraph. Do not add labels, arrows, or bullet points, and do not invent facts or statistics.
-`;
+    taskInstruction += SPORTS_THUMBNAIL_TEXT_REQUIREMENT;
   } else {
     roleInstruction = `
 ### SYSTEM ROLE:
@@ -478,7 +482,7 @@ function isVietnameseText(text) {
 
 function buildSportsClickbaitPrompt(sourceText, title) {
   const safeSource = (sourceText || title || "This story").trim();
-  return `Rewrite the content below into a short, highly dramatic, clickbait-style description of about 120-130 words. Use the same cinematic, urgent, franchise-altering tone as the article prompt. Return only one single smooth paragraph, no bullets, no list formatting. IMPORTANT: Write the entire description in English only. Do not use Vietnamese or any other language. Keep it to 120-130 words and make the key athlete, team, or event feel massive and unforgettable. Structure the paragraph in this exact order: shocking hook → the most striking detail or statistic → explain why the event is serious → escalate the conflict or drama → reveal the consequence or imminent risk → end with a cliffhanger question. Blend all six beats naturally into one continuous paragraph; do not add labels, arrows, or bullet points, and do not invent facts or statistics. At the end of the response, add one exact marker line in this format: [[THUMBNAIL_TEXT: <your paragraph here>]]. The title is: "${title}".\n\nOriginal content:\n${safeSource}`;
+  return `Rewrite the content below into dramatic, high-impact sports thumbnail text. Follow the required headline and body format exactly:\n${SPORTS_THUMBNAIL_TEXT_REQUIREMENT}\nThe title is: "${title}".\n\nOriginal content:\n${safeSource}`;
 }
 
 function extractSportsThumbnailText(articleText = "") {
@@ -1171,13 +1175,10 @@ If there is no text, return an empty string.
 
         if (effectiveMode === "sports") {
           try {
-            let clickbaitPrompt = buildSportsClickbaitPrompt(
+            const clickbaitPrompt = buildSportsClickbaitPrompt(
               thumbnailText || title,
               title,
             );
-            // Reinforce strict length requirement in case the model ignores lighter instructions
-            clickbaitPrompt +=
-              "\n\nIMPORTANT: The thumbnail paragraph must be EXACTLY 120-130 words. If shorter, expand it (add vivid, concrete detail) until it reaches at least 120 words; do not exceed 130 words. Follow this beat order: shocking hook → most striking detail/statistic → why it is serious → escalate the conflict/drama → consequence or imminent risk → cliffhanger question. Blend the beats into one paragraph without labels or arrows, do not invent facts/statistics, and include the marker [[THUMBNAIL_TEXT: <your paragraph>]] at the end.";
             const clickbaitTimeoutMs = DEFAULT_CLICKBAIT_TIMEOUT;
             const cbResult = await runWithTimeout(
               () => generateClickbaitText(clickbaitPrompt, title, provider),
