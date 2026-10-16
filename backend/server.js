@@ -206,7 +206,7 @@ const SPORTS_THUMBNAIL_TEXT_REQUIREMENT = `
 - Write the headline first on its own line, followed by the body on the next line. Keep the body as one paragraph with no line breaks.
 - Headline formula: [Team/Character Name]'s [Plan/Season/Future] Just COLLAPSED—[Shocking Event] Could Change Everything!
 - Make the headline approximately 8–15 words, powerful, dramatic, and attention-grabbing.
-- Write the body in approximately 100-110 words. In order, cover: [SHOCK] the main shocking development in one sentence; [EVIDENCE] 1–2 of the strongest supported details, facts, or numbers; [STAKES] why this could have serious consequences; [CONFLICT] escalating tension, conflict, or pressure; [CONSEQUENCE] what could happen next; and [CLIFFHANGER] a suspenseful question.
+- Write the body in approximately 130-140 words. In order, cover: [SHOCK] the main shocking development in one sentence; [EVIDENCE] 1–2 of the strongest supported details, facts, or numbers; [STAKES] why this could have serious consequences; [CONFLICT] escalating tension, conflict, or pressure; [CONSEQUENCE] what could happen next; and [CLIFFHANGER] a suspenseful question.
 - Use a dramatic, high-impact storytelling style with emotional hooks, urgency, escalating tension, and curiosity. Do not print the bracketed beat labels.
 - Keep the headline and body in English. Do not invent facts, details, or statistics.
 `;
