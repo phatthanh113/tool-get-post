@@ -154,7 +154,7 @@ const DEFAULT_THUMB_OCR_TIMEOUT = parseInt(
   10,
 );
 const DEFAULT_CLICKBAIT_TIMEOUT = parseInt(
-  process.env.CLICKBAIT_TIMEOUT_MS || "4000",
+  process.env.CLICKBAIT_TIMEOUT_MS || "30000",
   10,
 );
 
@@ -206,7 +206,7 @@ const SPORTS_THUMBNAIL_TEXT_REQUIREMENT = `
 - Write the headline first on its own line, followed by the body on the next line. Keep the body as one paragraph with no line breaks.
 - Headline formula: [Team/Character Name]'s [Plan/Season/Future] Just COLLAPSED—[Shocking Event] Could Change Everything!
 - Make the headline approximately 8–15 words, powerful, dramatic, and attention-grabbing.
-- Write the body in approximately 130-140 words. In order, cover: [SHOCK] the main shocking development in one sentence; [EVIDENCE] 1–2 of the strongest supported details, facts, or numbers; [STAKES] why this could have serious consequences; [CONFLICT] escalating tension, conflict, or pressure; [CONSEQUENCE] what could happen next; and [CLIFFHANGER] a suspenseful question.
+- Write the body in approximately 90-120 words. In order, cover: [SHOCK] the main shocking development in one sentence; [EVIDENCE] 1–2 of the strongest supported details, facts, or numbers; [STAKES] why this could have serious consequences; [CONFLICT] escalating tension, conflict, or pressure; [CONSEQUENCE] what could happen next; and [CLIFFHANGER] a suspenseful question.
 - Use a dramatic, high-impact storytelling style with emotional hooks, urgency, escalating tension, and curiosity. Do not print the bracketed beat labels.
 - Keep the headline and body in English. Do not invent facts, details, or statistics.
 `;
@@ -482,7 +482,7 @@ function isVietnameseText(text) {
 
 function buildSportsClickbaitPrompt(sourceText, title) {
   const safeSource = (sourceText || title || "This story").trim();
-  return `Rewrite the content below into dramatic, high-impact sports thumbnail text. Follow the required headline and body format exactly:\n${SPORTS_THUMBNAIL_TEXT_REQUIREMENT}\nThe title is: "${title}".\n\nOriginal content:\n${safeSource}`;
+  return `Rewrite the content below into dramatic, high-impact sports thumbnail text. Follow the required headline and body format exactly. The body must contain 90-120 words; never replace it with a short summary. Count the body words before responding and return only the required marker block.\n${SPORTS_THUMBNAIL_TEXT_REQUIREMENT}\nThe title is: "${title}".\n\nOriginal content:\n${safeSource}`;
 }
 
 function extractSportsThumbnailText(articleText = "") {
@@ -501,6 +501,64 @@ function extractSportsThumbnailText(articleText = "") {
   }
 
   return "";
+}
+
+function validateSportsThumbnailText(text = "") {
+  const candidate = (extractSportsThumbnailText(text) || text)
+    .replace(/```(?:\w+)?/gi, "")
+    .trim();
+  const lines = candidate
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean);
+  if (lines.length < 2) return null;
+
+  const headline = lines[0];
+  const body = lines.slice(1).join(" ");
+  const countWords = (value) =>
+    (value.match(/[A-Za-z0-9]+(?:['’-][A-Za-z0-9]+)*/g) || []).length;
+  const headlineWordCount = countWords(headline);
+  const bodyWordCount = countWords(body);
+
+  if (
+    headlineWordCount < 8 ||
+    headlineWordCount > 15 ||
+    bodyWordCount < 90 ||
+    bodyWordCount > 120
+  ) {
+    return null;
+  }
+
+  return `${headline}\n${body}`;
+}
+
+async function generateValidatedSportsThumbnailText(
+  sourceText,
+  title,
+  provider,
+) {
+  let previousDraft = "";
+
+  for (let attempt = 0; attempt < 2; attempt++) {
+    const prompt = buildSportsClickbaitPrompt(sourceText, title);
+    const retryPrompt =
+      attempt === 0
+        ? prompt
+        : `${prompt}\n\nYour previous draft did not satisfy the required word counts. Rewrite it to have an 8-15 word headline and a 90-120 word body. Do not shorten the body.\nPrevious draft:\n${previousDraft}`;
+    const draft = await generateClickbaitText(retryPrompt, title, provider);
+    const validatedText = validateSportsThumbnailText(draft);
+
+    if (validatedText) return validatedText;
+
+    previousDraft = draft;
+    console.warn(
+      `⚠️ Sports thumbnail text failed word-count validation (attempt ${attempt + 1}/2).`,
+    );
+  }
+
+  throw new Error(
+    "AI failed to generate sports thumbnail text with an 8-15 word headline and a 90-120 word body after 2 attempts.",
+  );
 }
 
 async function generateClickbaitText(prompt, title, provider = "groq") {
@@ -1174,35 +1232,35 @@ If there is no text, return an empty string.
         let players = thumbnailText || "";
 
         if (effectiveMode === "sports") {
-          try {
-            const clickbaitPrompt = buildSportsClickbaitPrompt(
-              thumbnailText || title,
-              title,
-            );
-            const clickbaitTimeoutMs = DEFAULT_CLICKBAIT_TIMEOUT;
-            const cbResult = await runWithTimeout(
-              () => generateClickbaitText(clickbaitPrompt, title, provider),
-              clickbaitTimeoutMs,
-            );
+          const clickbaitSource = [
+            title,
+            truncatedDescription,
+            thumbnailText,
+            article,
+          ]
+            .filter(Boolean)
+            .join("\n\n");
+          const clickbaitTimeoutMs = DEFAULT_CLICKBAIT_TIMEOUT;
+          const cbResult = await runWithTimeout(
+            () =>
+              generateValidatedSportsThumbnailText(
+                clickbaitSource,
+                title,
+                provider,
+              ),
+            clickbaitTimeoutMs,
+          );
 
-            if (cbResult.timedOut) {
-              console.warn(
-                `⚠️ Thumbnail clickbait generation timed out after ${clickbaitTimeoutMs}ms; leaving thumbnail text empty.`,
-              );
-            } else if (cbResult.error) {
-              console.warn(
-                "⚠️ Thumbnail sports clickbait failed:",
-                cbResult.error.message,
-              );
-            } else if (cbResult.value) {
-              players = cbResult.value;
-            }
-          } catch (clickbaitErr) {
-            console.warn(
-              "⚠️ Thumbnail sports clickbait failed:",
-              clickbaitErr.message,
+          if (cbResult.timedOut) {
+            throw new Error(
+              `Sports thumbnail text generation timed out after ${clickbaitTimeoutMs}ms.`,
             );
           }
+          if (cbResult.error) {
+            throw cbResult.error;
+          }
+
+          players = cbResult.value;
         }
 
         return res.json({
@@ -1222,16 +1280,33 @@ If there is no text, return an empty string.
       let players = thumbnailText || "";
 
       if (generationMode === "sports") {
-        const sportsThumbnailText = extractSportsThumbnailText(article);
+        const articleThumbnailText = extractSportsThumbnailText(article);
+        const sportsThumbnailText = validateSportsThumbnailText(
+          articleThumbnailText,
+        );
+        players = articleThumbnailText || players;
+
         if (sportsThumbnailText) {
           players = sportsThumbnailText;
           console.log(
-            "✅ Sports clickbait thumbnail text extracted from same response.",
+            "✅ Sports thumbnail text extracted and passed word-count validation.",
           );
         } else {
           console.warn(
-            "⚠️ Sports thumbnail text marker was not found; continuing with article fallback.",
+            "⚠️ Sports thumbnail text marker was missing or failed word-count validation; regenerating thumbnail text.",
           );
+          try {
+            players = await generateValidatedSportsThumbnailText(
+              article,
+              title,
+              provider,
+            );
+          } catch (thumbnailError) {
+            console.warn(
+              "⚠️ Could not regenerate valid sports thumbnail text; keeping the existing thumbnail text and article:",
+              thumbnailError.message,
+            );
+          }
         }
       }
 
