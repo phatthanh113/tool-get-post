@@ -367,6 +367,27 @@
                 color: #1e293b;
             }
 
+            .story-modal-header .icon-btn {
+                width: 36px;
+                height: 36px;
+                padding: 0;
+                border-radius: 8px;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                background: rgba(255, 255, 255, 0.9);
+                border: 1px solid rgba(15, 23, 42, 0.06);
+                cursor: pointer;
+                font-size: 16px;
+                color: #475569;
+            }
+
+            .story-modal-header .icon-btn.copy {
+                background: #eff6ff;
+                color: #1e40af;
+                border-color: rgba(59, 130, 246, 0.08);
+            }
+
             .story-modal-close {
                 border: none;
                 background: transparent;
@@ -487,6 +508,20 @@
 
             #storyTextInput {
                 grid-area: storyTextarea;
+            }
+
+            .story-text-input-container {
+                grid-area: storyTextarea;
+            }
+
+            .story-text-paste-button {
+                margin: 0 0 8px auto;
+                padding: 8px 12px;
+                border-radius: 8px;
+                background: #eff6ff;
+                border: 1px solid rgba(59, 130, 246, 0.08);
+                color: #1e40af;
+                font-size: 0.9rem;
             }
 
             .story-modal-body > .story-modal-actions {
@@ -623,6 +658,16 @@
                 margin-bottom: 20px;
             }
 
+            .button-spinner {
+                width: 16px;
+                height: 16px;
+                border: 2px solid rgba(255, 255, 255, 0.4);
+                border-top-color: #ffffff;
+                border-radius: 50%;
+                animation: spin 0.8s linear infinite;
+                flex: 0 0 auto;
+            }
+
             @keyframes spin {
                 0% {
                     transform: rotate(0deg);
@@ -752,12 +797,11 @@
                     </select>
                 </div>
 
-                <div class="input-group" style="display: none">
-                    <label for="language-select">Target Language</label>
-                    <select id="language-select">
-                        <option value="Vietnamese">Vietnamese</option>
+                <div class="input-group">
+                    <label for="language-select">Ngôn ngữ bài viết</label>
+                    <select id="language-select" style="padding: 12px; border-radius: 12px; border: 1px solid #cbd5e1; width: 100%">
                         <option value="English" selected>English</option>
-                        <option value="French">French</option>
+                        <option value="German">Deutsch (German)</option>
                     </select>
                 </div>
 
@@ -820,6 +864,16 @@
                 <div class="checkbox-group" style="grid-column: auto; margin: 0 0 16px; flex-wrap: wrap">
                     <input type="checkbox" id="storySuffixEnabled" />
                     <label for="storySuffixEnabled" style="cursor: pointer">Thêm dòng cuối vào story (preview và video tải về)</label>
+                    <select
+                        id="storySuffixPreset"
+                        aria-label="Chọn câu kết có sẵn"
+                        onchange="applyStorySuffixPreset(this.value)"
+                        style="padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 8px"
+                    >
+                        <option value="">Chọn câu có sẵn...</option>
+                        <option value="Lesen Sie die vollständige Geschichte unter dem folgenden Link 👇">Deutsch</option>
+                        <option value="Read the full story in the link below👇">English</option>
+                    </select>
                     <input
                         type="text"
                         id="storySuffixInput"
@@ -848,7 +902,7 @@
                 <div class="story-modal-header">
                     <h3>Video Story Creator</h3>
                     <div style="display: flex; gap: 8px; align-items: center">
-                        <button id="storyCopyAllButton" type="button" class="btn-secondary" style="padding: 8px 10px; font-size: 0.9rem" onclick="storyCopyAll()">Copy All</button>
+                        <button id="storyCopyAllButton" type="button" class="icon-btn copy" onclick="storyCopyAll()" title="Copy All" aria-label="Copy all">📋</button>
                         <button type="button" class="story-modal-close" onclick="closeStoryTool()">✕</button>
                     </div>
                 </div>
@@ -885,12 +939,15 @@
                         <input id="storyFontSize" type="range" min="14" max="90" value="40" step="1" aria-label="Story font size" />
                         <span id="storyFontOut">60</span>
                     </div>
-                    <textarea
-                        id="storyTextInput"
-                        rows="5"
-                        style="width: 100%; min-height: 120px; padding: 12px; border-radius: 12px; border: 1px solid #cbd5e1; font-size: 0.95rem"
-                        placeholder="Enter the story text here or use thumbnail text from the article."
-                    ></textarea>
+                    <div class="story-text-input-container">
+                        <button type="button" class="story-text-paste-button" onclick="storyPasteFromClipboard()">📋 Paste</button>
+                        <textarea
+                            id="storyTextInput"
+                            rows="5"
+                            style="width: 100%; min-height: 120px; padding: 12px; border-radius: 12px; border: 1px solid #cbd5e1; font-size: 0.95rem"
+                            placeholder="Enter the story text here or use thumbnail text from the article."
+                        ></textarea>
+                    </div>
                     <div id="storyPreview" class="story-modal-preview"></div>
                     <div id="storyThumbnailSelector" style="margin-top: 0; padding: 16px; border: 1px solid #e2e8f0; border-radius: 16px; background: #f8fafc">
                         <label style="display: block; margin-bottom: 8px; color: #475569; font-weight: 600">Thumbnail source</label>
@@ -1416,7 +1473,12 @@
                     return;
                 }
                 const btn = document.getElementById("downloadSelectedBtn");
-                btn.disabled = true;
+                const originalButtonContent = btn ? btn.innerHTML : "";
+                if (btn) {
+                    btn.disabled = true;
+                    btn.innerHTML = '<span class="button-spinner" aria-hidden="true"></span><span>Downloading...</span>';
+                    btn.setAttribute("aria-busy", "true");
+                }
                 try {
                     for (let i = 0; i < indexes.length; i++) {
                         const idx = indexes[i];
@@ -1429,7 +1491,11 @@
                     storyUpdateMessage(err.message || "Batch download failed", true);
                 } finally {
                     setStoryButtonsLoading(false);
-                    if (btn) btn.disabled = false;
+                    if (btn) {
+                        btn.disabled = false;
+                        btn.innerHTML = originalButtonContent;
+                        btn.removeAttribute("aria-busy");
+                    }
                 }
             }
 
@@ -1538,6 +1604,7 @@
 
                 const provider = document.getElementById("ai-provider").value;
                 const selectedMode = document.getElementById("generation-mode")?.value || "story";
+                const language = document.getElementById("language-select")?.value || "English";
                 const total = urls.length;
                 let completedCount = 0;
 
@@ -1552,6 +1619,7 @@
                                     provider,
                                     generationMode: "thumbnail",
                                     thumbnailMode: selectedMode,
+                                    language,
                                 }),
                             });
 
@@ -1676,6 +1744,7 @@
                         try {
                             const provider = document.getElementById("ai-provider").value;
                             const generationMode = document.getElementById("generation-mode")?.value || "story";
+                            const language = document.getElementById("language-select")?.value || "English";
                             const res = await fetch("/generate-article", {
                                 method: "POST",
                                 headers: { "Content-Type": "application/json" },
@@ -1683,6 +1752,7 @@
                                     youtubeUrl: url,
                                     provider: provider,
                                     generationMode: generationMode,
+                                    language,
                                 }),
                             });
 
@@ -1772,6 +1842,7 @@
                 try {
                     const provider = document.getElementById("ai-provider").value;
                     const generationMode = document.getElementById("generation-mode")?.value || "story";
+                    const language = document.getElementById("language-select")?.value || "English";
                     const res = await fetch("/generate-article", {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
@@ -1779,6 +1850,7 @@
                             youtubeUrl: url,
                             provider: provider,
                             generationMode: generationMode,
+                            language,
                         }),
                     });
 
@@ -1877,6 +1949,15 @@
                 const enabledInput = document.getElementById("storySuffixEnabled");
                 const textInput = document.getElementById("storySuffixInput");
                 return enabledInput?.checked ? textInput?.value.trim() || "" : "";
+            }
+
+            function applyStorySuffixPreset(value) {
+                if (!value) return;
+                const textInput = document.getElementById("storySuffixInput");
+                const enabledInput = document.getElementById("storySuffixEnabled");
+                if (textInput) textInput.value = value;
+                if (enabledInput) enabledInput.checked = true;
+                saveStorySuffixSettings();
             }
 
             function applyStorySuffix(text) {
@@ -2692,6 +2773,7 @@
                     const ta = card?.querySelector("textarea.w-full.min-h-52");
                     content = ta?.value || "";
                 }
+                content = content.replace(/<[^>]+>/g, "\n").replace(/&nbsp;/g, " ");
                 if (!content) {
                     storyUpdateMessage("No article content to copy.", true);
                     return;
@@ -2701,6 +2783,30 @@
                     storyUpdateMessage("Copied article content to clipboard.", false);
                 } catch (err) {
                     storyUpdateMessage("Copy failed. Try selecting and copying manually.", true);
+                }
+            }
+
+            async function storyPasteFromClipboard() {
+                try {
+                    const clipboardContent = await navigator.clipboard.readText();
+                    if (!clipboardContent) {
+                        storyUpdateMessage("Clipboard is empty.", true);
+                        return;
+                    }
+
+                    const content = clipboardContent
+                        .replace(/\*\*/g, "")
+                        .split(/\r?\n/)
+                        .map((line) => line.trim())
+                        .filter(Boolean)
+                        .join("\n");
+                    const storyTextInput = document.getElementById("storyTextInput");
+                    storyTextInput.value = "";
+                    storyTextInput.value = content;
+                    storyTextInput.dispatchEvent(new Event("input", { bubbles: true }));
+                    storyUpdateMessage("Pasted clipboard content into story text.", false);
+                } catch (err) {
+                    storyUpdateMessage(err.message || "Unable to read clipboard. Check browser permissions.", true);
                 }
             }
 
