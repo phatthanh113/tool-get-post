@@ -367,27 +367,6 @@
                 color: #1e293b;
             }
 
-            .story-modal-header .icon-btn {
-                width: 36px;
-                height: 36px;
-                padding: 0;
-                border-radius: 8px;
-                display: inline-flex;
-                align-items: center;
-                justify-content: center;
-                background: rgba(255, 255, 255, 0.9);
-                border: 1px solid rgba(15, 23, 42, 0.06);
-                cursor: pointer;
-                font-size: 16px;
-                color: #475569;
-            }
-
-            .story-modal-header .icon-btn.copy {
-                background: #eff6ff;
-                color: #1e40af;
-                border-color: rgba(59, 130, 246, 0.08);
-            }
-
             .story-modal-close {
                 border: none;
                 background: transparent;
@@ -508,20 +487,6 @@
 
             #storyTextInput {
                 grid-area: storyTextarea;
-            }
-
-            .story-text-input-container {
-                grid-area: storyTextarea;
-            }
-
-            .story-text-paste-button {
-                margin: 0 0 8px auto;
-                padding: 8px 12px;
-                border-radius: 8px;
-                background: #eff6ff;
-                border: 1px solid rgba(59, 130, 246, 0.08);
-                color: #1e40af;
-                font-size: 0.9rem;
             }
 
             .story-modal-body > .story-modal-actions {
@@ -842,9 +807,17 @@
                 <button id="textModeBtn" onclick="toggleView()" class="btn-secondary bg-green-600">Chế độ text</button>
                 <button onclick="restoreArticlesFromLocalStorage()" class="btn-secondary" style="background-color: #6366f1; border-color: #6366f1; color: white">💾 Khôi phục bài viết</button>
                 <button onclick="sortResultCards()" class="btn-secondary" title="Sắp xếp các bài theo thứ tự ban đầu">🔃 Sắp xếp bài</button>
-                <button onclick="clearLocalStorageArticles()" class="btn-secondary" style="background-color: #ef4444; border-color: #ef4444; color: white">🗑️ Xóa localStorage</button>
-                <button onclick="generateThumbnailOnly()" class="btn-secondary" style="background-color: #f59e0b; border-color: #f59e0b; color: white">🖼️ Thumbnail</button>
+                <button onclick="clearLocalStorageArticles()" class="btn-secondary" style="display: none; background-color: #ef4444; border-color: #ef4444; color: white">🗑️ Xóa localStorage</button>
+                <button onclick="generateThumbnailOnly()" class="btn-secondary" style="display: none; background-color: #f59e0b; border-color: #f59e0b; color: white">🖼️ Thumbnail</button>
+                <button id="autoSelectImagesBtn" type="button" onclick="startAutoSelectImages()" class="btn-secondary" style="background-color: #ff9800; border-color: #ff9800; color: white">⚡ Auto Select Img</button>
                 <button onclick="generate()" id="buzzBtn" class="btn-primary button-primary-custom">Buzz</button>
+            </div>
+
+            <div style="display: flex; justify-content: flex-end; margin-top: 10px;">
+                <label style="display: inline-flex; align-items: center; gap: 8px; font-weight: 600; color: var(--text-muted);">
+                    <input id="autoPublishCheckbox" type="checkbox" checked />
+                    Tự động Publish Linastory
+                </label>
             </div>
 
             <div id="loading" class="loading-overlay">
@@ -902,7 +875,7 @@
                 <div class="story-modal-header">
                     <h3>Video Story Creator</h3>
                     <div style="display: flex; gap: 8px; align-items: center">
-                        <button id="storyCopyAllButton" type="button" class="icon-btn copy" onclick="storyCopyAll()" title="Copy All" aria-label="Copy all">📋</button>
+                        <button id="storyCopyAllButton" type="button" class="btn-secondary" style="padding: 8px 10px; font-size: 0.9rem" onclick="storyCopyAll()">Copy All</button>
                         <button type="button" class="story-modal-close" onclick="closeStoryTool()">✕</button>
                     </div>
                 </div>
@@ -939,15 +912,12 @@
                         <input id="storyFontSize" type="range" min="14" max="90" value="40" step="1" aria-label="Story font size" />
                         <span id="storyFontOut">60</span>
                     </div>
-                    <div class="story-text-input-container">
-                        <button type="button" class="story-text-paste-button" onclick="storyPasteFromClipboard()">📋 Paste</button>
-                        <textarea
-                            id="storyTextInput"
-                            rows="5"
-                            style="width: 100%; min-height: 120px; padding: 12px; border-radius: 12px; border: 1px solid #cbd5e1; font-size: 0.95rem"
-                            placeholder="Enter the story text here or use thumbnail text from the article."
-                        ></textarea>
-                    </div>
+                    <textarea
+                        id="storyTextInput"
+                        rows="5"
+                        style="width: 100%; min-height: 120px; padding: 12px; border-radius: 12px; border: 1px solid #cbd5e1; font-size: 0.95rem"
+                        placeholder="Enter the story text here or use thumbnail text from the article."
+                    ></textarea>
                     <div id="storyPreview" class="story-modal-preview"></div>
                     <div id="storyThumbnailSelector" style="margin-top: 0; padding: 16px; border: 1px solid #e2e8f0; border-radius: 16px; background: #f8fafc">
                         <label style="display: block; margin-bottom: 8px; color: #475569; font-weight: 600">Thumbnail source</label>
@@ -1095,7 +1065,9 @@
                                             <option value="maxres2" ${variant === "maxres2" ? "selected" : ""}>maxres2.jpg</option>
                                             <option value="custom" ${variant === "custom" ? "selected" : ""}>Tải ảnh ngoài</option>
                                         </select>
-                                        <button type="button" class="btn-secondary" style="padding: 10px 14px; font-size: 0.9rem;" onclick="document.getElementById('thumbnail-file-${item.index}').click()">Chọn file</button>
+                                        <button type="button" class="btn-secondary" style="padding: 10px 14px; font-size: 0.9rem;" onclick="document.getElementById('thumbnail-file-${item.index}').click()">
+                                            Chọn file
+                                        </button>
                                         <input id="thumbnail-file-${item.index}" type="file" accept="image/*" style="display:none" onchange="handleThumbnailFileChange(this, '${safeUrl}', ${item.index})" />
                                     </div>
                                     <div id="thumbnail-preview-${item.index}" style="display:none; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:10px;">
@@ -1153,7 +1125,7 @@
                 const link = document.getElementById(`thumbnail-link-${index}`);
                 if (!item) return;
                 const imageUrl = item.customThumbnailUrl || getThumbnailVariantUrl(item.videoId, item.thumbnailVariant);
-                const labelText = item.thumbnailVariant === "custom" ? "Custom image loaded" : `${item.thumbnailVariant}.jpg`;
+                const labelText = item.thumbnailVariant === "custom" ? "Custom image loaded" : `${item.thumbnailVariant || "maxresdefault"}.jpg`;
                 const img = preview?.querySelector("img");
                 const label = preview?.querySelector("span");
                 if (img) img.src = imageUrl;
@@ -1240,6 +1212,12 @@
                 handleThumbnailFileChange(input, article.url, activeStoryCardIndex);
             }
 
+            function normalizeSavedArticleIndexes(saved) {
+                return saved
+                    .sort((a, b) => Number(a.index) - Number(b.index))
+                    .map((item, newIndex) => ({ ...item, index: newIndex }));
+            }
+
             function deleteArticle(index, url) {
                 if (!confirm("Bạn có chắc chắn muốn xóa bài viết này không?")) return;
                 let saved = [];
@@ -1249,12 +1227,21 @@
                     saved = [];
                 }
                 saved = saved.filter((item) => item.url !== url);
+                saved = normalizeSavedArticleIndexes(saved);
                 localStorage.setItem("saved_articles", JSON.stringify(saved));
-                const card = document.getElementById(`card-${index}`);
-                if (card) card.remove();
-                if (activeStoryCardIndex === index) {
-                    closeStoryTool();
-                }
+
+                const nextSelectedIndexes = new Set();
+                selectedArticleIndexes.forEach((selectedIndex) => {
+                    if (selectedIndex > index) nextSelectedIndexes.add(selectedIndex - 1);
+                    else if (selectedIndex < index) nextSelectedIndexes.add(selectedIndex);
+                });
+                selectedArticleIndexes.clear();
+                nextSelectedIndexes.forEach((selectedIndex) => selectedArticleIndexes.add(selectedIndex));
+
+                if (activeStoryCardIndex === index) closeStoryTool();
+                else if (activeStoryCardIndex > index) activeStoryCardIndex -= 1;
+
+                restoreArticlesFromLocalStorage();
                 updateStoryNavigationButtons();
             }
 
@@ -1386,6 +1373,179 @@
 
             // Selection state for batch download
             const selectedArticleIndexes = new Set();
+
+            function extractAutoSelectYouTubeId(url) {
+                if (!url || typeof url !== "string") return null;
+                const patterns = [/[?&]v=([A-Za-z0-9_-]{6,})/, /youtu\.be\/([A-Za-z0-9_-]{6,})/, /\/embed\/([A-Za-z0-9_-]{6,})/, /\/v\/([A-Za-z0-9_-]{6,})/];
+                for (const pattern of patterns) {
+                    const match = url.match(pattern);
+                    if (match?.[1]) return match[1];
+                }
+                try { return new URL(url).searchParams.get("v"); } catch (error) { return null; }
+            }
+
+            function injectAutoSelectedImages(articleHtml, videoId) {
+                if (!articleHtml || !videoId) return articleHtml;
+                const defaultUrl = `https://i.ytimg.com/vi/${videoId}/maxresdefault.jpg`;
+                const firstUrl = `https://i.ytimg.com/vi/${videoId}/maxres1.jpg`;
+                const secondUrl = `https://i.ytimg.com/vi/${videoId}/maxres2.jpg`;
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(`<div id="auto-image-root">${articleHtml}</div>`, "text/html");
+                const root = doc.getElementById("auto-image-root");
+                if (!root) return articleHtml;
+
+                root.querySelectorAll('img[alt="Auto thumbnail"], img[alt="Image 1"], img[alt="Image 2"]').forEach((image) => image.remove());
+
+                const imageWrapper = (imageUrl, altText) => {
+                    const wrapper = doc.createElement("p");
+                    const image = doc.createElement("img");
+                    image.src = imageUrl;
+                    image.alt = altText;
+                    image.style.cssText = "max-width: 100%; height: auto;";
+                    wrapper.appendChild(image);
+                    return wrapper;
+                };
+
+                const insertAfterFirstLine = (imageElement) => {
+                    const firstParagraph = root.querySelector("p");
+                    if (firstParagraph) {
+                        firstParagraph.insertAdjacentElement("afterend", imageElement);
+                        ensureDefaultImageBreak(imageElement);
+                        return;
+                    }
+
+                    const firstDiv = root.querySelector("div");
+                    (firstDiv || root).insertAdjacentElement("beforeend", imageElement);
+                    ensureDefaultImageBreak(imageElement);
+                };
+
+                const ensureDefaultImageBreak = (imageElement) => {
+                    if (!imageElement) return;
+                    let nextNode = imageElement.nextSibling;
+                    while (nextNode && nextNode.nodeType === Node.TEXT_NODE && !nextNode.textContent.trim()) {
+                        nextNode = nextNode.nextSibling;
+                    }
+                    if (!nextNode || nextNode.nodeType === Node.TEXT_NODE && !nextNode.textContent.trim()) return;
+                    if (nextNode.nodeName === "BR") return;
+                    if (nextNode.textContent?.trim()) {
+                        imageElement.insertAdjacentHTML("afterend", "<br><br>");
+                    }
+                };
+
+                const hasDefaultImage = Array.from(root.querySelectorAll("img")).some((image) => {
+                    const src = image.getAttribute("src") || image.src || "";
+                    return src.includes(`/vi/${videoId}/maxresdefault.jpg`) || src.includes("maxresdefault.jpg");
+                });
+
+                if (!hasDefaultImage) {
+                    insertAfterFirstLine(imageWrapper(defaultUrl, "Auto thumbnail"));
+                } else {
+                    const existingDefault = Array.from(root.querySelectorAll("img")).find((image) => {
+                        const src = image.getAttribute("src") || image.src || "";
+                        return src.includes(`/vi/${videoId}/maxresdefault.jpg`) || src.includes("maxresdefault.jpg");
+                    });
+                    ensureDefaultImageBreak(existingDefault);
+                }
+
+                const paragraphs = Array.from(root.querySelectorAll("p"));
+                const insertAfterParagraph = (paragraph, imageUrl, altText) => {
+                    if (!paragraph) return false;
+                    paragraph.insertAdjacentElement("afterend", imageWrapper(imageUrl, altText));
+                    return true;
+                };
+
+                const refreshedParagraphs = Array.from(root.querySelectorAll("p")).filter((paragraph) => !paragraph.querySelector("img"));
+                insertAfterParagraph(refreshedParagraphs[2], firstUrl, "Image 1");
+                insertAfterParagraph(refreshedParagraphs[4], secondUrl, "Image 2");
+
+                return root.innerHTML;
+            }
+
+            async function sendToLinastory(payload) {
+                return new Promise((resolve) => {
+                    let settled = false;
+                    const timeoutId = setTimeout(() => {
+                        if (settled) return;
+                        settled = true;
+                        window.removeEventListener("tool-get-post:linastory-status", handleStatus);
+                        resolve(false);
+                    }, 1500);
+                    const handleStatus = (event) => {
+                        if (settled) return;
+                        settled = true;
+                        clearTimeout(timeoutId);
+                        window.removeEventListener("tool-get-post:linastory-status", handleStatus);
+                        resolve(Boolean(event.detail?.success));
+                    };
+                    window.addEventListener("tool-get-post:linastory-status", handleStatus);
+                    try {
+                        window.dispatchEvent(new CustomEvent("tool-get-post:fill-linastory", { detail: payload }));
+                    } catch (error) {
+                        settled = true;
+                        clearTimeout(timeoutId);
+                        window.removeEventListener("tool-get-post:linastory-status", handleStatus);
+                        resolve(false);
+                    }
+                });
+            }
+
+            async function startAutoSelectImages() {
+                const indexes = selectedArticleIndexes.size > 0
+                    ? getSelectedIndexes()
+                    : Array.from(document.querySelectorAll('#output .result-card[id^="card-"]'))
+                        .map((card) => Number(card.id.replace("card-", "")))
+                        .filter((index) => Number.isFinite(index));
+                if (indexes.length === 0) { alert("Không có bài viết để tự động chọn ảnh."); return; }
+
+                const button = document.getElementById("autoSelectImagesBtn");
+                const originalHtml = button?.innerHTML || "";
+                if (button) { button.disabled = true; button.innerHTML = '<span class="button-spinner" aria-hidden="true"></span><span>Đang chọn ảnh...</span>'; }
+
+                let updatedCount = 0;
+                let skippedCount = 0;
+                const linastoryArticles = [];
+                try {
+                    const saved = JSON.parse(localStorage.getItem("saved_articles") || "[]");
+                    for (const index of indexes) {
+                        const articleIndex = saved.findIndex((item) => Number(item.index) === Number(index));
+                        if (articleIndex === -1) { skippedCount++; continue; }
+                        const article = saved[articleIndex];
+                        const videoId = article.videoId || extractAutoSelectYouTubeId(article.url);
+                        if (!videoId) { skippedCount++; continue; }
+                        article.videoId = videoId;
+                        article.thumbnailVariant = "maxresdefault";
+                        article.customThumbnailUrl = "";
+                        article.article = injectAutoSelectedImages(article.article || "", videoId);
+                        saved[articleIndex] = article;
+                        const card = document.getElementById(`card-${index}`);
+                        const textarea = card?.querySelector("textarea.w-full.min-h-52");
+                        if (textarea) textarea.value = article.article || "";
+                        updateCardThumbnailPreview(index, article);
+                        linastoryArticles.push({
+                            title: article.title || "",
+                            description: article.article || "",
+                            image: `https://i.ytimg.com/vi/${videoId}/maxresdefault.jpg`,
+                            videoUrl: "",
+                            autoPublish: document.getElementById("autoPublishCheckbox")?.checked !== false,
+                        });
+                        updatedCount++;
+                    }
+                    localStorage.setItem("saved_articles", JSON.stringify(saved));
+                    renderThumbnailSelectorForActiveCard();
+                    renderStoryPreview();
+
+                    let bridgedCount = 0;
+                    for (let i = 0; i < linastoryArticles.length; i++) {
+                        const delivered = await sendToLinastory(linastoryArticles[i]);
+                        if (delivered) bridgedCount++;
+                        await new Promise((resolve) => setTimeout(resolve, 3500));
+                    }
+
+                    console.log(`Auto selected images for ${updatedCount} articles; Linastory deliveries: ${bridgedCount}; skipped: ${skippedCount}.`);
+                } finally {
+                    if (button) { button.disabled = false; button.innerHTML = originalHtml; }
+                }
+            }
 
             function toggleSelectArticle(index) {
                 if (selectedArticleIndexes.has(index)) {
@@ -1651,7 +1811,7 @@
                                                     <div style="display: grid; grid-template-columns: 1fr; gap: 10px; margin-bottom: 15px;">
                                                         <div>
                                                             <label style="display:block; margin-bottom:8px; color:var(--text-muted);">Thumbnail Text</label>
-                                                            <textarea class="player-input border" style="width: 100%; min-height: 80px; font-family: monospace; font-size: 0.85rem;" oninput="updateThumbnailText(${index}, this.value)">${(data.players || "").replace(/</g, "&lt;").replace(/>/g, "&gt;")}</textarea>
+                                                            <textarea class="player-input border" style="width: 100%; min-height: 80px; font-family: monospace; font-size: 0.85rem;" placeholder="Thumbnail text from OCR..." oninput="updateThumbnailText(${index}, this.value)">${(data.players || "").replace(/</g, "&lt;").replace(/>/g, "&gt;")}</textarea>
                                                             ${buildThumbnailControls({
                                                                 index,
                                                                 url,
@@ -1674,8 +1834,8 @@
                         } catch (err) {
                             output.innerHTML += `
                                             <div class="result-card" id="card-${index}" style="border-color: #ef4444; margin-bottom: 20px;">
-                                                <p style="color: #ef4444; font-weight: bold;">❌ Thumbnail failed [${index + 1}]: ${url}</p>
-                                                <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 15px;">Network error during thumbnail generation.</p>
+                                                <p style="color: #ef4444; font-weight: bold;">❌ Network error [${index + 1}]</p>
+                                                <button onclick="retrySingle('${url}', ${index})" class="btn-primary" style="padding: 8px 16px; font-size: 0.8rem; width: auto;">🔄 Thử lại ngay</button>
                                             </div>
                                         `;
                         } finally {
@@ -2773,7 +2933,6 @@
                     const ta = card?.querySelector("textarea.w-full.min-h-52");
                     content = ta?.value || "";
                 }
-                content = content.replace(/<[^>]+>/g, "\n").replace(/&nbsp;/g, " ");
                 if (!content) {
                     storyUpdateMessage("No article content to copy.", true);
                     return;
@@ -2783,30 +2942,6 @@
                     storyUpdateMessage("Copied article content to clipboard.", false);
                 } catch (err) {
                     storyUpdateMessage("Copy failed. Try selecting and copying manually.", true);
-                }
-            }
-
-            async function storyPasteFromClipboard() {
-                try {
-                    const clipboardContent = await navigator.clipboard.readText();
-                    if (!clipboardContent) {
-                        storyUpdateMessage("Clipboard is empty.", true);
-                        return;
-                    }
-
-                    const content = clipboardContent
-                        .replace(/\*\*/g, "")
-                        .split(/\r?\n/)
-                        .map((line) => line.trim())
-                        .filter(Boolean)
-                        .join("\n");
-                    const storyTextInput = document.getElementById("storyTextInput");
-                    storyTextInput.value = "";
-                    storyTextInput.value = content;
-                    storyTextInput.dispatchEvent(new Event("input", { bubbles: true }));
-                    storyUpdateMessage("Pasted clipboard content into story text.", false);
-                } catch (err) {
-                    storyUpdateMessage(err.message || "Unable to read clipboard. Check browser permissions.", true);
                 }
             }
 
