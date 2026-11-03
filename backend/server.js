@@ -198,18 +198,46 @@ function extractVideoId(url) {
   return match ? match[1] : null;
 }
 
-const SPORTS_THUMBNAIL_TEXT_REQUIREMENT = `
+function getSportsThumbnailTextRequirement(language = "English") {
+  const targetLanguage = normalizePromptLanguage(language);
+  const headlineFormulas =
+    targetLanguage === "German"
+      ? [
+          "[Team-/Figurenname]s [Plan/Saison/Zukunft] ist gerade ZUSAMMENGEBROCHEN – [schockierendes Ereignis] könnte alles verändern!",
+          "[Team-/Figurenname] steht nach [schockierendem Ereignis] vor einem gewaltigen SCHOCK – was passiert jetzt?",
+          "Niemand hat das kommen sehen: [schockierendes Ereignis] stellt [Team-/Figurenname]s Zukunft auf den Kopf!",
+          "[Team-/Figurenname] in der KRISE: [schockierendes Ereignis] könnte alles auf den Kopf stellen!",
+          "[Team-/Figurenname]s Saison nimmt nach [schockierendem Ereignis] eine verheerende Wende!",
+          "Ist das das ENDE für [Team-/Figurenname]? [Schockierendes Ereignis] lässt alle sprachlos zurück!",
+          "[Team-/Figurenname] droht alles zu verlieren – [schockierendes Ereignis] verändert jetzt alles!",
+          "Ein unerwarteter SCHOCK trifft [Team-/Figurenname] – die Folgen könnten gewaltig sein!",
+        ]
+      : [
+          "[Team/Character Name]'s [Plan/Season/Future] Just COLLAPSED—[Shocking Event] Could Change Everything!",
+          "[Team/Character Name] Hit With a SHOCKING Setback—[Major Consequence] Now Looms!",
+          "Nobody Saw This Coming: [Shocking Event] Just Changed [Team/Character Name]'s Future!",
+          "[Team/Character Name] in CRISIS After [Shocking Event]—What Happens Next?",
+          "[Team/Character Name]'s Season Takes a DEVASTATING Turn After [Shocking Event]!",
+          "Is This the END for [Team/Character Name]? [Shocking Event] Leaves Everyone Stunned!",
+          "[Team/Character Name] Could Lose Everything After [Shocking Event]—The Fallout Begins!",
+          "A Massive SHOCK Rocks [Team/Character Name]—The Consequences Could Be Unbelievable!",
+        ];
+  const headlineFormula =
+    headlineFormulas[Math.floor(Math.random() * headlineFormulas.length)];
+
+  return `
 ### THUMBNAIL_TEXT_REQUIREMENT:
 - At the very end of the response, include one marker block in this format:
   [[THUMBNAIL_TEXT: <headline>
   <body paragraph>]]
 - Write the headline first on its own line, followed by the body on the next line. Keep the body as one paragraph with no line breaks.
-- Headline formula: [Team/Character Name]'s [Plan/Season/Future] Just COLLAPSED—[Shocking Event] Could Change Everything!
+- Randomly selected headline formula, written entirely in ${targetLanguage}: ${headlineFormula}
 - Make the headline approximately 8–15 words, powerful, dramatic, and attention-grabbing.
 - Write the body in approximately 90-120 words. In order, cover: [SHOCK] the main shocking development in one sentence; [EVIDENCE] 1–2 of the strongest supported details, facts, or numbers; [STAKES] why this could have serious consequences; [CONFLICT] escalating tension, conflict, or pressure; [CONSEQUENCE] what could happen next; and [CLIFFHANGER] a suspenseful question.
 - Use a dramatic, high-impact storytelling style with emotional hooks, urgency, escalating tension, and curiosity. Do not print the bracketed beat labels.
 - Do not invent facts, details, or statistics.
 `;
+}
 
 function normalizePromptLanguage(language) {
   return String(language || "English").toLowerCase() === "german"
@@ -245,7 +273,7 @@ Transform this YouTube video into a highly dramatic sports article with a strong
     languageInstruction = `
   - The article MUST be written entirely in ${targetLanguage}. Do not use another language, even if the video title uses another language.`;
 
-    taskInstruction += `${SPORTS_THUMBNAIL_TEXT_REQUIREMENT}\n- Write the headline and body in ${targetLanguage}.`;
+    taskInstruction += `${getSportsThumbnailTextRequirement(targetLanguage)}\n- Write the headline and body in ${targetLanguage}.`;
   } else {
     roleInstruction = `
 ### SYSTEM ROLE:
@@ -507,7 +535,7 @@ function isVietnameseText(text) {
 function buildSportsClickbaitPrompt(sourceText, title, language = "English") {
   const safeSource = (sourceText || title || "This story").trim();
   const targetLanguage = normalizePromptLanguage(language);
-  return `Rewrite the content below into dramatic, high-impact sports thumbnail text in ${targetLanguage}. Follow the required headline and body format exactly. The body must contain 90-120 words; never replace it with a short summary. Count the body words before responding and return only the required marker block.\n${SPORTS_THUMBNAIL_TEXT_REQUIREMENT}\nWrite the headline and body in ${targetLanguage}. The title is: "${title}".\n\nOriginal content:\n${safeSource}`;
+  return `Rewrite the content below into dramatic, high-impact sports thumbnail text in ${targetLanguage}. Follow the required headline and body format exactly. The body must contain 90-120 words; never replace it with a short summary. Count the body words before responding and return only the required marker block.\n${getSportsThumbnailTextRequirement(targetLanguage)}\nWrite the headline and body in ${targetLanguage}. The title is: "${title}".\n\nOriginal content:\n${safeSource}`;
 }
 
 function extractSportsThumbnailText(articleText = "") {
@@ -571,7 +599,7 @@ async function generateValidatedSportsThumbnailText(
     const retryPrompt =
       attempt === 0
         ? prompt
-        : `${prompt}\n\nIMPORTANT: The entire headline and body MUST be written in ${targetLanguage}. Do not switch to English or any other language. Rewrite the previous draft to have an 8-15 word headline and a 90-120 word body in ${targetLanguage}. Keep the body in one paragraph and do not shorten it.\nPrevious draft:\n${previousDraft}`;
+        : `${prompt}\n\nIMPORTANT: Write the headline and body entirely in ${targetLanguage}. Do not switch to English or any other language.\nHeadline: 8-15 words.\nBody: one paragraph containing exactly 6 complete sentences.\nMake each sentence approximately 16-18 words so the body reaches 90-120 words.\nBefore responding, silently check that the headline and body meet these requirements. If they do not, revise them before providing the final answer.\nReturn only the required marker block containing the headline and body. Do not include a word count or explanation.\nPrevious draft:\n${previousDraft}`;
     const draft = await generateClickbaitText(
       retryPrompt,
       title,
