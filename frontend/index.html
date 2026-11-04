@@ -845,8 +845,8 @@
                         style="padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 8px"
                     >
                         <option value="">Chọn câu có sẵn...</option>
-                        <option value="Lesen Sie die vollständige Geschichte unter dem folgenden Link 👇">Deutsch</option>
-                        <option value="Read the full story in the link below👇">English</option>
+                        <option value="Lesen Sie die vollständige Geschichte unter dem folgenden Link 👇" data-language="German">Deutsch</option>
+                        <option value="Read the full story in the link below👇" data-language="English">English</option>
                     </select>
                     <input
                         type="text"
@@ -2439,6 +2439,21 @@
                 saveStorySuffixSettings();
             }
 
+            function syncStorySuffixPresetToArticleLanguage() {
+                const languageSelect = document.getElementById("language-select");
+                const presetSelect = document.getElementById("storySuffixPreset");
+                if (!languageSelect || !presetSelect) return;
+
+                const language = languageSelect.value || "English";
+                const matchingOption = Array.from(presetSelect.options).find((option) =>
+                    option.dataset.language === language
+                );
+                if (!matchingOption) return;
+
+                presetSelect.value = matchingOption.value;
+                applyStorySuffixPreset(matchingOption.value);
+            }
+
             function applyStorySuffix(text) {
                 const baseText = String(text || "").trimEnd();
                 const suffix = getStorySuffixText();
@@ -3314,6 +3329,7 @@
             loadStorySuffixSettings();
             document.getElementById("storySuffixEnabled")?.addEventListener("change", saveStorySuffixSettings);
             document.getElementById("storySuffixInput")?.addEventListener("input", saveStorySuffixSettings);
+            document.getElementById("language-select")?.addEventListener("change", syncStorySuffixPresetToArticleLanguage);
             syncStoryModeSelection();
 
             const youtubeUrlLabel = document.getElementById("youtubeUrlLabel");
