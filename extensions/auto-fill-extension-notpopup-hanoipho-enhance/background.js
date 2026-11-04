@@ -390,16 +390,6 @@ chrome.runtime.onMessage.addListener(async (message, sender, sendResponse) => {
 
   if (message.type === "UPDATE_CONTENT") {
     try {
-      await chrome.storage.local.set({
-        linastoryPendingPayload: {
-          title: message.content.title || "",
-          description: message.content.description || "",
-          videoUrl: message.content.videoUrl || "",
-          autoPublish: message.content.autoPublish !== false,
-          createdAt: Date.now(),
-        },
-      });
-
       // Never activate or refocus a Linastory tab from the background workflow.
       const hanoiphoTab = await chrome.tabs.create({
         url: "https://linatoysdochoitreem.com/wp-admin/post-new.php",

@@ -193,15 +193,3 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   sendResponse({ success: Boolean(filled) });
   return false;
 });
-
-chrome.storage.local.get("linastoryPendingPayload", (result) => {
-  const payload = result.linastoryPendingPayload;
-  if (!payload || Date.now() - payload.createdAt > 60000) return;
-  chrome.storage.local.remove("linastoryPendingPayload");
-
-  let attempts = 0;
-  const retry = setInterval(() => {
-    attempts++;
-    if (fillLinastoryPayload(payload) || attempts >= 20) clearInterval(retry);
-  }, 500);
-});
