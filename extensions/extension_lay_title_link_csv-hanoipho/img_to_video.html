@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Image to Video</title>
+    <style>
+      .preview-container {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin: 10px 0;
+      }
+      .preview-image {
+        width: 200px;
+        height: 150px;
+        object-fit: cover;
+      }
+      .controls {
+        margin: 20px 0;
+      }
+      .video-container {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 20px;
+        margin-top: 20px;
+      }
+      .video-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 10px;
+      }
+      .loading {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        display: none;
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
+      }
+      .loading-content {
+        background: white;
+        padding: 20px;
+        border-radius: 8px;
+        text-align: center;
+      }
+      .spinner {
+        width: 40px;
+        height: 40px;
+        border: 4px solid #f3f3f3;
+        border-top: 4px solid #3498db;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin: 0 auto 10px;
+      }
+      @keyframes spin {
+        0% {
+          transform: rotate(0deg);
+        }
+        100% {
+          transform: rotate(360deg);
+        }
+      }
+      .progress {
+        margin-top: 10px;
+        font-size: 14px;
+      }
+      .download-all-btn {
+        margin-left: 10px;
+        padding: 5px 10px;
+        display: none;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="controls">
+      <input
+        type="file"
+        id="imageInput"
+        multiple
+        accept="image/*"
+        onchange="handleImageSelect(event)"
+      />
+      <button onclick="startRecording()" id="recordButton" disabled>
+        Tạo video từ ảnh
+      </button>
+      <button
+        onclick="downloadAllVideos()"
+        id="downloadAllBtn"
+        class="download-all-btn"
+      >
+        Tải tất cả video
+      </button>
+    </div>
+    <div id="previewContainer" class="preview-container"></div>
+    <canvas id="canvas" style="display: none"></canvas>
+    <div id="videoContainer" class="video-container"></div>
+
+    <div id="loading" class="loading">
+      <div class="loading-content">
+        <div class="spinner"></div>
+        <div>Đang tạo video...</div>
+        <div id="progress" class="progress">0/0</div>
+      </div>
+    </div>
+
+    <script>
+      let selectedImages = [];
+      let videoBlobs = []; // Mảng lưu trữ các blob video
+
+      function handleImageSelect(event) {
+        const files = event.target.files;
+        selectedImages = [];
+        videoBlobs = []; // Reset video blobs
+        const previewContainer = document.getElementById("previewContainer");
+        previewContainer.innerHTML = "";
+
+        Array.from(files).forEach((file) => {
+          const reader = new FileReader();
+          reader.onload = function (e) {
+            const img = new Image();
+            img.src = e.target.result;
+            img.className = "preview-image";
+            img.onload = function () {
+              selectedImages.push({
+                image: img,
+                name: file.name,
+                width: img.naturalWidth,
+                height: img.naturalHeight,
+              });
+            };
+            previewContainer.appendChild(img);
+          };
+          reader.readAsDataURL(file);
+        });
+
+        document.getElementById("recordButton").disabled = files.length === 0;
+        document.getElementById("videoContainer").innerHTML = "";
+        document.getElementById("downloadAllBtn").style.display = "none";
+      }
+
+      function showLoading(current, total) {
+        const loading = document.getElementById("loading");
+        const progress = document.getElementById("progress");
+        loading.style.display = "flex";
+        progress.textContent = `${current}/${total}`;
+      }
+
+      function hideLoading() {
+        document.getElementById("loading").style.display = "none";
+      }
+
+      async function createVideoFromImage(imageData, index, total) {
+        return new Promise((resolve, reject) => {
+          const canvas = document.getElementById("canvas");
+          // Đặt kích thước canvas bằng với kích thước ảnh gốc
+          canvas.width = imageData.width;
+          canvas.height = imageData.height;
+
+          const ctx = canvas.getContext("2d");
+
+          // Vẽ ảnh vào canvas với kích thước gốc
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          ctx.drawImage(imageData.image, 0, 0, canvas.width, canvas.height);
+
+          const stream = canvas.captureStream(25); // 25 FPS
+          const recordedChunks = [];
+
+          let mimeType = "video/webm;codecs=vp9";
+          if (!MediaRecorder.isTypeSupported(mimeType)) {
+            mimeType = "video/webm;codecs=vp8";
+            if (!MediaRecorder.isTypeSupported(mimeType)) {
+              mimeType = "video/webm";
+              if (!MediaRecorder.isTypeSupported(mimeType)) {
+                alert("Trình duyệt của bạn không hỗ trợ ghi video WebM");
+                reject("Codec not supported");
+                return;
+              }
+            }
+          }
+
+          const mediaRecorder = new MediaRecorder(stream, {
+            mimeType: mimeType,
+          });
+
+          mediaRecorder.ondataavailable = function (e) {
+            if (e.data.size > 0) recordedChunks.push(e.data);
+          };
+
+          mediaRecorder.onstop = function () {
+            const blob = new Blob(recordedChunks, { type: "video/webm" });
+            videoBlobs.push({
+              blob: blob,
+              name: `video_${imageData.name}.webm`,
+            });
+            const url = URL.createObjectURL(blob);
+
+            const videoItem = document.createElement("div");
+            videoItem.className = "video-item";
+
+            const video = document.createElement("video");
+            video.controls = true;
+            video.src = url;
+            // Đặt kích thước video bằng với kích thước ảnh gốc
+            video.width = imageData.width;
+            video.height = imageData.height;
+
+            const downloadBtn = document.createElement("a");
+            downloadBtn.href = url;
+            downloadBtn.download = `video_${imageData.name}.webm`;
+            downloadBtn.textContent = "Tải video";
+            downloadBtn.className = "download-btn";
+
+            const dimensions = document.createElement("div");
+            dimensions.textContent = `Kích thước: ${imageData.width}x${imageData.height}`;
+
+            videoItem.appendChild(video);
+            videoItem.appendChild(dimensions);
+            videoItem.appendChild(downloadBtn);
+            document.getElementById("videoContainer").appendChild(videoItem);
+
+            resolve();
+          };
+
+          mediaRecorder.start();
+
+          setTimeout(() => {
+            mediaRecorder.stop();
+          }, 5000);
+        });
+      }
+
+      async function startRecording() {
+        if (selectedImages.length === 0) {
+          alert("Vui lòng chọn ít nhất một ảnh");
+          return;
+        }
+
+        document.getElementById("recordButton").disabled = true;
+        document.getElementById("videoContainer").innerHTML = "";
+        document.getElementById("downloadAllBtn").style.display = "none";
+        videoBlobs = []; // Reset video blobs
+
+        try {
+          const total = selectedImages.length;
+          for (let i = 0; i < total; i++) {
+            showLoading(i + 1, total);
+            await createVideoFromImage(selectedImages[i], i, total);
+          }
+          // Hiển thị nút tải tất cả sau khi hoàn thành
+          document.getElementById("downloadAllBtn").style.display =
+            "inline-block";
+        } catch (error) {
+          console.error("Lỗi khi tạo video:", error);
+          alert("Có lỗi xảy ra khi tạo video");
+        } finally {
+          hideLoading();
+          document.getElementById("recordButton").disabled = false;
+        }
+      }
+
+      function downloadAllVideos() {
+        if (videoBlobs.length === 0) {
+          alert("Không có video nào để tải");
+          return;
+        }
+
+        videoBlobs.forEach(({ blob, name }) => {
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = name;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+        });
+      }
+    </script>
+  </body>
+</html>

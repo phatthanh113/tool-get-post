@@ -1,0 +1,21 @@
+{
+  "manifest_version": 3,
+  "name": "Push YouTube → Xopboo",
+  "version": "1.0.0",
+  "description": "Đang mở YouTube, bấm icon để đẩy URL sang wp.xopboo.com và tự đặt token=5000, language=English.",
+  "action": {
+    "default_title": "Push YouTube → Xopboo"
+  },
+  "permissions": ["tabs"],
+  "host_permissions": ["http://localhost:3000/*"],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["http://localhost:3000/*"],
+      "js": ["content_wp.js"],
+      "run_at": "document_idle"
+    }
+  ]
+}

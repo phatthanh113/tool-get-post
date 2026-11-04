@@ -1,0 +1,33 @@
+{
+  "manifest_version": 3,
+  "name": "Lấy Title và Link bài viết Hanoipho",
+  "version": "1.0",
+  "permissions": ["scripting", "tabs", "activeTab", "storage", "contextMenus"],
+  "action": {
+    "default_popup": "popup.html"
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://linatoysdochoitreem.com/wp-admin/post.php*"],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": [
+        "https://www.google.com/search*",
+        "https://www.google.com.vn/search*"
+      ],
+      "js": ["google-images-content.js"],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": ["https://www.youtube.com/*"],
+      "js": ["youtube-content.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "host_permissions": ["<all_urls>"]
+}

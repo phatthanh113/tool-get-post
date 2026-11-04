@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <title>Hiển thị 10 ảnh</title>
+        <style>
+            body {
+                font-family: "Segoe UI", system-ui, sans-serif;
+                text-align: center;
+                margin: 0;
+                padding: 30px;
+                background: #f5f5f7;
+                color: #333;
+            }
+            h2,
+            h3 {
+                color: #1a1a1a;
+                margin-bottom: 1.5rem;
+            }
+            .search-container {
+                margin-bottom: 2rem;
+                display: flex;
+                flex-direction: column;
+                gap: 1rem;
+                align-items: center;
+            }
+            .article-title {
+                color: #2c3e50;
+                font-size: 1.2rem;
+                margin: 0 0 1rem;
+                padding: 10px 20px;
+                background: #e8f5e9;
+                border-radius: 10px;
+                box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            }
+            .contributors-select {
+                width: 100%;
+                max-width: 600px;
+                margin-bottom: 1rem;
+            }
+            .contributor-dropdown {
+                width: 100%;
+                padding: 12px 20px;
+                font-size: 16px;
+                border: 2px solid #ddd;
+                border-radius: 25px;
+                background-color: white;
+                cursor: pointer;
+                transition: all 0.3s;
+            }
+            .contributor-dropdown:focus {
+                outline: none;
+                border-color: #4caf50;
+                box-shadow: 0 0 8px rgba(76, 175, 80, 0.2);
+            }
+            .contributor-dropdown option {
+                padding: 10px;
+            }
+            .search-input-group {
+                display: flex;
+                gap: 10px;
+                align-items: center;
+            }
+            input[type="text"] {
+                width: 400px;
+                padding: 12px 20px;
+                font-size: 16px;
+                border: 2px solid #ddd;
+                border-radius: 25px;
+                transition: all 0.3s;
+            }
+            input[type="text"]:focus {
+                outline: none;
+                border-color: #4caf50;
+                box-shadow: 0 0 8px rgba(76, 175, 80, 0.2);
+            }
+            .search-btn {
+                background: #4caf50;
+                color: white;
+                border: none;
+                padding: 12px 25px;
+                border-radius: 25px;
+                font-size: 16px;
+                margin-left: 10px;
+                cursor: pointer;
+                transition: background 0.3s;
+            }
+            .search-btn:hover {
+                background: #45a049;
+            }
+            .images {
+                display: grid;
+                grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+                gap: 20px;
+                padding: 20px;
+                background: white;
+                border-radius: 15px;
+                box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            }
+            .image-container {
+                position: relative;
+                background: white;
+                padding: 10px;
+                border-radius: 10px;
+                box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+                transition: transform 0.2s;
+            }
+            .image-container:hover {
+                transform: translateY(-5px);
+            }
+            .image-container input[type="radio"] {
+                position: absolute;
+                top: 10px;
+                left: 10px;
+                width: 20px;
+                height: 20px;
+                cursor: pointer;
+                z-index: 2;
+            }
+            .images img {
+                width: 100%;
+                max-width: 200px;
+                height: 150px;
+                object-fit: cover;
+                border-radius: 8px;
+                cursor: pointer;
+            }
+            .selected img {
+                border: 3px solid #4caf50;
+            }
+            .overlay-preview {
+                margin: 2rem 0;
+                padding: 20px;
+                background: white;
+                border-radius: 15px;
+                box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            }
+            .overlay-preview img {
+                max-width: 200px;
+                border-radius: 8px;
+                border: 2px dashed #4caf50;
+                margin: 10px;
+            }
+            .layout-options {
+                margin: 2rem 0;
+                padding: 15px;
+                background: white;
+                border-radius: 15px;
+                box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            }
+            .layout-options label {
+                margin: 0 15px;
+                cursor: pointer;
+            }
+            .btn-create {
+                background: #4caf50;
+                color: white;
+                border: none;
+                padding: 15px 30px;
+                border-radius: 25px;
+                font-size: 16px;
+                font-weight: 600;
+                cursor: pointer;
+                transition: all 0.3s;
+                margin-top: 2rem;
+                box-shadow: 0 2px 5px rgba(76, 175, 80, 0.2);
+            }
+            .btn-create:hover {
+                background: #45a049;
+                transform: translateY(-2px);
+                box-shadow: 0 4px 10px rgba(76, 175, 80, 0.3);
+            }
+        </style>
+    </head>
+    <body>
+        <h2>🎨 Tạo ảnh cho bài viết</h2>
+        <div class="search-container">
+            <div class="contributors-select">
+                <select id="contributorSelect" class="contributor-dropdown">
+                    <option value="">-- Chọn Contributor --</option>
+                </select>
+            </div>
+            <div class="search-input-group">
+                <input type="text" id="search" placeholder="Nhập từ khóa tìm kiếm..." />
+                <button id="searchBtn" class="search-btn">🔍 Tìm ảnh</button>
+            </div>
+        </div>
+
+        <div class="layout-options">
+            <h3>📐 Chọn tỷ lệ ảnh</h3>
+            <label>
+                <input type="radio" name="layout" value="16:3" checked />
+                16:3 (Ảnh bìa)
+            </label>
+            <label>
+                <input type="radio" name="layout" value="1:1" />
+                1:1 (Ảnh vuông)
+            </label>
+        </div>
+
+        <div class="overlay-preview">
+            <h3>🖼️ Ảnh từ bài viết</h3>
+            <div id="overlayPreview"></div>
+        </div>
+
+        <h3>🎯 Chọn ảnh nền từ kết quả tìm kiếm</h3>
+        <div class="images" id="result"></div>
+
+        <button id="submitBtn" class="btn-create">✨ Tạo ảnh</button>
+
+        <script src="create_img.js"></script>
+    </body>
+</html>

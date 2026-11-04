@@ -811,6 +811,7 @@
                 <button onclick="generateThumbnailOnly()" class="btn-secondary" style="display: none; background-color: #f59e0b; border-color: #f59e0b; color: white">🖼️ Thumbnail</button>
                 <button id="autoSelectImagesBtn" type="button" onclick="startAutoSelectImages()" class="btn-secondary" style="background-color: #ff9800; border-color: #ff9800; color: white">⚡ Auto Select Img</button>
                 <button onclick="generate()" id="buzzBtn" class="btn-primary button-primary-custom">Buzz</button>
+                <button onclick="stopBuzzGeneration()" id="stopBuzzBtn" type="button" class="btn-secondary" style="display: none; background: #ef4444; color: white">⏹ Stop</button>
             </div>
 
             <div style="display: flex; justify-content: flex-end; margin-top: 10px;">
@@ -1229,20 +1230,44 @@
                 saved = saved.filter((item) => item.url !== url);
                 saved = normalizeSavedArticleIndexes(saved);
                 localStorage.setItem("saved_articles", JSON.stringify(saved));
-
                 const nextSelectedIndexes = new Set();
+                const nextDownloadedIndexes = new Set();
                 selectedArticleIndexes.forEach((selectedIndex) => {
                     if (selectedIndex > index) nextSelectedIndexes.add(selectedIndex - 1);
                     else if (selectedIndex < index) nextSelectedIndexes.add(selectedIndex);
                 });
+                downloadedArticleIndexes.forEach((downloadedIndex) => {
+                    if (downloadedIndex > index) nextDownloadedIndexes.add(downloadedIndex - 1);
+                    else if (downloadedIndex < index) nextDownloadedIndexes.add(downloadedIndex);
+                });
                 selectedArticleIndexes.clear();
                 nextSelectedIndexes.forEach((selectedIndex) => selectedArticleIndexes.add(selectedIndex));
+                downloadedArticleIndexes.clear();
+                nextDownloadedIndexes.forEach((downloadedIndex) => downloadedArticleIndexes.add(downloadedIndex));
 
                 if (activeStoryCardIndex === index) closeStoryTool();
                 else if (activeStoryCardIndex > index) activeStoryCardIndex -= 1;
 
                 restoreArticlesFromLocalStorage();
+                nextDownloadedIndexes.forEach((downloadedIndex) => downloadedArticleIndexes.add(downloadedIndex));
+                resetDownloadSelectedStatus();
+                updateArticleDisplayNumbers();
                 updateStoryNavigationButtons();
+            }
+
+            function updateArticleDisplayNumbers() {
+                const cards = Array.from(document.querySelectorAll('#output .result-card[id^="card-"]'));
+                cards.forEach((card, position) => {
+                    card.querySelectorAll("label").forEach((label) => {
+                        label.textContent = label.textContent.replace(
+                            /^Article \d+ (Title|Content \(HTML\))$/,
+                            `Article ${position + 1} $1`,
+                        );
+                    });
+                });
+
+                const selectAllBtn = document.getElementById("selectAllBtn");
+                if (selectAllBtn) selectAllBtn.textContent = selectedArticleIndexes.size > 0 ? "Clear" : "Select All";
             }
 
             function updateSavedArticle(idOrUrl, field, value) {
@@ -1307,16 +1332,19 @@
                 const output = document.getElementById("output");
                 resultSection.style.display = "block";
                 output.innerHTML = "";
+                downloadedArticleIndexes.clear();
+                selectedArticleIndexes.clear();
 
                 saved.sort((a, b) => a.index - b.index);
                 saved.forEach((item) => {
+                    selectedArticleIndexes.add(Number(item.index));
                     const articleCard = document.createElement("div");
                     articleCard.className = "result-card";
                     articleCard.id = `card-${item.index}`;
                     articleCard.style.marginBottom = "20px";
                     articleCard.innerHTML = `
                                     <div class="card-controls">
-                                        <button id="select-btn-${item.index}" class="icon-btn select" onclick="toggleSelectArticle(${item.index})" title="Select">⬜</button>
+                                        <button id="select-btn-${item.index}" class="icon-btn select" onclick="toggleSelectArticle(${item.index})" title="Select">${selectedArticleIndexes.has(Number(item.index)) ? "✅" : "⬜"}</button>
                                         <button class="icon-btn copy" onclick="copyArticle(${item.index})" title="Copy article">📋</button>
                                         <button class="icon-btn delete" onclick="deleteArticle(${item.index}, '${item.url}')" title="Delete article">🗑</button>
                                     </div>
@@ -1373,6 +1401,224 @@
 
             // Selection state for batch download
             const selectedArticleIndexes = new Set();
+            const downloadedArticleIndexes = new Set();
+            let selectedDownloadsInProgress = false;
+
+            function selectArticleIndexByDefault(index) {
+                const normalizedIndex = Number(index);
+                if (!Number.isFinite(normalizedIndex)) return;
+                selectedArticleIndexes.add(normalizedIndex);
+                const button = document.getElementById(`select-btn-${normalizedIndex}`);
+                if (button) button.textContent = "✅";
+            }
+
+            function resetDownloadSelectedStatus() {
+                if (selectedDownloadsInProgress) return;
+                const downloadButton = document.getElementById("downloadSelectedBtn");
+                if (downloadButton) downloadButton.textContent = "Download Selected";
+            }
+
+            window.addEventListener("beforeunload", (event) => {
+                const articleIndexes = getStoryArticleIndexes();
+                if (articleIndexes.length === 0 || articleIndexes.every((index) => downloadedArticleIndexes.has(index))) return;
+                event.preventDefault();
+                event.returnValue = "";
+            });
+
+            function extractAutoSelectYouTubeId(url) {
+                if (!url || typeof url !== "string") return null;
+                const patterns = [/[?&]v=([A-Za-z0-9_-]{6,})/, /youtu\.be\/([A-Za-z0-9_-]{6,})/, /\/embed\/([A-Za-z0-9_-]{6,})/, /\/v\/([A-Za-z0-9_-]{6,})/];
+                for (const pattern of patterns) {
+                    const match = url.match(pattern);
+                    if (match?.[1]) return match[1];
+                }
+                try { return new URL(url).searchParams.get("v"); } catch (error) { return null; }
+            }
+
+            function getExistingThumbnailVariant(articleHtml, videoId) {
+                if (!articleHtml) return null;
+                const html = String(articleHtml);
+                const variants = ["maxresdefault", "maxres1", "maxres2"];
+                for (const variant of variants) {
+                    const escapedVariant = variant.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+                    const pattern = new RegExp(`i\\\\.ytimg\\\\.com/[^\\\\s\"'<>]+/${escapedVariant}\\\\.jpg`, "i");
+                    if (pattern.test(html)) return variant;
+                }
+
+                if (videoId) {
+                    for (const variant of variants) {
+                        const url = `https://i.ytimg.com/vi/${videoId}/${variant}.jpg`;
+                        if (html.includes(url)) return variant;
+                    }
+                }
+                return null;
+            }
+
+            function injectAutoSelectedImages(articleHtml, videoId) {
+                if (!articleHtml || !videoId) return articleHtml;
+                if (getExistingThumbnailVariant(articleHtml, videoId)) return articleHtml;
+                const defaultUrl = `https://i.ytimg.com/vi/${videoId}/maxresdefault.jpg`;
+                const firstUrl = `https://i.ytimg.com/vi/${videoId}/maxres1.jpg`;
+                const secondUrl = `https://i.ytimg.com/vi/${videoId}/maxres2.jpg`;
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(`<div id="auto-image-root">${articleHtml}</div>`, "text/html");
+                const root = doc.getElementById("auto-image-root");
+                if (!root) return articleHtml;
+
+                root.querySelectorAll('img[alt="Auto thumbnail"], img[alt="Image 1"], img[alt="Image 2"]').forEach((image) => image.remove());
+
+                const imageWrapper = (imageUrl, altText) => {
+                    const wrapper = doc.createElement("p");
+                    const image = doc.createElement("img");
+                    image.src = imageUrl;
+                    image.alt = altText;
+                    image.style.cssText = "max-width: 100%; height: auto;";
+                    wrapper.appendChild(image);
+                    return wrapper;
+                };
+
+                const insertAfterFirstLine = (imageElement) => {
+                    const firstParagraph = root.querySelector("p");
+                    if (firstParagraph) {
+                        firstParagraph.insertAdjacentElement("afterend", imageElement);
+                        ensureDefaultImageBreak(imageElement);
+                        return;
+                    }
+
+                    const firstDiv = root.querySelector("div");
+                    (firstDiv || root).insertAdjacentElement("beforeend", imageElement);
+                    ensureDefaultImageBreak(imageElement);
+                };
+
+                const ensureDefaultImageBreak = (imageElement) => {
+                    if (!imageElement) return;
+                    let nextNode = imageElement.nextSibling;
+                    while (nextNode && nextNode.nodeType === Node.TEXT_NODE && !nextNode.textContent.trim()) {
+                        nextNode = nextNode.nextSibling;
+                    }
+                    if (!nextNode || nextNode.nodeType === Node.TEXT_NODE && !nextNode.textContent.trim()) return;
+                    if (nextNode.nodeName === "BR") return;
+                    if (nextNode.textContent?.trim()) {
+                        imageElement.insertAdjacentHTML("afterend", "<br><br>");
+                    }
+                };
+
+                const hasDefaultImage = Array.from(root.querySelectorAll("img")).some((image) => {
+                    const src = image.getAttribute("src") || image.src || "";
+                    return src.includes(`/vi/${videoId}/maxresdefault.jpg`) || src.includes("maxresdefault.jpg");
+                });
+
+                if (!hasDefaultImage) {
+                    insertAfterFirstLine(imageWrapper(defaultUrl, "Auto thumbnail"));
+                } else {
+                    const existingDefault = Array.from(root.querySelectorAll("img")).find((image) => {
+                        const src = image.getAttribute("src") || image.src || "";
+                        return src.includes(`/vi/${videoId}/maxresdefault.jpg`) || src.includes("maxresdefault.jpg");
+                    });
+                    ensureDefaultImageBreak(existingDefault);
+                }
+
+                const paragraphs = Array.from(root.querySelectorAll("p"));
+                const insertAfterParagraph = (paragraph, imageUrl, altText) => {
+                    if (!paragraph) return false;
+                    paragraph.insertAdjacentElement("afterend", imageWrapper(imageUrl, altText));
+                    return true;
+                };
+
+                const refreshedParagraphs = Array.from(root.querySelectorAll("p")).filter((paragraph) => !paragraph.querySelector("img"));
+                insertAfterParagraph(refreshedParagraphs[2], firstUrl, "Image 1");
+                insertAfterParagraph(refreshedParagraphs[4], secondUrl, "Image 2");
+
+                return root.innerHTML;
+            }
+
+            async function sendToLinastory(payload) {
+                return new Promise((resolve) => {
+                    let settled = false;
+                    const timeoutId = setTimeout(() => {
+                        if (settled) return;
+                        settled = true;
+                        window.removeEventListener("tool-get-post:linastory-status", handleStatus);
+                        resolve(false);
+                    }, 1500);
+                    const handleStatus = (event) => {
+                        if (settled) return;
+                        settled = true;
+                        clearTimeout(timeoutId);
+                        window.removeEventListener("tool-get-post:linastory-status", handleStatus);
+                        resolve(Boolean(event.detail?.success));
+                    };
+                    window.addEventListener("tool-get-post:linastory-status", handleStatus);
+                    try {
+                        window.dispatchEvent(new CustomEvent("tool-get-post:fill-linastory", { detail: payload }));
+                    } catch (error) {
+                        settled = true;
+                        clearTimeout(timeoutId);
+                        window.removeEventListener("tool-get-post:linastory-status", handleStatus);
+                        resolve(false);
+                    }
+                });
+            }
+
+            async function startAutoSelectImages() {
+                const indexes = getSelectedIndexes();
+                if (indexes.length === 0) { alert("Vui lòng tick bài viết muốn tự động chọn ảnh."); return; }
+
+                const button = document.getElementById("autoSelectImagesBtn");
+                const originalHtml = button?.innerHTML || "";
+                if (button) { button.disabled = true; button.innerHTML = '<span class="button-spinner" aria-hidden="true"></span><span>Đang chọn ảnh...</span>'; }
+
+                let updatedCount = 0;
+                let skippedCount = 0;
+                const linastoryArticles = [];
+                try {
+                    const saved = JSON.parse(localStorage.getItem("saved_articles") || "[]");
+                    for (const index of indexes) {
+                        const articleIndex = saved.findIndex((item) => Number(item.index) === Number(index));
+                        if (articleIndex === -1) { skippedCount++; continue; }
+                        const article = saved[articleIndex];
+                        const videoId = article.videoId || extractAutoSelectYouTubeId(article.url);
+                        if (!videoId) { skippedCount++; continue; }
+                        article.videoId = videoId;
+                        const existingVariant = getExistingThumbnailVariant(article.article || "", videoId);
+                        if (!existingVariant) {
+                            article.thumbnailVariant = "maxresdefault";
+                            article.customThumbnailUrl = "";
+                            article.article = injectAutoSelectedImages(article.article || "", videoId);
+                        }
+                        saved[articleIndex] = article;
+                        const card = document.getElementById(`card-${index}`);
+                        const textarea = card?.querySelector("textarea.w-full.min-h-52");
+                        if (textarea) textarea.value = article.article || "";
+                        updateCardThumbnailPreview(index, article);
+                        const publishImage = existingVariant
+                            ? getThumbnailVariantUrl(videoId, existingVariant)
+                            : (article.customThumbnailUrl || getThumbnailVariantUrl(videoId, article.thumbnailVariant || "maxresdefault"));
+                        linastoryArticles.push({
+                            title: article.title || "",
+                            description: article.article || "",
+                            image: publishImage,
+                            videoUrl: "",
+                            autoPublish: document.getElementById("autoPublishCheckbox")?.checked !== false,
+                        });
+                        updatedCount++;
+                    }
+                    localStorage.setItem("saved_articles", JSON.stringify(saved));
+                    renderThumbnailSelectorForActiveCard();
+                    renderStoryPreview();
+
+                    let bridgedCount = 0;
+                    for (let i = 0; i < linastoryArticles.length; i++) {
+                        const delivered = await sendToLinastory(linastoryArticles[i]);
+                        if (delivered) bridgedCount++;
+                        await new Promise((resolve) => setTimeout(resolve, 3500));
+                    }
+
+                    console.log(`Auto selected images for ${updatedCount} articles; Linastory deliveries: ${bridgedCount}; skipped: ${skippedCount}.`);
+                } finally {
+                    if (button) { button.disabled = false; button.innerHTML = originalHtml; }
+                }
+            }
 
             function extractAutoSelectYouTubeId(url) {
                 if (!url || typeof url !== "string") return null;
@@ -1490,12 +1736,8 @@
             }
 
             async function startAutoSelectImages() {
-                const indexes = selectedArticleIndexes.size > 0
-                    ? getSelectedIndexes()
-                    : Array.from(document.querySelectorAll('#output .result-card[id^="card-"]'))
-                        .map((card) => Number(card.id.replace("card-", "")))
-                        .filter((index) => Number.isFinite(index));
-                if (indexes.length === 0) { alert("Không có bài viết để tự động chọn ảnh."); return; }
+                const indexes = getSelectedIndexes();
+                if (indexes.length === 0) { alert("Vui lòng tick bài viết muốn tự động chọn ảnh."); return; }
 
                 const button = document.getElementById("autoSelectImagesBtn");
                 const originalHtml = button?.innerHTML || "";
@@ -1557,6 +1799,7 @@
                     const btn = document.getElementById(`select-btn-${index}`) || document.getElementById(`select-sample-${index}`);
                     if (btn) btn.textContent = "✅";
                 }
+                resetDownloadSelectedStatus();
                 const selectAllBtn = document.getElementById("selectAllBtn");
                 if (selectAllBtn) selectAllBtn.textContent = selectedArticleIndexes.size > 0 ? "Clear" : "Select All";
             }
@@ -1574,6 +1817,7 @@
                     });
                     const selectAllBtn = document.getElementById("selectAllBtn");
                     if (selectAllBtn) selectAllBtn.textContent = "Select All";
+                    resetDownloadSelectedStatus();
                     return;
                 }
                 // select all
@@ -1585,6 +1829,7 @@
                 });
                 const selectAllBtn = document.getElementById("selectAllBtn");
                 if (selectAllBtn) selectAllBtn.textContent = "Clear";
+                resetDownloadSelectedStatus();
             }
 
             function getSelectedIndexes() {
@@ -1634,6 +1879,9 @@
                 }
                 const btn = document.getElementById("downloadSelectedBtn");
                 const originalButtonContent = btn ? btn.innerHTML : "";
+                const selectedIndexesSnapshot = indexes.join(",");
+                let allDownloadsSucceeded = false;
+                selectedDownloadsInProgress = true;
                 if (btn) {
                     btn.disabled = true;
                     btn.innerHTML = '<span class="button-spinner" aria-hidden="true"></span><span>Downloading...</span>';
@@ -1642,18 +1890,26 @@
                 try {
                     for (let i = 0; i < indexes.length; i++) {
                         const idx = indexes[i];
+                        if (btn) {
+                            btn.innerHTML = `<span class="button-spinner" aria-hidden="true"></span><span>Downloading ${i + 1}/${indexes.length}...</span>`;
+                        }
                         storyUpdateMessage(`Converting article ${i + 1}/${indexes.length}...`);
                         setStoryButtonsLoading(true);
-                        await downloadArticleByIndex(idx);
+                        const downloaded = await downloadArticleByIndex(idx);
+                        if (!downloaded) throw new Error(`Article ${idx + 1} could not be downloaded.`);
+                        downloadedArticleIndexes.add(idx);
                     }
+                    allDownloadsSucceeded = true;
                     storyUpdateMessage("All selected downloads completed.", false);
                 } catch (err) {
                     storyUpdateMessage(err.message || "Batch download failed", true);
                 } finally {
                     setStoryButtonsLoading(false);
+                    selectedDownloadsInProgress = false;
+                    const selectionUnchanged = getSelectedIndexes().join(",") === selectedIndexesSnapshot;
                     if (btn) {
                         btn.disabled = false;
-                        btn.innerHTML = originalButtonContent;
+                        btn.innerHTML = allDownloadsSucceeded && selectionUnchanged ? "✅ Download Completed" : originalButtonContent;
                         btn.removeAttribute("aria-busy");
                     }
                 }
@@ -1684,7 +1940,7 @@
                     articleCard.style.marginBottom = "20px";
                     articleCard.innerHTML = `
                                     <div class="card-controls">
-                                        <button id="select-btn-${item.index}" class="icon-btn select" onclick="toggleSelectArticle(${item.index})" title="Select">⬜</button>
+                                        <button id="select-btn-${item.index}" class="icon-btn select" onclick="toggleSelectArticle(${item.index})" title="Select">${selectedArticleIndexes.has(Number(item.index)) ? "✅" : "⬜"}</button>
                                         <button class="icon-btn copy" onclick="copyArticle(${item.index})" title="Copy article">📋</button>
                                         <button class="icon-btn delete" onclick="deleteArticle(${item.index}, '${item.url}')" title="Delete article">🗑</button>
                                     </div>
@@ -1755,6 +2011,7 @@
                 loading.style.display = "flex";
                 resultSection.style.display = "block";
                 output.innerHTML = "";
+                downloadedArticleIndexes.clear();
                 // Clear previous saved articles so new Thumbnail run doesn't append
                 try {
                     localStorage.removeItem("saved_articles");
@@ -1801,7 +2058,7 @@
                                 articleCard.style.marginBottom = "20px";
                                 articleCard.innerHTML = `
                                                 <div class="card-controls">
-                                                    <button id="select-btn-${index}" class="icon-btn select" onclick="toggleSelectArticle(${index})" title="Select">⬜</button>
+                                                    <button id="select-btn-${index}" class="icon-btn select" onclick="toggleSelectArticle(${index})" title="Select">✅</button>
                                                     <button class="icon-btn copy" onclick="copyArticle(${index})" title="Copy article">📋</button>
                                                     <button class="icon-btn delete" onclick="deleteArticle(${index}, '${url}')" title="Delete article">🗑</button>
                                                 </div>
@@ -1858,6 +2115,35 @@
                 });
             }
 
+            let activeBuzzGeneration = null;
+
+            function finishBuzzGeneration(run) {
+                if (run.finished) return;
+                run.finished = true;
+                if (run.cooldownTimeout) clearTimeout(run.cooldownTimeout);
+
+                document.getElementById("loading").style.display = "none";
+                document.getElementById("loading").style.pointerEvents = "";
+                document.getElementById("buzzBtn").disabled = false;
+                document.getElementById("stopBuzzBtn").style.display = "none";
+
+                if (activeBuzzGeneration === run) activeBuzzGeneration = null;
+                run.resolve();
+            }
+
+            function stopBuzzGeneration() {
+                const run = activeBuzzGeneration;
+                if (!run) return;
+
+                run.stopped = true;
+                if (run.cooldownTimeout) {
+                    clearTimeout(run.cooldownTimeout);
+                    run.cooldownTimeout = null;
+                }
+                run.controller.abort();
+                if (!run.inFlight) finishBuzzGeneration(run);
+            }
+
             async function generate() {
                 const urlInput = document.getElementById("youtubeUrl");
                 const urls = urlInput.value
@@ -1871,6 +2157,7 @@
                     alert("Please enter at least one YouTube URL");
                     return;
                 }
+                if (activeBuzzGeneration) return;
 
                 const loading = document.getElementById("loading");
                 const resultSection = document.getElementById("resultSection");
@@ -1878,8 +2165,11 @@
 
                 loading.style.display = "flex";
                 loading.style.pointerEvents = "none";
+                document.getElementById("buzzBtn").disabled = true;
+                document.getElementById("stopBuzzBtn").style.display = "inline-flex";
                 resultSection.style.display = "block";
                 output.innerHTML = "";
+                downloadedArticleIndexes.clear();
                 // Clear previous saved articles so new Buzz run doesn't append
                 try {
                     localStorage.removeItem("saved_articles");
@@ -1894,7 +2184,21 @@
                 const total = urls.length;
 
                 return new Promise((resolve) => {
+                    const run = {
+                        controller: new AbortController(),
+                        cooldownTimeout: null,
+                        finished: false,
+                        inFlight: false,
+                        resolve,
+                        stopped: false,
+                    };
+                    activeBuzzGeneration = run;
+
                     const processNext = async () => {
+                        if (run.stopped || activeBuzzGeneration !== run) {
+                            finishBuzzGeneration(run);
+                            return;
+                        }
                         if (nextIndex >= total) return;
 
                         const currentIndex = nextIndex++;
@@ -1905,9 +2209,11 @@
                             const provider = document.getElementById("ai-provider").value;
                             const generationMode = document.getElementById("generation-mode")?.value || "story";
                             const language = document.getElementById("language-select")?.value || "English";
+                            run.inFlight = true;
                             const res = await fetch("/generate-article", {
                                 method: "POST",
                                 headers: { "Content-Type": "application/json" },
+                                signal: run.controller.signal,
                                 body: JSON.stringify({
                                     youtubeUrl: url,
                                     provider: provider,
@@ -1917,6 +2223,7 @@
                             });
 
                             const data = await res.json();
+                            if (run.stopped) return;
 
                             if (data.error) {
                                 output.innerHTML += `
@@ -1935,7 +2242,7 @@
                                 articleCard.style.marginBottom = "20px";
                                 articleCard.innerHTML = `
                                                 <div class="card-controls">
-                                                    <button id="select-btn-${currentIndex}" class="icon-btn select" onclick="toggleSelectArticle(${currentIndex})" title="Select">⬜</button>
+                                                    <button id="select-btn-${currentIndex}" class="icon-btn select" onclick="toggleSelectArticle(${currentIndex})" title="Select">✅</button>
                                                     <button class="icon-btn copy" onclick="copyArticle(${currentIndex})" title="Copy article">📋</button>
                                                     <button class="icon-btn delete" onclick="deleteArticle(${currentIndex}, '${url}')" title="Delete article">🗑</button>
                                                 </div>
@@ -1960,23 +2267,30 @@
                                 updateStoryNavigationButtons();
                             }
                         } catch (err) {
-                            output.innerHTML += `
+                            if (!run.stopped) {
+                                output.innerHTML += `
                                             <div class="result-card" id="card-${currentIndex}" style="border-color: #ef4444; margin-bottom: 20px;">
                                                 <p style="color: #ef4444; font-weight: bold;">❌ Network error [${currentIndex + 1}]</p>
                                                 <button onclick="retrySingle('${url}', ${currentIndex})" class="btn-primary" style="padding: 8px 16px; font-size: 0.8rem; width: auto;">🔄 Thử lại ngay</button>
                                             </div>
                                         `;
+                            }
                         } finally {
+                            run.inFlight = false;
+                            if (run.stopped) {
+                                finishBuzzGeneration(run);
+                                return;
+                            }
+
                             completedCount++;
                             if (completedCount === total) {
-                                loading.style.display = "none";
-                                loading.style.pointerEvents = "";
                                 console.log("🏁 Batch process completed.");
-                                resolve();
+                                finishBuzzGeneration(run);
                             } else {
                                 // Add a 3-second delay before picking up the next link to avoid rate limits
                                 console.log("⏳ Waiting 3s for API cooldown...");
-                                setTimeout(() => {
+                                run.cooldownTimeout = setTimeout(() => {
+                                    run.cooldownTimeout = null;
                                     processNext();
                                 }, 3000);
                             }
@@ -2028,7 +2342,7 @@
                         saveArticleToLocalStorage(index, url, data.title, data.players, data.videoId, finalArticle);
                         card.innerHTML = `
                                         <div class="card-controls">
-                                            <button id="select-btn-${index}" class="icon-btn select" onclick="toggleSelectArticle(${index})" title="Select">⬜</button>
+                                            <button id="select-btn-${index}" class="icon-btn select" onclick="toggleSelectArticle(${index})" title="Select">✅</button>
                                             <button class="icon-btn copy" onclick="copyArticle(${index})" title="Copy article">📋</button>
                                             <button class="icon-btn delete" onclick="deleteArticle(${index}, '${url}')" title="Delete article">🗑</button>
                                         </div>

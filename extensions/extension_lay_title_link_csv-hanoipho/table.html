@@ -1,0 +1,895 @@
+<!DOCTYPE html>
+<html lang="vi">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Danh sách bài viết</title>
+        <style>
+            * {
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box;
+            }
+
+            body {
+                font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+                background: #f8fafc;
+                min-height: 100vh;
+                padding: 20px;
+            }
+
+            .container {
+                max-width: 1500px;
+                margin: 0 auto;
+                background: white;
+                border-radius: 12px;
+                box-shadow: 0 4px 6px rgba(0, 0, 0, 0.07);
+                overflow: hidden;
+            }
+
+            .header {
+                background: #334155;
+                color: white;
+                padding: 15px;
+                text-align: center;
+            }
+
+            .header h1 {
+                font-size: 1.8rem;
+                margin-bottom: 5px;
+                font-weight: 700;
+            }
+
+            .header p {
+                opacity: 0.9;
+                font-size: 0.9rem;
+            }
+
+            .controls {
+                padding: 15px 20px;
+                background: #f8fafc;
+                border-bottom: 1px solid #e2e8f0;
+            }
+
+            .control-group {
+                margin-bottom: 12px;
+            }
+
+            .control-group:last-child {
+                margin-bottom: 0;
+            }
+
+            .control-group label {
+                display: block;
+                font-weight: 600;
+                color: #374151;
+                margin-bottom: 6px;
+                font-size: 0.9rem;
+            }
+
+            .button-row {
+                display: flex;
+                gap: 8px;
+                flex-wrap: wrap;
+            }
+
+            .btn {
+                padding: 8px 16px;
+                border: none;
+                border-radius: 6px;
+                cursor: pointer;
+                font-size: 14px;
+                font-weight: 500;
+                transition: all 0.3s ease;
+                display: flex;
+                align-items: center;
+                gap: 6px;
+            }
+
+            .btn-primary {
+                background: #475569;
+                color: white;
+            }
+
+            .btn-primary:hover {
+                background: #334155;
+                transform: translateY(-1px);
+                box-shadow: 0 4px 12px rgba(71, 85, 105, 0.3);
+            }
+
+            .btn-secondary {
+                background: #059669;
+                color: white;
+            }
+
+            .btn-secondary:hover {
+                background: #047857;
+                transform: translateY(-1px);
+                box-shadow: 0 4px 12px rgba(5, 150, 105, 0.3);
+            }
+
+            .btn-danger {
+                background: #dc2626;
+                color: white;
+            }
+
+            .btn-danger:hover {
+                background: #b91c1c;
+                transform: translateY(-1px);
+                box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
+            }
+
+            .table-container {
+                padding: 30px;
+                overflow-x: auto;
+            }
+
+            table {
+                width: 100%;
+                border-collapse: collapse;
+                border-radius: 12px;
+                overflow: hidden;
+                box-shadow: 0 4px 6px rgba(0, 0, 0, 0.07);
+            }
+
+            th {
+                background: #475569;
+                color: white;
+                padding: 16px 12px;
+                text-align: left;
+                font-weight: 600;
+                font-size: 0.9rem;
+            }
+
+            td {
+                padding: 14px 12px;
+                border-bottom: 1px solid #e5e7eb;
+                vertical-align: middle;
+            }
+
+            tr:hover {
+                background: #f9fafb;
+            }
+
+            tr:last-child td {
+                border-bottom: none;
+            }
+
+            .checkbox-cell {
+                text-align: center;
+                width: 50px;
+            }
+
+            .checkbox-cell input[type="checkbox"] {
+                transform: scale(1.3);
+                cursor: pointer;
+            }
+
+            .actions-cell {
+                width: 120px;
+            }
+
+            .empty-state {
+                text-align: center;
+                padding: 60px 20px;
+                color: #6b7280;
+            }
+
+            .empty-state .icon {
+                font-size: 4rem;
+                margin-bottom: 16px;
+            }
+
+            .empty-state h3 {
+                font-size: 1.5rem;
+                margin-bottom: 8px;
+                color: #374151;
+            }
+
+            .toast {
+                visibility: hidden;
+                min-width: 320px;
+                max-width: 450px;
+                margin-left: -160px;
+                background: white;
+                color: #374151;
+                border-radius: 12px;
+                padding: 0;
+                position: fixed;
+                z-index: 9999;
+                left: 50%;
+                bottom: 30px;
+                font-size: 15px;
+                font-weight: 500;
+                opacity: 0;
+                transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+                box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+                border: 1px solid #e5e7eb;
+            }
+
+            .toast.show {
+                visibility: visible;
+                opacity: 1;
+                transform: translateY(-10px);
+            }
+
+            .toast-content {
+                padding: 16px 20px;
+                display: flex;
+                align-items: center;
+                gap: 12px;
+            }
+
+            .toast-icon {
+                font-size: 20px;
+                flex-shrink: 0;
+            }
+
+            .toast-message {
+                flex: 1;
+                line-height: 1.4;
+            }
+
+            .toast-button {
+                background: #059669;
+                color: white;
+                border: none;
+                padding: 8px 16px;
+                border-radius: 6px;
+                cursor: pointer;
+                font-weight: 600;
+                font-size: 13px;
+                transition: all 0.2s ease;
+                flex-shrink: 0;
+            }
+
+            .toast-button:hover {
+                background: #047857;
+                transform: translateY(-1px);
+            }
+
+            .toast-button:active {
+                transform: translateY(0);
+            }
+
+            .toast-progress {
+                height: 3px;
+                background: #f3f4f6;
+                border-radius: 0 0 12px 12px;
+                overflow: hidden;
+                position: relative;
+            }
+
+            .toast-progress-bar {
+                height: 100%;
+                background: linear-gradient(90deg, #ef4444 0%, #dc2626 100%);
+                transition: width 1s linear;
+                border-radius: 0 0 12px 12px;
+            }
+
+            .toast-countdown {
+                color: #ef4444;
+                font-weight: 700;
+                font-size: 16px;
+            }
+
+            .toast.success {
+                border-left: 4px solid #059669;
+            }
+
+            .toast.success .toast-icon {
+                color: #059669;
+            }
+
+            .toast.warning {
+                border-left: 4px solid #f59e0b;
+            }
+
+            .toast.warning .toast-icon {
+                color: #f59e0b;
+            }
+
+            .toast.error {
+                border-left: 4px solid #ef4444;
+            }
+
+            .toast.error .toast-icon {
+                color: #ef4444;
+            }
+
+            .toast.show {
+                visibility: visible;
+                opacity: 1;
+                transform: translateY(-10px);
+            }
+            .copy-select {
+                padding: 8px 10px;
+                border: 2px solid #e2e8f0;
+                border-radius: 6px;
+                font-size: 14px;
+                font-weight: 500;
+                background: white;
+                color: #374151;
+                cursor: pointer;
+                transition: all 0.3s ease;
+                width: 180px;
+                margin-bottom: 8px;
+            }
+
+            .copy-select:focus {
+                outline: none;
+                border-color: #475569;
+                box-shadow: 0 0 0 3px rgba(71, 85, 105, 0.1);
+            }
+
+            /* Custom copy modal */
+            .token-row {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 8px;
+                margin-bottom: 4px;
+            }
+            .token-btn {
+                padding: 6px 12px;
+                border: 2px solid #cbd5e1;
+                border-radius: 6px;
+                background: #f8fafc;
+                color: #334155;
+                font-size: 13px;
+                font-weight: 600;
+                cursor: pointer;
+                transition: all 0.2s ease;
+            }
+            .token-btn:hover {
+                border-color: #475569;
+                background: #e2e8f0;
+            }
+            .custom-preview {
+                margin: 0;
+                padding: 12px;
+                background: #f8fafc;
+                border: 2px dashed #e2e8f0;
+                border-radius: 8px;
+                font-family: Consolas, "Courier New", monospace;
+                font-size: 13px;
+                white-space: pre-wrap;
+                word-break: break-word;
+                color: #334155;
+                max-height: 200px;
+                overflow-y: auto;
+            }
+            /* Modal Styles */
+            .modal {
+                display: none;
+                position: fixed;
+                z-index: 10000;
+                left: 0;
+                top: 0;
+                width: 100%;
+                height: 100%;
+                background-color: rgba(0, 0, 0, 0.6);
+                backdrop-filter: blur(4px);
+            }
+
+            .modal.show {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+
+            .modal-content {
+                background: white;
+                border-radius: 16px;
+                padding: 0;
+                width: 90%;
+                max-width: 900px;
+                max-height: 90vh;
+                overflow-y: auto;
+                box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+                animation: modalSlideIn 0.3s ease-out;
+            }
+
+            @keyframes modalSlideIn {
+                from {
+                    opacity: 0;
+                    transform: translateY(-20px);
+                }
+                to {
+                    opacity: 1;
+                    transform: translateY(0);
+                }
+            }
+
+            .modal-header {
+                background: linear-gradient(135deg, #475569 0%, #334155 100%);
+                color: white;
+                padding: 20px 24px;
+                border-radius: 16px 16px 0 0;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+            }
+
+            .modal-header h2 {
+                margin: 0;
+                font-size: 1.5rem;
+                font-weight: 700;
+            }
+
+            .close-btn {
+                background: rgba(255, 255, 255, 0.2);
+                border: none;
+                color: white;
+                font-size: 24px;
+                cursor: pointer;
+                width: 36px;
+                height: 36px;
+                border-radius: 8px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                transition: all 0.2s ease;
+            }
+
+            .close-btn:hover {
+                background: rgba(255, 255, 255, 0.3);
+                transform: rotate(90deg);
+            }
+
+            .modal-body {
+                padding: 24px;
+            }
+
+            .input-section {
+                margin-bottom: 20px;
+            }
+
+            .input-section label {
+                display: block;
+                font-weight: 600;
+                color: #374151;
+                margin-bottom: 8px;
+                font-size: 0.95rem;
+            }
+
+            .input-section textarea {
+                width: 100%;
+                min-height: 150px;
+                padding: 12px;
+                border: 2px solid #e2e8f0;
+                border-radius: 8px;
+                font-size: 14px;
+                font-family: inherit;
+                resize: vertical;
+                transition: border-color 0.2s ease;
+            }
+
+            .input-section textarea:focus {
+                outline: none;
+                border-color: #475569;
+                box-shadow: 0 0 0 3px rgba(71, 85, 105, 0.1);
+            }
+
+            .process-btn {
+                width: 100%;
+                padding: 12px;
+                background: linear-gradient(135deg, #059669 0%, #047857 100%);
+                color: white;
+                border: none;
+                border-radius: 8px;
+                font-size: 16px;
+                font-weight: 600;
+                cursor: pointer;
+                transition: all 0.3s ease;
+            }
+
+            .process-btn:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 10px 20px rgba(5, 150, 105, 0.3);
+            }
+
+            .results-section {
+                margin-top: 24px;
+                display: none;
+            }
+
+            .results-section.show {
+                display: block;
+            }
+
+            .article-card {
+                background: #f8fafc;
+                border: 2px solid #e2e8f0;
+                border-radius: 12px;
+                padding: 20px;
+                margin-bottom: 16px;
+            }
+
+            .article-card h3 {
+                color: #475569;
+                font-size: 1.2rem;
+                margin-bottom: 16px;
+                display: flex;
+                align-items: center;
+                gap: 8px;
+            }
+
+            .content-box {
+                background: white;
+                border: 1px solid #e2e8f0;
+                border-radius: 8px;
+                padding: 12px;
+                margin-bottom: 12px;
+            }
+
+            .content-label {
+                font-weight: 600;
+                color: #64748b;
+                font-size: 0.85rem;
+                margin-bottom: 6px;
+            }
+
+            .content-text {
+                color: #1e293b;
+                line-height: 1.6;
+                word-wrap: break-word;
+            }
+
+            .copy-buttons {
+                display: flex;
+                gap: 8px;
+                flex-wrap: wrap;
+            }
+
+            .copy-btn {
+                padding: 8px 16px;
+                background: #475569;
+                color: white;
+                border: none;
+                border-radius: 6px;
+                font-size: 13px;
+                font-weight: 500;
+                cursor: pointer;
+                transition: all 0.2s ease;
+                display: flex;
+                align-items: center;
+                gap: 6px;
+            }
+
+            .copy-btn:hover {
+                background: #334155;
+                transform: translateY(-1px);
+            }
+
+            .copy-all-section {
+                margin-bottom: 20px;
+                padding: 16px;
+                background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+                border-radius: 12px;
+                border: 2px solid #0ea5e9;
+            }
+
+            .copy-all-section h4 {
+                margin: 0 0 12px 0;
+                color: #0c4a6e;
+                font-size: 1rem;
+                display: flex;
+                align-items: center;
+                gap: 8px;
+            }
+
+            .copy-all-buttons {
+                display: flex;
+                gap: 10px;
+                flex-wrap: wrap;
+            }
+
+            .copy-all-btn {
+                flex: 1;
+                min-width: 150px;
+                padding: 10px 18px;
+                background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
+                color: white;
+                border: none;
+                border-radius: 8px;
+                font-size: 14px;
+                font-weight: 600;
+                cursor: pointer;
+                transition: all 0.3s ease;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 8px;
+            }
+
+            .copy-all-btn:hover {
+                background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+                transform: translateY(-2px);
+                box-shadow: 0 8px 16px rgba(14, 165, 233, 0.3);
+            }
+
+            .copy-all-btn:active {
+                transform: translateY(0);
+            }
+
+            @media (max-width: 768px) {
+                body {
+                    padding: 10px;
+                }
+
+                .header h1 {
+                    font-size: 2rem;
+                }
+
+                .button-row {
+                    flex-direction: column;
+                }
+
+                .btn {
+                    justify-content: center;
+                }
+
+                .controls {
+                    padding: 20px;
+                }
+
+                .table-container {
+                    padding: 20px;
+                }
+                .copy-select {
+                    width: 180px;
+                }
+                th,
+                td {
+                    padding: 10px 8px;
+                    font-size: 0.85rem;
+                }
+
+                .modal-content {
+                    width: 95%;
+                    max-height: 95vh;
+                }
+
+                .modal-header h2 {
+                    font-size: 1.2rem;
+                }
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <div class="header">
+                <h1>📝 Danh sách bài viết</h1>
+                <p>Quản lý và theo dõi các bài viết của bạn</p>
+            </div>
+
+            <div class="controls">
+                <div class="control-group">
+                    <label>📋 Sao chép dữ liệu:</label>
+                    <div class="copy-controls">
+                        <select id="copyMode" class="copy-select" style="margin-bottom: 12px">
+                            <option value="all">Tất cả dữ liệu</option>
+                            <option value="selected">Chỉ các dòng đã chọn</option>
+                        </select>
+                        <div class="button-row" id="copyButtons">
+                            <button id="copyNumbers" class="btn btn-primary">🔢 Sao chép số thứ tự</button>
+                            <button id="copyTitles" class="btn btn-primary" style="display: none">📄 Sao chép tiêu đề</button>
+                            <button id="copySummaries" class="btn btn-primary" style="display: none">📝 Sao chép tóm tắt</button>
+                            <button id="copyDataDesc" class="btn btn-primary" style="display: none">📋 Sao chép theo des</button>
+                            <button id="copyLinks" class="btn btn-primary" style="display: none">🔗 Sao chép liên kết</button>
+                            <button id="copyShortlinks" class="btn btn-primary" style="display: none">🧷 Sao chép shortlink</button>
+                            <button
+                                id="copyCustom"
+                                class="btn btn-primary"
+                                title="Chuột trái: sao chép theo mẫu custom · Chuột phải: tùy chỉnh mẫu"
+                            >⚙️ Sao chép custom</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="control-group">
+                    <label>📚 Chủ đề:</label>
+                    <select id="topicPicker" class="copy-select" style="margin-bottom: 12px">
+                        <option value="">Chọn chủ đề</option>
+                        <option value="topic1" style="background-color: #ffb6c1">Chủ đề 1 (Light Pink)</option>
+                        <option value="topic2" style="background-color: #98fb98">Chủ đề 2 (Mint Green)</option>
+                        <option value="topic3" style="background-color: #87ceeb">Chủ đề 3 (Sky Blue)</option>
+                        <option value="topic4" style="background-color: #dda0dd">Chủ đề 4 (Plum)</option>
+                        <option value="topic5" style="background-color: #f4a460">Chủ đề 5 (Sandy Brown)</option>
+                    </select>
+                </div>
+                <div class="control-group">
+                    <label>⚙️ Thao tác:</label>
+                    <div class="button-row">
+                        <button id="viewTable" class="btn btn-secondary">👁️ Xem danh sách</button>
+                        <button id="deleteBtn" class="btn btn-danger">🗑️ Xoá</button>
+                        <button id="sortCheckedBtn" class="btn btn-secondary">Sắp xếp</button>
+                        <button id="openSplitModal" class="btn btn-primary">✂️ Tách bài viết</button>
+                        <button id="restoreBtn" class="btn" style="display: none">♻️ Khôi phục</button>
+                    </div>
+                </div>
+                <div class="control-group">
+                    <label>🧩 Cột tùy chọn:</label>
+                    <div class="button-row" style="align-items: center">
+                        <label style="display: inline-flex; align-items: center; gap: 8px">
+                            <input type="checkbox" id="showEditLinkCol" />
+                            Hiện cột "Link chỉnh sửa"
+                        </label>
+                        <label style="display: inline-flex; align-items: center; gap: 8px">
+                            <input type="checkbox" id="showYoutubeLinkCol" />
+                            Hiện cột "Link YouTube"
+                        </label>
+                    </div>
+                </div>
+                <div class="control-group">
+                    <label>📝 Tóm tắt bài viết:</label>
+                    <div class="button-row" style="align-items: center">
+                        <label style="display: inline-flex; align-items: center; gap: 8px">
+                            <input type="checkbox" id="summaryFromLast" checked />
+                            Lấy summary từ đoạn cuối (bỏ chọn = lấy đoạn đầu)
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="table-container">
+                <table id="dataTable">
+                    <thead>
+                        <tr>
+                            <th>STT</th>
+                            <th>Tiêu đề</th>
+                            <th>Tóm tắt</th>
+                            <th>Liên kết</th>
+                            <th class="col-shortlink" style="display: none">Shortlink</th>
+                            <th class="col-edit-link" style="display: none">Link chỉnh sửa</th>
+                            <th class="col-youtube-link" style="display: none">Link YouTube</th>
+                            <th>Ảnh</th>
+                            <!--   <th>Người đóng góp</th> -->
+                            <th>Hành động</th>
+                            <th class="checkbox-cell">
+                                <input id="checkAll" type="checkbox" title="Chọn tất cả" />
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Dữ liệu sẽ được thêm vào đây -->
+                    </tbody>
+                </table>
+
+                <div class="empty-state" id="emptyState">
+                    <div class="icon">📄</div>
+                    <h3>Chưa có bài viết nào</h3>
+                    <p>Thêm bài viết đầu tiên để bắt đầu quản lý danh sách của bạn</p>
+                </div>
+            </div>
+        </div>
+
+        <div id="toast" class="toast"></div>
+
+        <!-- Modal tùy chỉnh mẫu sao chép custom -->
+        <div id="customCopyModal" class="modal">
+            <div class="modal-content" style="max-width: 680px">
+                <div class="modal-header">
+                    <h2>⚙️ Tùy chỉnh mẫu sao chép</h2>
+                    <button class="close-btn" id="closeCustomCopyModal">×</button>
+                </div>
+                <div class="modal-body">
+                    <div class="input-section">
+                        <label>⚡ Mẫu có sẵn — bấm để dùng ngay:</label>
+                        <div class="token-row">
+                            <button
+                                class="token-btn"
+                                id="presetExcel"
+                                title="Tiêu đề và shortlink vào 2 ô Excel cùng hàng"
+                            >📊 Excel: tiêu đề ⇥ shortlink</button>
+                            <button
+                                class="token-btn"
+                                id="presetLine"
+                                title="Tiêu đề rồi shortlink ở dòng dưới"
+                            >📄 Xdòng: tiêu đề → shortlink</button>
+                            <button
+                                class="token-btn"
+                                id="presetFullStory"
+                                title="Tiêu đề, Full Story và shortlink trong cùng hàng"
+                            >📖 Full Story 👉</button>
+                            <button
+                                class="token-btn"
+                                id="presetVollstandigeGeschichte"
+                                title="Tiêu đề, Vollständige Geschichte và shortlink trong cùng hàng"
+                            >📖 Vollständige Geschichte 👉</button>
+                        </div>
+                    </div>
+                    <div class="input-section">
+                        <label
+                            >🧱 Thẻ có sẵn — bấm để chèn vào mẫu (⇥ Tab dùng để
+                            tách ô Excel):</label
+                        >
+                        <div class="token-row">
+                            <button class="token-btn" data-token="{stt}">{stt}</button>
+                            <button
+                                class="token-btn"
+                                data-token="{ngay}"
+                                title="Ngày tháng hôm nay, vd: 2310"
+                            >{ngay} 📅</button>
+                            <button class="token-btn" data-token="{title}">{title}</button>
+                            <button class="token-btn" data-token="{summary}">{summary}</button>
+                            <button class="token-btn" data-token="{link}">{link}</button>
+                            <button class="token-btn" data-token="{shortlink}">{shortlink}</button>
+                            <button class="token-btn" data-token="{content}">{content}</button>
+                            <button class="token-btn" data-token="Full Story 👉">Full Story 👉</button>
+                            <button class="token-btn" data-token="Vollständige Geschichte 👉">Vollständige Geschichte 👉</button>
+                            <button
+                                class="token-btn"
+                                data-token="&#9;"
+                                title="Chèn Tab để tách sang ô Excel bên cạnh"
+                            >⇥ Tab (ô Excel)</button>
+                        </div>
+                    </div>
+                    <div class="input-section">
+                        <label
+                            >📝 Mẫu sao chép — gõ chữ tự do (vd: "full story") giữa
+                            các thẻ. Tab = ô Excel bên cạnh, Enter = dòng mới
+                            Excel:</label
+                        >
+                        <textarea
+                            id="customTemplateInput"
+                            rows="5"
+                            placeholder="{title}&#9;full story&#9;{shortlink}"
+                        ></textarea>
+                    </div>
+                    <div class="input-section">
+                        <label>👀 Xem trước (dòng đầu tiên):</label>
+                        <pre id="customCopyPreview" class="custom-preview"></pre>
+                    </div>
+                    <div class="button-row">
+                        <button class="process-btn" id="saveCustomTemplate">
+                            💾 Lưu mẫu
+                        </button>
+                        <button class="btn btn-secondary" id="resetCustomTemplate">
+                            ♻️ Mặc định
+                        </button>
+                    </div>
+                    <p style="color: #64748b; font-size: 13px; margin: 10px 0 0">
+                        ℹ️ ⇥ Tab = ô Excel bên cạnh · ~nội dung~ = gom vào 1 ô
+                        (kể cả Enter/Tab bên trong) · Enter = xuống dòng trong ô
+                        · Chuột trái nút "Sao chép custom" = sao chép theo mẫu
+                        · Chuột phải = mở cửa sổ này.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal tách bài viết -->
+        <div id="splitModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>✂️ Tách bài viết</h2>
+                    <button class="close-btn" id="closeModal">×</button>
+                </div>
+                <div class="modal-body">
+                    <div class="input-section">
+                        <label>📝 Dán nội dung vào đây:</label>
+                        <textarea
+                            id="articleInput"
+                            placeholder="Dán nội dung bài viết của bạn vào đây...&#10;&#10;Ví dụ:&#10;THE STORY THEY CARRIED HOME IN SILENCE — What the Band of Brothers Cast Learned Playing Men Who Never Truly Returned&#10;Wearing the uniform was the easy part. Carrying the weight of real lives proved harder..."
+                        ></textarea>
+                    </div>
+                    <button class="process-btn" id="processBtn">🔄 Tách bài viết</button>
+
+                    <div class="results-section" id="resultsSection">
+                        <!-- Copy All Section -->
+                        <div class="copy-all-section" id="copyAllSection" style="display: none">
+                            <h4>📋 Copy tất cả</h4>
+                            <div class="copy-all-buttons">
+                                <button class="copy-all-btn" id="copyAllTitles">📄 Copy All Titles</button>
+                                <button class="copy-all-btn" id="copyAllContent">📝 Copy All Content</button>
+                            </div>
+                        </div>
+                        <!-- Các bài viết sẽ được thêm động vào đây -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <script src="table.js"></script>
+    </body>
+</html>

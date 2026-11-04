@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Content Editor</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 20px;
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 20px;
+      }
+      .container {
+        display: flex;
+        gap: 20px;
+      }
+      .left-section,
+      .right-section {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+        min-width: 0; /* Prevent flex items from overflowing */
+        max-width: 50%; /* Ensure each section takes exactly half the space */
+      }
+
+      /* Handle content overflow */
+      #descContent,
+      #updatedContent {
+        overflow-wrap: break-word;
+        word-wrap: break-word;
+        overflow: auto;
+        max-height: 70vh; /* Limit height and add scrolling if needed */
+      }
+
+      /* Ensure images don't overflow their containers */
+      #descContent img,
+      #updatedContent img {
+        max-width: 100%;
+        height: auto;
+      }
+      .content-section {
+        border: 1px solid #ccc;
+        padding: 15px;
+        border-radius: 5px;
+      }
+      .desc-section {
+        background-color: #f9f9f9;
+      }
+      .input-section {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+      textarea {
+        flex: 1;
+        padding: 8px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        resize: vertical;
+        min-height: 100px;
+        font-family: inherit;
+        font-size: inherit;
+      }
+      button {
+        padding: 8px 16px;
+        background-color: #4caf50;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+      }
+      button:hover {
+        background-color: #45a049;
+      }
+      .media-preview {
+        max-width: 100%;
+        margin: 10px 0;
+      }
+      iframe {
+        width: 100%;
+        min-height: 400px;
+        border: none;
+      }
+      .section-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 10px;
+      }
+      .copy-btn {
+        background-color: #2196f3;
+        font-size: 14px;
+        padding: 5px 10px;
+      }
+      .copy-btn:hover {
+        background-color: #1976d2;
+      }
+      .names-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        padding: 10px;
+      }
+      .name-tag {
+        background-color: #e3f2fd;
+        color: #1976d2;
+        padding: 4px 12px;
+        border-radius: 16px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        font-size: 14px;
+        border: 1px solid #90caf9;
+      }
+      .name-tag:hover {
+        background-color: #1976d2;
+        color: white;
+        border-color: #1976d2;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="left-section">
+        <div class="content-section names-section">
+          <div class="section-header">
+            <h3>Names Found</h3>
+          </div>
+          <div id="namesList" class="names-list"></div>
+        </div>
+        <div class="content-section teams-section">
+          <div class="section-header">
+            <h3>Teams Found</h3>
+          </div>
+          <div id="teamsList" class="names-list"></div>
+        </div>
+        <div class="content-section desc-section">
+          <div class="section-header">
+            <h3>Description Content</h3>
+            <button class="copy-btn" id="copyDescBtn">Copy Content</button>
+          </div>
+          <div id="descContent"></div>
+        </div>
+
+        <!--    <div class="content-section">
+          <h3>Image Preview</h3>
+          <img id="imagePreview" class="media-preview" src="" alt="Preview" />
+        </div> -->
+
+        <!--    <div class="content-section">
+          <h3>Iframe Content</h3>
+          <div id="iframeContainer"></div>
+        </div> -->
+      </div>
+
+      <div class="right-section">
+        <div class="input-section">
+          <textarea
+            id="newInput"
+            placeholder="Enter new text..."
+            rows="5"
+          ></textarea>
+          <div style="margin: 10px 0">
+            <label style="font-weight: bold">Image Position:</label>
+            <div style="margin-top: 5px">
+              <label>
+                <input type="radio" name="imagePosition" value="1" /> After
+                Paragraph 1
+              </label>
+              <label style="margin-left: 10px">
+                <input type="radio" name="imagePosition" value="2" checked />
+                After Paragraph 2
+              </label>
+              <label style="margin-left: 10px">
+                <input type="radio" name="imagePosition" value="3" /> After
+                Paragraph 3
+              </label>
+            </div>
+          </div>
+          <button id="updateButton">Update Content</button>
+        </div>
+
+        <div class="content-section">
+          <div class="section-header">
+            <h3>Updated Content Preview</h3>
+            <button class="copy-btn" id="copyUpdatedBtn">Copy Content</button>
+          </div>
+          <div id="updatedContent"></div>
+        </div>
+      </div>
+    </div>
+    <script src="editor.js"></script>
+  </body>
+</html>

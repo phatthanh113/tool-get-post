@@ -1,0 +1,420 @@
+<!doctype html>
+<html>
+    <head>
+        <title>Xopboo Articles</title>
+        <style>
+            body {
+                font-family: Arial, sans-serif;
+                margin: 20px;
+                min-width: 800px;
+            }
+            .container {
+                max-width: 1200px;
+                margin: 0 auto;
+            }
+            table {
+                width: 100%;
+                border-collapse: collapse;
+                margin-bottom: 20px;
+            }
+            th,
+            td {
+                padding: 12px;
+                text-align: left;
+                border-bottom: 1px solid #ddd;
+            }
+
+            /* STT column specific styles */
+            th:nth-child(2),
+            td:nth-child(2) {
+                width: 60px;
+                text-align: center;
+                font-weight: bold;
+                background-color: #fafafa;
+            }
+
+            th:nth-child(2) {
+                background-color: #e8e8e8;
+                color: #555;
+            }
+            th {
+                background-color: #f5f5f5;
+            }
+            tr:hover {
+                background-color: #f9f9f9;
+            }
+            .btn {
+                padding: 8px 16px;
+                margin: 4px;
+                border: none;
+                border-radius: 4px;
+                cursor: pointer;
+                font-size: 14px;
+            }
+            .btn-edit {
+                background-color: #4caf50;
+                color: white;
+            }
+            .btn-copy {
+                background-color: #2196f3;
+                color: white;
+            }
+            .btn-delete {
+                background-color: #f44336;
+                color: white;
+            }
+            .action-buttons {
+                margin-bottom: 20px;
+                display: flex;
+                gap: 10px;
+            }
+            .btn-copy-all {
+                background-color: #ff9800;
+                color: white;
+            }
+            .btn-delete-all {
+                background-color: #f44336;
+                color: white;
+            }
+            .status-bar {
+                margin-bottom: 20px;
+                padding: 10px;
+                background-color: #f5f5f5;
+                border-radius: 4px;
+            }
+            .toast {
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                padding: 12px 24px;
+                background-color: #f44336;
+                color: white;
+                border-radius: 4px;
+                box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+                opacity: 0;
+                transition: opacity 0.3s ease-in-out;
+                z-index: 1000;
+            }
+            .toast.show {
+                opacity: 1;
+            }
+            .article-image {
+                max-width: 100px;
+                max-height: 50px;
+                object-fit: cover;
+                border-radius: 4px;
+            }
+            .no-image {
+                width: 200px;
+                height: 120px;
+                background-color: #f5f5f5;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                color: #999;
+                font-size: 14px;
+                border-radius: 4px;
+            }
+            .name-tag {
+                display: inline-block;
+                background-color: #e3f2fd;
+                color: #1976d2;
+                padding: 2px 6px;
+                margin: 1px;
+                border-radius: 3px;
+                font-size: 11px;
+                cursor: pointer;
+                text-decoration: none;
+                border: 1px solid #bbdefb;
+            }
+            .name-tag:hover {
+                background-color: #bbdefb;
+                color: #0d47a1;
+            }
+            .names-container {
+                max-width: 150px;
+                max-height: 60px;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+
+            /* Modal styles */
+            .modal {
+                position: fixed;
+                z-index: 1000;
+                left: 0;
+                top: 0;
+                width: 100%;
+                height: 100%;
+                background-color: rgba(0, 0, 0, 0.5);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+
+            .modal-content {
+                background-color: white;
+                border-radius: 8px;
+                box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+                position: relative;
+            }
+
+            .modal-header {
+                padding: 20px;
+                border-bottom: 1px solid #ddd;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+            }
+
+            .modal-header h2 {
+                margin: 0;
+                color: #333;
+            }
+
+            .close {
+                font-size: 28px;
+                font-weight: bold;
+                cursor: pointer;
+                color: #aaa;
+                line-height: 1;
+            }
+
+            .close:hover {
+                color: #000;
+            }
+
+            .modal-body {
+                padding: 20px;
+            }
+
+            .image-container.selected {
+                border-color: #2196f3 !important;
+                background-color: #f3f8ff;
+            }
+
+            .image-container:hover {
+                border-color: #bbb;
+            }
+
+            /* Loading spinner animation */
+            @keyframes spin {
+                0% {
+                    transform: rotate(0deg);
+                }
+                100% {
+                    transform: rotate(360deg);
+                }
+            }
+
+            /* Completed row styling */
+            .row-completed {
+                background-color: #f5f5f5 !important;
+                opacity: 0.7;
+            }
+
+            .row-completed td {
+                color: #666 !important;
+            }
+
+            .row-completed .btn {
+                opacity: 0.6;
+            }
+
+            /* Loading button styles */
+            .btn-loading {
+                background-color: #ff9800 !important;
+                color: white !important;
+                animation: pulse 1s infinite;
+                position: relative;
+                overflow: hidden;
+            }
+
+            .btn-loading::before {
+                content: "";
+                position: absolute;
+                top: 0;
+                left: -100%;
+                width: 100%;
+                height: 100%;
+                background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+                animation: shimmer 2s infinite;
+            }
+
+            @keyframes pulse {
+                0% {
+                    transform: scale(1);
+                }
+                50% {
+                    transform: scale(1.05);
+                }
+                100% {
+                    transform: scale(1);
+                }
+            }
+
+            @keyframes shimmer {
+                0% {
+                    left: -100%;
+                }
+                100% {
+                    left: 100%;
+                }
+            }
+
+            /* Bulk Paste Modal Styles */
+            .bulk-paste-modal {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background-color: rgba(0, 0, 0, 0.5);
+                z-index: 1000;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                padding: 20px;
+                box-sizing: border-box;
+            }
+
+            .bulk-paste-content {
+                background: white;
+                padding: 25px;
+                border-radius: 8px;
+                width: 90%;
+                max-width: 650px;
+                max-height: 85vh;
+                overflow-y: auto;
+                box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+                margin: auto;
+                position: relative;
+            }
+
+            .bulk-paste-textarea {
+                width: 100%;
+                height: 320px;
+                padding: 12px;
+                border: 2px solid #ddd;
+                border-radius: 6px;
+                font-family: "Consolas", "Monaco", "Courier New", monospace;
+                font-size: 13px;
+                line-height: 1.4;
+                resize: vertical;
+                transition: border-color 0.3s ease;
+            }
+
+            .bulk-paste-textarea:focus {
+                outline: none;
+                border-color: #4caf50;
+                box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.1);
+            }
+
+            .bulk-paste-buttons {
+                margin-top: 20px;
+                display: flex;
+                gap: 12px;
+                justify-content: flex-end;
+            }
+
+            .bulk-paste-cancel {
+                background-color: #666;
+                color: white;
+            }
+
+            .bulk-paste-cancel:hover {
+                background-color: #555;
+            }
+
+            .bulk-paste-confirm {
+                background-color: #4caf50;
+                color: white;
+            }
+
+            .bulk-paste-confirm:hover {
+                background-color: #45a049;
+            }
+        </style>
+    </head>
+    <body>
+        <div id="toast" class="toast"></div>
+        <div class="container">
+            <h1>Xopboo Articles</h1>
+            <div class="status-bar">
+                Total articles:
+                <span id="total-articles">0</span>
+            </div>
+            <div class="action-buttons">
+                <button id="copyAllBtn" class="btn btn-copy-all">Copy All Content</button>
+                <button id="copyAllTitleBtn" class="btn btn-copy-all" style="background-color: #9c27b0">Copy All Titles</button>
+                <button id="copySelectedBtn" class="btn btn-copy" style="background-color: #2196f3; display: none">Copy Selected</button>
+                <button id="copySelectedTitlesBtn" class="btn btn-copy" style="background-color: #9c27b0">Copy Selected Titles</button>
+                <button id="deleteSelectedBtn" class="btn btn-delete">Delete Selected</button>
+                <button id="deleteAllBtn" class="btn btn-delete-all">Delete All</button>
+                <button id="bulkPasteBtn" class="btn" style="background-color: #4caf50; color: white">Bulk Paste</button>
+                <button id="autoSelectImagesBtn" class="btn" style="background-color: #ff9800; color: white">Auto Select Img</button>
+                <button
+                    id="closeXopbooTabsBtn"
+                    class="btn"
+                    style="background-color: #d32f2f; color: white; padding: 8px 12px; font-size: 18px; line-height: 1"
+                    title="Close all http://localhost:3000/ tabs currently open"
+                >
+                    X
+                </button>
+                <div style="display: flex; align-items: center; margin-left: 10px; background: #fff; padding: 5px 10px; border-radius: 4px; border: 1px solid #ddd">
+                    <label style="cursor: pointer; user-select: none; display: flex; align-items: center; gap: 5px; margin: 0">
+                        <input type="checkbox" id="globalInputPositionBottom" />
+                        New content at bottom
+                    </label>
+                </div>
+            </div>
+
+            <!-- Bulk Paste Modal -->
+            <div id="bulkPasteModal" class="bulk-paste-modal" style="display: none">
+                <div class="bulk-paste-content">
+                    <h3 style="margin-top: 0; color: #333">Bulk Paste Articles</h3>
+                    <p style="color: #666; margin-bottom: 15px">
+                        Paste your articles below. Each article should be separated by double line breaks. The system will automatically distribute them to available article inputs.
+                    </p>
+                    <textarea
+                        id="bulkPasteTextarea"
+                        class="bulk-paste-textarea"
+                        placeholder="Paste your articles here...
+
+Example:
+Article 1 title
+Article 1 content paragraph 1
+Article 1 content paragraph 2
+
+Article 2 title  
+Article 2 content paragraph 1
+
+Article 3 title
+Article 3 content"
+                    ></textarea>
+                    <div class="bulk-paste-buttons">
+                        <button id="bulkPasteCancelBtn" class="btn bulk-paste-cancel">Cancel</button>
+                        <button id="bulkPasteConfirmBtn" class="btn bulk-paste-confirm">Paste Articles</button>
+                    </div>
+                </div>
+            </div>
+            <table id="articlesTable">
+                <thead>
+                    <tr>
+                        <th></th>
+                        <th><input type="checkbox" id="selectAll" title="Select All" /></th>
+                        <th>Title</th>
+                        <th>Image</th>
+                        <th style="display: none">Names</th>
+                        <th>Actions</th>
+                        <th>Content Update</th>
+                    </tr>
+                </thead>
+                <tbody id="articlesBody">
+                    <!-- Articles will be populated here -->
+                </tbody>
+            </table>
+        </div>
+        <script src="table.js"></script>
+    </body>
+</html>

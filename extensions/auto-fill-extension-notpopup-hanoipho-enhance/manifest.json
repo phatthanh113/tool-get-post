@@ -1,0 +1,38 @@
+{
+  "manifest_version": 3,
+  "name": "Enhance AI Auto Fill Post from Xopboo Not Popup Hanoipho new",
+  "version": "1.0",
+  "description": "Lấy dữ liệu từ wp.xopboo.com và điền vào trang tạo bài viết.",
+  "permissions": ["tabs", "scripting", "windows", "storage"],
+  "host_permissions": [
+    "http://localhost:3000/*",
+    "file:///*",
+    "https://linatoysdochoitreem.com/*"
+  ],
+  "action": {},
+  "background": {
+    "service_worker": "background.js"
+  },
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "editor.html",
+        "editor.js",
+        "content-fill.js",
+        "table.html",
+        "table.js"
+      ],
+      "matches": ["<all_urls>"]
+    }
+  ],
+  "content_scripts": [
+    {
+      "matches": ["https://linatoysdochoitreem.com/wp-admin/*"],
+      "js": ["content-fill.js"]
+    },
+    {
+      "matches": ["http://localhost:3000/*"],
+      "js": ["linastory-bridge.js"]
+    }
+  ]
+}
