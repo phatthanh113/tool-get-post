@@ -1620,7 +1620,7 @@
                 }
             }
 
-            function extractAutoSelectYouTubeId(url) {
+            function extractAutoSelectYouTubeIdLegacy(url) {
                 if (!url || typeof url !== "string") return null;
                 const patterns = [/[?&]v=([A-Za-z0-9_-]{6,})/, /youtu\.be\/([A-Za-z0-9_-]{6,})/, /\/embed\/([A-Za-z0-9_-]{6,})/, /\/v\/([A-Za-z0-9_-]{6,})/];
                 for (const pattern of patterns) {
@@ -1630,7 +1630,7 @@
                 try { return new URL(url).searchParams.get("v"); } catch (error) { return null; }
             }
 
-            function injectAutoSelectedImages(articleHtml, videoId) {
+            function injectAutoSelectedImagesLegacy(articleHtml, videoId) {
                 if (!articleHtml || !videoId) return articleHtml;
                 const defaultUrl = `https://i.ytimg.com/vi/${videoId}/maxresdefault.jpg`;
                 const firstUrl = `https://i.ytimg.com/vi/${videoId}/maxres1.jpg`;
@@ -1707,7 +1707,7 @@
                 return root.innerHTML;
             }
 
-            async function sendToLinastory(payload) {
+            async function sendToLinastoryLegacy(payload) {
                 return new Promise((resolve) => {
                     let settled = false;
                     const timeoutId = setTimeout(() => {
@@ -1735,7 +1735,7 @@
                 });
             }
 
-            async function startAutoSelectImages() {
+            async function startAutoSelectImagesLegacy() {
                 const indexes = getSelectedIndexes();
                 if (indexes.length === 0) { alert("Vui lòng tick bài viết muốn tự động chọn ảnh."); return; }
 
@@ -2012,6 +2012,7 @@
                 resultSection.style.display = "block";
                 output.innerHTML = "";
                 downloadedArticleIndexes.clear();
+                selectedArticleIndexes.clear();
                 // Clear previous saved articles so new Thumbnail run doesn't append
                 try {
                     localStorage.removeItem("saved_articles");
@@ -2086,6 +2087,7 @@
                                                 </div>
                                             `;
                                 output.appendChild(articleCard);
+                                selectArticleIndexByDefault(index);
                                 updateStoryNavigationButtons();
                             }
                         } catch (err) {
@@ -2170,6 +2172,7 @@
                 resultSection.style.display = "block";
                 output.innerHTML = "";
                 downloadedArticleIndexes.clear();
+                selectedArticleIndexes.clear();
                 // Clear previous saved articles so new Buzz run doesn't append
                 try {
                     localStorage.removeItem("saved_articles");
@@ -2264,6 +2267,7 @@
                                                 </div>
                                             `;
                                 output.appendChild(articleCard);
+                                selectArticleIndexByDefault(currentIndex);
                                 updateStoryNavigationButtons();
                             }
                         } catch (err) {
@@ -2363,6 +2367,7 @@
                                             <textarea class="w-full min-h-52" style="min-height: 400px; font-family: 'Inter', monospace; font-size: 0.9rem;" oninput="updateSavedArticle(${index}, 'article', this.value)">${finalArticle}</textarea>
                                         </div>
                                     `;
+                        selectArticleIndexByDefault(index);
                         card.style.borderColor = "var(--border)";
                     }
                 } catch (err) {
