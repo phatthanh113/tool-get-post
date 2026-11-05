@@ -1455,8 +1455,7 @@
             }
 
             function injectAutoSelectedImages(articleHtml, videoId) {
-                if (!articleHtml || !videoId) return articleHtml;
-                if (getExistingThumbnailVariant(articleHtml, videoId)) return articleHtml;
+                if (!videoId) return articleHtml;
                 const defaultUrl = `https://i.ytimg.com/vi/${videoId}/maxresdefault.jpg`;
                 const firstUrl = `https://i.ytimg.com/vi/${videoId}/maxres1.jpg`;
                 const secondUrl = `https://i.ytimg.com/vi/${videoId}/maxres2.jpg`;
@@ -1464,8 +1463,6 @@
                 const doc = parser.parseFromString(`<div id="auto-image-root">${articleHtml}</div>`, "text/html");
                 const root = doc.getElementById("auto-image-root");
                 if (!root) return articleHtml;
-
-                root.querySelectorAll('img[alt="Auto thumbnail"], img[alt="Image 1"], img[alt="Image 2"]').forEach((image) => image.remove());
 
                 const imageWrapper = (imageUrl, altText) => {
                     const wrapper = doc.createElement("p");
@@ -1477,57 +1474,36 @@
                     return wrapper;
                 };
 
-                const insertAfterFirstLine = (imageElement) => {
-                    const firstParagraph = root.querySelector("p");
-                    if (firstParagraph) {
-                        firstParagraph.insertAdjacentElement("afterend", imageElement);
-                        ensureDefaultImageBreak(imageElement);
-                        return;
-                    }
-
-                    const firstDiv = root.querySelector("div");
-                    (firstDiv || root).insertAdjacentElement("beforeend", imageElement);
-                    ensureDefaultImageBreak(imageElement);
-                };
-
-                const ensureDefaultImageBreak = (imageElement) => {
-                    if (!imageElement) return;
-                    let nextNode = imageElement.nextSibling;
-                    while (nextNode && nextNode.nodeType === Node.TEXT_NODE && !nextNode.textContent.trim()) {
-                        nextNode = nextNode.nextSibling;
-                    }
-                    if (!nextNode || nextNode.nodeType === Node.TEXT_NODE && !nextNode.textContent.trim()) return;
-                    if (nextNode.nodeName === "BR") return;
-                    if (nextNode.textContent?.trim()) {
-                        imageElement.insertAdjacentHTML("afterend", "<br><br>");
-                    }
-                };
-
-                const hasDefaultImage = Array.from(root.querySelectorAll("img")).some((image) => {
+                const existingVariants = new Set();
+                for (const image of root.querySelectorAll("img")) {
                     const src = image.getAttribute("src") || image.src || "";
-                    return src.includes(`/vi/${videoId}/maxresdefault.jpg`) || src.includes("maxresdefault.jpg");
-                });
-
-                if (!hasDefaultImage) {
-                    insertAfterFirstLine(imageWrapper(defaultUrl, "Auto thumbnail"));
-                } else {
-                    const existingDefault = Array.from(root.querySelectorAll("img")).find((image) => {
-                        const src = image.getAttribute("src") || image.src || "";
-                        return src.includes(`/vi/${videoId}/maxresdefault.jpg`) || src.includes("maxresdefault.jpg");
-                    });
-                    ensureDefaultImageBreak(existingDefault);
+                    let pathname;
+                    try {
+                        pathname = new URL(src, doc.baseURI).pathname;
+                    } catch (error) {
+                        continue;
+                    }
+                    const variant = ["maxresdefault", "maxres1", "maxres2"].find((name) =>
+                        pathname.endsWith(`/vi/${videoId}/${name}.jpg`)
+                    );
+                    if (!variant) continue;
+                    if (existingVariants.has(variant)) image.remove();
+                    else existingVariants.add(variant);
                 }
 
-                const paragraphs = Array.from(root.querySelectorAll("p"));
-                const insertAfterParagraph = (paragraph, imageUrl, altText) => {
-                    if (!paragraph) return false;
-                    paragraph.insertAdjacentElement("afterend", imageWrapper(imageUrl, altText));
-                    return true;
+                const insertImage = (paragraph, imageUrl, altText) => {
+                    const image = imageWrapper(imageUrl, altText);
+                    if (paragraph) paragraph.insertAdjacentElement("afterend", image);
+                    else root.appendChild(image);
                 };
 
-                const refreshedParagraphs = Array.from(root.querySelectorAll("p")).filter((paragraph) => !paragraph.querySelector("img"));
-                insertAfterParagraph(refreshedParagraphs[2], firstUrl, "Image 1");
-                insertAfterParagraph(refreshedParagraphs[4], secondUrl, "Image 2");
+                if (!existingVariants.has("maxresdefault")) {
+                    insertImage(root.querySelector("p"), defaultUrl, "Auto thumbnail");
+                }
+
+                const textParagraphs = Array.from(root.querySelectorAll("p")).filter((paragraph) => !paragraph.querySelector("img"));
+                if (!existingVariants.has("maxres1")) insertImage(textParagraphs[2], firstUrl, "Image 1");
+                if (!existingVariants.has("maxres2")) insertImage(textParagraphs[4], secondUrl, "Image 2");
 
                 return root.innerHTML;
             }
@@ -1584,8 +1560,8 @@
                         if (!existingVariant) {
                             article.thumbnailVariant = "maxresdefault";
                             article.customThumbnailUrl = "";
-                            article.article = injectAutoSelectedImages(article.article || "", videoId);
                         }
+                        article.article = injectAutoSelectedImages(article.article || "", videoId);
                         saved[articleIndex] = article;
                         const card = document.getElementById(`card-${index}`);
                         const textarea = card?.querySelector("textarea.w-full.min-h-52");
@@ -1598,175 +1574,6 @@
                             title: article.title || "",
                             description: article.article || "",
                             image: publishImage,
-                            videoUrl: "",
-                            autoPublish: document.getElementById("autoPublishCheckbox")?.checked !== false,
-                        });
-                        updatedCount++;
-                    }
-                    localStorage.setItem("saved_articles", JSON.stringify(saved));
-                    renderThumbnailSelectorForActiveCard();
-                    renderStoryPreview();
-
-                    let bridgedCount = 0;
-                    for (let i = 0; i < linastoryArticles.length; i++) {
-                        const delivered = await sendToLinastory(linastoryArticles[i]);
-                        if (delivered) bridgedCount++;
-                        await new Promise((resolve) => setTimeout(resolve, 3500));
-                    }
-
-                    console.log(`Auto selected images for ${updatedCount} articles; Linastory deliveries: ${bridgedCount}; skipped: ${skippedCount}.`);
-                } finally {
-                    if (button) { button.disabled = false; button.innerHTML = originalHtml; }
-                }
-            }
-
-            function extractAutoSelectYouTubeIdLegacy(url) {
-                if (!url || typeof url !== "string") return null;
-                const patterns = [/[?&]v=([A-Za-z0-9_-]{6,})/, /youtu\.be\/([A-Za-z0-9_-]{6,})/, /\/embed\/([A-Za-z0-9_-]{6,})/, /\/v\/([A-Za-z0-9_-]{6,})/];
-                for (const pattern of patterns) {
-                    const match = url.match(pattern);
-                    if (match?.[1]) return match[1];
-                }
-                try { return new URL(url).searchParams.get("v"); } catch (error) { return null; }
-            }
-
-            function injectAutoSelectedImagesLegacy(articleHtml, videoId) {
-                if (!articleHtml || !videoId) return articleHtml;
-                const defaultUrl = `https://i.ytimg.com/vi/${videoId}/maxresdefault.jpg`;
-                const firstUrl = `https://i.ytimg.com/vi/${videoId}/maxres1.jpg`;
-                const secondUrl = `https://i.ytimg.com/vi/${videoId}/maxres2.jpg`;
-                const parser = new DOMParser();
-                const doc = parser.parseFromString(`<div id="auto-image-root">${articleHtml}</div>`, "text/html");
-                const root = doc.getElementById("auto-image-root");
-                if (!root) return articleHtml;
-
-                root.querySelectorAll('img[alt="Auto thumbnail"], img[alt="Image 1"], img[alt="Image 2"]').forEach((image) => image.remove());
-
-                const imageWrapper = (imageUrl, altText) => {
-                    const wrapper = doc.createElement("p");
-                    const image = doc.createElement("img");
-                    image.src = imageUrl;
-                    image.alt = altText;
-                    image.style.cssText = "max-width: 100%; height: auto;";
-                    wrapper.appendChild(image);
-                    return wrapper;
-                };
-
-                const insertAfterFirstLine = (imageElement) => {
-                    const firstParagraph = root.querySelector("p");
-                    if (firstParagraph) {
-                        firstParagraph.insertAdjacentElement("afterend", imageElement);
-                        ensureDefaultImageBreak(imageElement);
-                        return;
-                    }
-
-                    const firstDiv = root.querySelector("div");
-                    (firstDiv || root).insertAdjacentElement("beforeend", imageElement);
-                    ensureDefaultImageBreak(imageElement);
-                };
-
-                const ensureDefaultImageBreak = (imageElement) => {
-                    if (!imageElement) return;
-                    let nextNode = imageElement.nextSibling;
-                    while (nextNode && nextNode.nodeType === Node.TEXT_NODE && !nextNode.textContent.trim()) {
-                        nextNode = nextNode.nextSibling;
-                    }
-                    if (!nextNode || nextNode.nodeType === Node.TEXT_NODE && !nextNode.textContent.trim()) return;
-                    if (nextNode.nodeName === "BR") return;
-                    if (nextNode.textContent?.trim()) {
-                        imageElement.insertAdjacentHTML("afterend", "<br><br>");
-                    }
-                };
-
-                const hasDefaultImage = Array.from(root.querySelectorAll("img")).some((image) => {
-                    const src = image.getAttribute("src") || image.src || "";
-                    return src.includes(`/vi/${videoId}/maxresdefault.jpg`) || src.includes("maxresdefault.jpg");
-                });
-
-                if (!hasDefaultImage) {
-                    insertAfterFirstLine(imageWrapper(defaultUrl, "Auto thumbnail"));
-                } else {
-                    const existingDefault = Array.from(root.querySelectorAll("img")).find((image) => {
-                        const src = image.getAttribute("src") || image.src || "";
-                        return src.includes(`/vi/${videoId}/maxresdefault.jpg`) || src.includes("maxresdefault.jpg");
-                    });
-                    ensureDefaultImageBreak(existingDefault);
-                }
-
-                const paragraphs = Array.from(root.querySelectorAll("p"));
-                const insertAfterParagraph = (paragraph, imageUrl, altText) => {
-                    if (!paragraph) return false;
-                    paragraph.insertAdjacentElement("afterend", imageWrapper(imageUrl, altText));
-                    return true;
-                };
-
-                const refreshedParagraphs = Array.from(root.querySelectorAll("p")).filter((paragraph) => !paragraph.querySelector("img"));
-                insertAfterParagraph(refreshedParagraphs[2], firstUrl, "Image 1");
-                insertAfterParagraph(refreshedParagraphs[4], secondUrl, "Image 2");
-
-                return root.innerHTML;
-            }
-
-            async function sendToLinastoryLegacy(payload) {
-                return new Promise((resolve) => {
-                    let settled = false;
-                    const timeoutId = setTimeout(() => {
-                        if (settled) return;
-                        settled = true;
-                        window.removeEventListener("tool-get-post:linastory-status", handleStatus);
-                        resolve(false);
-                    }, 1500);
-                    const handleStatus = (event) => {
-                        if (settled) return;
-                        settled = true;
-                        clearTimeout(timeoutId);
-                        window.removeEventListener("tool-get-post:linastory-status", handleStatus);
-                        resolve(Boolean(event.detail?.success));
-                    };
-                    window.addEventListener("tool-get-post:linastory-status", handleStatus);
-                    try {
-                        window.dispatchEvent(new CustomEvent("tool-get-post:fill-linastory", { detail: payload }));
-                    } catch (error) {
-                        settled = true;
-                        clearTimeout(timeoutId);
-                        window.removeEventListener("tool-get-post:linastory-status", handleStatus);
-                        resolve(false);
-                    }
-                });
-            }
-
-            async function startAutoSelectImagesLegacy() {
-                const indexes = getSelectedIndexes();
-                if (indexes.length === 0) { alert("Vui lòng tick bài viết muốn tự động chọn ảnh."); return; }
-
-                const button = document.getElementById("autoSelectImagesBtn");
-                const originalHtml = button?.innerHTML || "";
-                if (button) { button.disabled = true; button.innerHTML = '<span class="button-spinner" aria-hidden="true"></span><span>Đang chọn ảnh...</span>'; }
-
-                let updatedCount = 0;
-                let skippedCount = 0;
-                const linastoryArticles = [];
-                try {
-                    const saved = JSON.parse(localStorage.getItem("saved_articles") || "[]");
-                    for (const index of indexes) {
-                        const articleIndex = saved.findIndex((item) => Number(item.index) === Number(index));
-                        if (articleIndex === -1) { skippedCount++; continue; }
-                        const article = saved[articleIndex];
-                        const videoId = article.videoId || extractAutoSelectYouTubeId(article.url);
-                        if (!videoId) { skippedCount++; continue; }
-                        article.videoId = videoId;
-                        article.thumbnailVariant = "maxresdefault";
-                        article.customThumbnailUrl = "";
-                        article.article = injectAutoSelectedImages(article.article || "", videoId);
-                        saved[articleIndex] = article;
-                        const card = document.getElementById(`card-${index}`);
-                        const textarea = card?.querySelector("textarea.w-full.min-h-52");
-                        if (textarea) textarea.value = article.article || "";
-                        updateCardThumbnailPreview(index, article);
-                        linastoryArticles.push({
-                            title: article.title || "",
-                            description: article.article || "",
-                            image: `https://i.ytimg.com/vi/${videoId}/maxresdefault.jpg`,
                             videoUrl: "",
                             autoPublish: document.getElementById("autoPublishCheckbox")?.checked !== false,
                         });
