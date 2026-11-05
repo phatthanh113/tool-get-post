@@ -489,6 +489,21 @@
                 grid-area: storyTextarea;
             }
 
+            .story-text-input-container {
+                grid-area: storyTextarea;
+            }
+
+            .story-text-paste-button {
+                display: block;
+                margin: 0 0 8px auto;
+                padding: 8px 12px;
+                border-radius: 8px;
+                background: #eff6ff;
+                border: 1px solid rgba(59, 130, 246, 0.08);
+                color: #1e40af;
+                font-size: 0.9rem;
+            }
+
             .story-modal-body > .story-modal-actions {
                 grid-area: actions;
             }
@@ -913,12 +928,15 @@
                         <input id="storyFontSize" type="range" min="14" max="90" value="40" step="1" aria-label="Story font size" />
                         <span id="storyFontOut">60</span>
                     </div>
-                    <textarea
-                        id="storyTextInput"
-                        rows="5"
-                        style="width: 100%; min-height: 120px; padding: 12px; border-radius: 12px; border: 1px solid #cbd5e1; font-size: 0.95rem"
-                        placeholder="Enter the story text here or use thumbnail text from the article."
-                    ></textarea>
+                    <div class="story-text-input-container">
+                        <button type="button" class="story-text-paste-button" onclick="storyPasteFromClipboard()">📋 Paste</button>
+                        <textarea
+                            id="storyTextInput"
+                            rows="5"
+                            style="width: 100%; min-height: 120px; padding: 12px; border-radius: 12px; border: 1px solid #cbd5e1; font-size: 0.95rem"
+                            placeholder="Enter the story text here or use thumbnail text from the article."
+                        ></textarea>
+                    </div>
                     <div id="storyPreview" class="story-modal-preview"></div>
                     <div id="storyThumbnailSelector" style="margin-top: 0; padding: 16px; border: 1px solid #e2e8f0; border-radius: 16px; background: #f8fafc">
                         <label style="display: block; margin-bottom: 8px; color: #475569; font-weight: 600">Thumbnail source</label>
@@ -3078,11 +3096,42 @@
                     storyUpdateMessage("No article content to copy.", true);
                     return;
                 }
+                content = content
+                    .replace(/<[^>]+>/g, "\n")
+                    .replace(/&nbsp;/gi, " ")
+                    .replace(/\u00a0/g, " ")
+                    .split(/\r?\n/)
+                    .map((line) => line.trim())
+                    .filter(Boolean)
+                    .join("\n");
                 try {
                     await navigator.clipboard.writeText(content);
                     storyUpdateMessage("Copied article content to clipboard.", false);
                 } catch (err) {
                     storyUpdateMessage("Copy failed. Try selecting and copying manually.", true);
+                }
+            }
+
+            async function storyPasteFromClipboard() {
+                try {
+                    const clipboardContent = await navigator.clipboard.readText();
+                    if (!clipboardContent) {
+                        storyUpdateMessage("Clipboard is empty.", true);
+                        return;
+                    }
+
+                    const content = clipboardContent
+                        .replace(/\*\*/g, "")
+                        .split(/\r?\n/)
+                        .map((line) => line.trim())
+                        .filter(Boolean)
+                        .join("\n");
+                    const storyTextInput = document.getElementById("storyTextInput");
+                    storyTextInput.value = content;
+                    storyTextInput.dispatchEvent(new Event("input", { bubbles: true }));
+                    storyUpdateMessage("Pasted clipboard content into story text.", false);
+                } catch (err) {
+                    storyUpdateMessage(err.message || "Unable to read clipboard. Check browser permissions.", true);
                 }
             }
 
