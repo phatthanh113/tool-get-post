@@ -1,4 +1,26 @@
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  if (message.action === "closeLinastoryTabs") {
+    chrome.tabs.query({}, async (tabs) => {
+      const linastoryTabs = tabs.filter((tab) => {
+        try {
+          const hostname = new URL(tab.url || "").hostname.toLowerCase();
+          return hostname === "linatoysdochoitreem.com" ||
+            hostname.endsWith(".linatoysdochoitreem.com") ||
+            hostname === "linastory.com" ||
+            hostname.endsWith(".linastory.com");
+        } catch (error) {
+          return false;
+        }
+      });
+      const tabIds = linastoryTabs.map((tab) => tab.id).filter((id) => Number.isInteger(id));
+      if (tabIds.length > 0) {
+        await chrome.tabs.remove(tabIds);
+      }
+      sendResponse({ success: true, closedCount: tabIds.length });
+    });
+    return true;
+  }
+
   if (message.action === "openTable") {
     const tableUrl = chrome.runtime.getURL("table.html");
 

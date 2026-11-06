@@ -9,7 +9,24 @@
 
   window.addEventListener("message", (event) => {
     if (event.source !== window || event.origin !== window.location.origin) return;
-    if (event.data?.channel !== "tool-get-post:linastory-bridge" || event.data.action !== "request") return;
+    if (event.data?.channel !== "tool-get-post:linastory-bridge") return;
+
+    if (event.data.action === "close-tabs") {
+      const requestId = event.data.requestId;
+      if (typeof requestId !== "string") return;
+      chrome.runtime.sendMessage({ action: "closeLinastoryTabs" }, (response) => {
+        window.postMessage({
+          channel: "tool-get-post:linastory-bridge",
+          action: "close-response",
+          requestId,
+          closedCount: response?.closedCount || 0,
+          error: chrome.runtime.lastError?.message || response?.error || "",
+        }, window.location.origin);
+      });
+      return;
+    }
+
+    if (event.data.action !== "request") return;
 
     const requestId = event.data.requestId;
     const requestedTitles = event.data.titles;

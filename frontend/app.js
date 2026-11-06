@@ -302,12 +302,43 @@ const DEFAULT_LINASTORY_COPY_TEMPLATE = "{title}\t{link}";
                     button.disabled = true;
                     setLinastoryCopyStatus("Đang lấy permalink Linastory để copy...");
                     await loadMatchedLinastoryArticles();
-                    await copyMatchedLinastoryCustom();
+                    const copied = await copyMatchedLinastoryCustom();
+                    if (copied) {
+                        const closedCount = await closeLinastoryTabsAfterQuickCopy();
+                        if (closedCount > 0) {
+                            const message = `Đã copy và đóng ${closedCount} tab Linastory.`;
+                            setLinastoryCopyStatus(message);
+                            document.getElementById("linastoryArticlesSummary").textContent = message;
+                        }
+                    }
                 } catch (error) {
                     setLinastoryCopyStatus(error.message || "Không thể copy dữ liệu Linastory.", true);
                 } finally {
                     button.disabled = false;
                 }
+            }
+
+            function closeLinastoryTabsAfterQuickCopy() {
+                return new Promise((resolve) => {
+                    const requestId = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+                    const timeoutId = setTimeout(() => {
+                        window.removeEventListener("message", onResponse);
+                        resolve(0);
+                    }, 1500);
+                    const onResponse = (event) => {
+                        if (event.source !== window || event.data?.channel !== "tool-get-post:linastory-bridge") return;
+                        if (event.data.requestId !== requestId || event.data.action !== "close-response") return;
+                        clearTimeout(timeoutId);
+                        window.removeEventListener("message", onResponse);
+                        resolve(Number.isFinite(Number(event.data.closedCount)) ? Number(event.data.closedCount) : 0);
+                    };
+                    window.addEventListener("message", onResponse);
+                    window.postMessage({
+                        channel: "tool-get-post:linastory-bridge",
+                        action: "close-tabs",
+                        requestId,
+                    }, window.location.origin);
+                });
             }
 
             async function copyMatchedLinastoryCustom() {
@@ -330,10 +361,12 @@ const DEFAULT_LINASTORY_COPY_TEMPLATE = "{title}\t{link}";
                     const message = `Đã copy ${rowsToCopy.length} bài theo thứ tự index.${unmatchedCount ? ` Bỏ qua ${unmatchedCount} bài không có link.` : ""}`;
                     setLinastoryCopyStatus(message);
                     document.getElementById("linastoryArticlesSummary").textContent = message;
+                    return true;
                 } catch (error) {
                     setLinastoryCopyStatus(error.message || "Không thể copy dữ liệu Linastory.", true);
                     document.getElementById("linastoryArticlesSummary").textContent =
                         error.message || "Không thể copy dữ liệu Linastory.";
+                    return false;
                 }
             }
 
