@@ -95,6 +95,54 @@
                 gap: 8px;
             }
 
+            .youtube-language-status {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 12px;
+                margin: 0;
+                padding: 10px 12px;
+                border: 1px solid #cbd5e1;
+                border-radius: 10px;
+                background: #f8fafc;
+                color: #475569;
+                font-size: 0.875rem;
+                line-height: 1.45;
+            }
+
+            .youtube-language-status[data-state="warning"] {
+                border-color: #fbbf24;
+                background: #fffbeb;
+                color: #92400e;
+            }
+
+            .youtube-language-status[data-state="error"] {
+                border-color: #fca5a5;
+                background: #fef2f2;
+                color: #991b1b;
+            }
+
+            .youtube-language-status[data-state="success"] {
+                border-color: #86efac;
+                background: #f0fdf4;
+                color: #166534;
+            }
+
+            .youtube-language-status[hidden],
+            .youtube-language-status button[hidden] {
+                display: none !important;
+            }
+
+            .youtube-language-status button {
+                flex: 0 0 auto;
+                min-height: 34px;
+                padding: 7px 10px;
+                border-radius: 8px;
+                background: #0f766e;
+                color: #ffffff;
+                font-size: 0.82rem;
+            }
+
             label {
                 font-size: 0.875rem;
                 font-weight: 500;
@@ -150,8 +198,322 @@
 
             .button-group {
                 display: flex;
-                gap: 16px;
+                flex-wrap: wrap;
+                align-items: center;
+                gap: 8px;
                 margin-top: 20px;
+            }
+
+            .button-group > button {
+                min-width: 0;
+                min-height: 40px;
+                padding: 9px 16px;
+                font-size: 0.9rem;
+            }
+
+            .button-group .btn-primary,
+            .button-group .btn-secondary {
+                flex: initial;
+            }
+
+            .linastory-copy-toolbar {
+                display: flex;
+                align-items: center;
+                gap: 12px;
+                flex-wrap: wrap;
+                margin: 0 0 18px;
+                padding: 14px 16px;
+                border: 1px solid rgba(13, 148, 136, 0.2);
+                border-radius: 16px;
+                background: linear-gradient(120deg, rgba(20, 184, 166, 0.1), rgba(99, 102, 241, 0.07));
+            }
+
+            .linastory-copy-toolbar select {
+                width: auto;
+                min-width: 220px;
+                margin: 0;
+                border-radius: 12px;
+            }
+
+            .linastory-copy-button {
+                min-height: 48px;
+                padding: 11px 22px;
+                border: 1px solid #0f766e;
+                border-radius: 12px;
+                background: linear-gradient(135deg, #0d9488, #059669);
+                color: white;
+                box-shadow: 0 8px 18px rgba(13, 148, 136, 0.2);
+                transition: transform 0.18s ease, box-shadow 0.18s ease, filter 0.18s ease;
+            }
+
+            .linastory-copy-button:hover {
+                transform: translateY(-2px);
+                filter: brightness(1.05);
+                box-shadow: 0 12px 24px rgba(13, 148, 136, 0.28);
+            }
+
+            .linastory-copy-button:active {
+                transform: translateY(0);
+            }
+
+            .linastory-dialog {
+                position: fixed;
+                inset: auto;
+                top: 50vh;
+                left: 50vw;
+                margin: 0;
+                transform: translate(-50%, -50%);
+                width: min(1080px, calc(100% - 32px));
+                max-width: 1080px;
+                max-height: min(86vh, 900px);
+                padding: 0;
+                overflow: hidden;
+                border: 1px solid #dbe3ee;
+                border-radius: 18px;
+                background: #ffffff;
+                color: #1e293b;
+                box-shadow: 0 28px 80px rgba(15, 23, 42, 0.3);
+            }
+
+            .linastory-dialog::backdrop {
+                background: rgba(15, 23, 42, 0.62);
+                backdrop-filter: blur(3px);
+            }
+
+            .linastory-dialog-panel {
+                display: flex;
+                max-height: min(86vh, 900px);
+                min-height: 0;
+                flex-direction: column;
+                overflow-y: auto;
+                padding: 24px;
+            }
+
+            .linastory-dialog-header {
+                display: flex;
+                align-items: flex-start;
+                justify-content: space-between;
+                gap: 16px;
+                margin-bottom: 8px;
+            }
+
+            .linastory-dialog-header h2 {
+                margin: 0;
+                color: #0f172a;
+                font-family: "Outfit", sans-serif;
+                font-size: 1.4rem;
+                line-height: 1.3;
+            }
+
+            .linastory-dialog-close {
+                flex: 0 0 40px !important;
+                width: 40px;
+                min-width: 40px;
+                height: 40px;
+                padding: 0 !important;
+                border: 1px solid #e2e8f0 !important;
+                border-radius: 10px !important;
+                background: #f8fafc !important;
+                color: #475569 !important;
+                box-shadow: none !important;
+                font-size: 1.35rem;
+            }
+
+            .linastory-dialog-close:hover {
+                background: #e2e8f0 !important;
+                transform: none !important;
+            }
+
+            .linastory-dialog-summary {
+                margin: 0 0 16px;
+                color: #64748b;
+                font-size: 0.95rem;
+                line-height: 1.5;
+            }
+
+            .linastory-table-wrap {
+                min-height: 120px;
+                overflow: auto;
+                border: 1px solid #e2e8f0;
+                border-radius: 12px;
+                background: #ffffff;
+            }
+
+            .linastory-table {
+                width: 100%;
+                border-collapse: separate;
+                border-spacing: 0;
+                table-layout: fixed;
+                font-size: 0.92rem;
+            }
+
+            .linastory-table th {
+                position: sticky;
+                z-index: 1;
+                top: 0;
+                padding: 12px 14px;
+                background: #f1f5f9;
+                color: #334155;
+                font-size: 0.82rem;
+                font-weight: 700;
+                letter-spacing: 0.025em;
+                text-align: left;
+                text-transform: uppercase;
+            }
+
+            .linastory-table td {
+                padding: 13px 14px;
+                border-top: 1px solid #e8edf3;
+                color: #334155;
+                line-height: 1.45;
+                vertical-align: top;
+            }
+
+            .linastory-table tbody tr:nth-child(even) {
+                background: #f8fafc;
+            }
+
+            .linastory-table tbody tr:hover {
+                background: #eff6ff;
+            }
+
+            .linastory-table .linastory-number {
+                color: #64748b;
+                font-weight: 700;
+                text-align: center;
+            }
+
+            .linastory-table .linastory-title {
+                color: #0f172a;
+                font-weight: 600;
+                overflow-wrap: anywhere;
+            }
+
+            .linastory-table a {
+                display: inline-block;
+                color: #4f46e5;
+                line-height: 1.45;
+                overflow-wrap: anywhere;
+                text-decoration: underline;
+                text-decoration-color: #c7d2fe;
+                text-underline-offset: 3px;
+            }
+
+            .linastory-table a:hover {
+                color: #3730a3;
+                text-decoration-color: currentColor;
+            }
+
+            .linastory-status {
+                color: #047857 !important;
+                font-weight: 600;
+                white-space: nowrap;
+            }
+
+            .linastory-status-missing {
+                color: #b45309 !important;
+            }
+
+            .linastory-dialog-actions {
+                display: flex;
+                gap: 10px;
+                flex-wrap: wrap;
+                margin-top: 18px;
+            }
+
+            .linastory-dialog-actions button {
+                flex: 0 0 auto;
+                min-height: 46px;
+                padding: 10px 18px;
+                border-radius: 11px;
+            }
+
+            .linastory-dialog-actions .linastory-copy-action {
+                flex: 0 0 auto;
+            }
+
+            .linastory-dialog-back {
+                flex: 0 0 auto !important;
+                padding: 9px 14px !important;
+                border-radius: 10px !important;
+                white-space: nowrap;
+            }
+
+            .linastory-settings-dialog {
+                width: min(720px, calc(100% - 32px));
+                max-width: 720px;
+            }
+
+            .linastory-template-buttons button,
+            .linastory-token-buttons button {
+                flex: 0 0 auto;
+                padding: 9px 13px;
+                border-radius: 10px;
+                font-size: 0.9rem;
+            }
+
+            .linastory-template-buttons {
+                display: grid;
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 12px;
+            }
+
+            .linastory-template-card {
+                min-height: 76px !important;
+                padding: 14px 16px !important;
+                border: 1px solid #a7f3d0 !important;
+                border-radius: 12px !important;
+                background: #ecfdf5 !important;
+                color: #065f46 !important;
+                box-shadow: none !important;
+                text-align: left;
+                line-height: 1.5;
+            }
+
+            .linastory-template-card:hover {
+                border-color: #34d399 !important;
+                background: #d1fae5 !important;
+                transform: translateY(-1px);
+            }
+
+            .linastory-template-card.is-selected {
+                border-color: #059669 !important;
+                background: #d1fae5 !important;
+                box-shadow: inset 0 0 0 1px #059669 !important;
+            }
+
+            .linastory-token-buttons button {
+                background: #eef2ff;
+                color: #4338ca;
+                box-shadow: none;
+            }
+
+            .linastory-token-buttons button:hover {
+                background: #e0e7ff;
+                transform: none;
+            }
+
+            .linastory-template-input {
+                min-height: 130px;
+                resize: vertical;
+                border-radius: 12px;
+                background: #f8fafc;
+                font-family: Consolas, monospace;
+                line-height: 1.5;
+            }
+
+            .linastory-preview {
+                min-height: 48px;
+                overflow-wrap: anywhere;
+                white-space: pre-wrap;
+                border: 1px solid #e2e8f0;
+                border-radius: 10px;
+                background: #f8fafc;
+                color: #334155;
+                font-family: Consolas, monospace;
+                font-size: 0.9rem;
+                line-height: 1.5;
+                padding: 12px;
             }
 
             button {
@@ -702,7 +1064,33 @@
                     grid-column: span 1;
                 }
                 .button-group {
-                    flex-direction: column;
+                    gap: 8px;
+                }
+                .button-group > button {
+                    min-height: 40px;
+                    padding: 9px 12px;
+                }
+                .linastory-copy-toolbar {
+                    align-items: stretch;
+                }
+                .linastory-copy-toolbar select,
+                .linastory-copy-button {
+                    width: 100%;
+                }
+                .linastory-dialog-panel {
+                    padding: 18px 14px;
+                }
+                .linastory-template-buttons {
+                    grid-template-columns: 1fr;
+                }
+                .linastory-dialog-actions button {
+                    width: auto;
+                    flex: 0 0 auto;
+                    min-height: 42px;
+                    padding: 9px 13px;
+                }
+                .linastory-table {
+                    min-width: 760px;
                 }
             }
         </style>
@@ -783,6 +1171,10 @@
                         <option value="English" selected>English</option>
                         <option value="German">Deutsch (German)</option>
                     </select>
+                    <div id="youtubeLanguageStatus" class="youtube-language-status" role="status" aria-live="polite" hidden>
+                        <span id="youtubeLanguageStatusText"></span>
+                        <button id="applyDetectedVideoLanguage" type="button" hidden></button>
+                    </div>
                 </div>
 
                 <div class="input-group" style="display: none">
@@ -818,7 +1210,16 @@
                 </div>
             </div>
 
-            <div class="button-group" style="display: flex; gap: 10px; flex-wrap: wrap">
+            <div class="linastory-copy-toolbar">
+                <select id="linastoryCopyMode" aria-label="Phạm vi copy Linastory">
+                    <option value="all">Copy tất cả bài viết</option>
+                    <option value="selected">Chỉ copy bài đã chọn</option>
+                </select>
+                <button id="copyLinastoryButton" type="button" class="linastory-copy-button" onclick="openLinastoryCopyModal()" oncontextmenu="quickCopyLinastory(event)" title="Chuột trái: xem danh sách bài và link · Chuột phải: copy nhanh">📋 Copy Linastory</button>
+                <span style="color: var(--text-muted); font-size: 0.9rem">Chuột trái: xem bài và link · Chuột phải: copy nhanh.</span>
+            </div>
+
+            <div class="button-group">
                 <button id="textModeBtn" onclick="toggleView()" class="btn-secondary bg-green-600">Chế độ text</button>
                 <button onclick="restoreArticlesFromLocalStorage()" class="btn-secondary" style="background-color: #6366f1; border-color: #6366f1; color: white">💾 Khôi phục bài viết</button>
                 <button onclick="sortResultCards()" class="btn-secondary" style="display: none" title="Sắp xếp các bài theo thứ tự ban đầu">🔃 Sắp xếp bài</button>
@@ -828,6 +1229,7 @@
                 <button onclick="generate()" id="buzzBtn" class="btn-primary button-primary-custom">Buzz</button>
                 <button onclick="stopBuzzGeneration()" id="stopBuzzBtn" type="button" class="btn-secondary" style="display: none; background: #ef4444; color: white">⏹ Stop</button>
             </div>
+            <p id="linastoryCopyStatus" role="status" aria-live="polite" style="min-height: 20px; margin-top: 8px; color: var(--text-muted)"></p>
 
             <div style="display: flex; justify-content: flex-end; margin-top: 10px;">
                 <label style="display: inline-flex; align-items: center; gap: 8px; font-weight: 600; color: var(--text-muted);">
@@ -979,7 +1381,413 @@
                 </div>
             </div>
         </div>
+        <dialog id="linastoryArticlesDialog" class="linastory-dialog">
+            <div class="linastory-dialog-panel">
+                <div class="linastory-dialog-header">
+                    <h2>📋 Bài viết khớp với Linastory</h2>
+                    <button type="button" class="linastory-dialog-close" onclick="closeLinastoryArticlesModal()" aria-label="Đóng">×</button>
+                </div>
+                <p id="linastoryArticlesSummary" class="linastory-dialog-summary"></p>
+                <div class="linastory-table-wrap" style="max-height: 55vh">
+                    <table class="linastory-table">
+                        <colgroup>
+                            <col style="width: 6%">
+                            <col style="width: 38%">
+                            <col style="width: 23%">
+                            <col style="width: 21%">
+                            <col style="width: 12%">
+                        </colgroup>
+                        <thead>
+                            <tr>
+                                <th>STT</th>
+                                <th>Title</th>
+                                <th>Permalink</th>
+                                <th>Shortlink</th>
+                                <th>Trạng thái</th>
+                            </tr>
+                        </thead>
+                        <tbody id="linastoryArticlesList"></tbody>
+                    </table>
+                </div>
+                <div class="linastory-dialog-actions">
+                    <button id="copyLinastoryMatchedButton" type="button" class="btn-primary linastory-copy-action" onclick="copyMatchedLinastoryCustom()" oncontextmenu="openLinastoryCopySettings(event)">📋 Sao chép custom</button>
+                    <button id="openLinastoryCopySettingsButton" type="button" class="btn-secondary" onclick="openLinastoryCopySettingsFromList()">⚙️ Mẫu copy</button>
+                    <button id="closeLinastoryArticlesButton" type="button" class="btn-secondary" onclick="closeLinastoryArticlesModal()">Đóng</button>
+                </div>
+            </div>
+        </dialog>
+        <dialog id="linastoryCopyDialog" class="linastory-dialog linastory-settings-dialog">
+            <div class="linastory-dialog-panel">
+                <div class="linastory-dialog-header">
+                    <h2>⚙️ Tùy chỉnh mẫu copy Linastory</h2>
+                    <button type="button" class="btn-secondary linastory-dialog-back" onclick="backToLinastoryArticles()">← Quay lại</button>
+                </div>
+                <p class="linastory-dialog-summary">Chọn thẻ mẫu để áp dụng định dạng, hoặc tự điền trường dữ liệu cần sao chép.</p>
+                <p style="color: #475569; margin-bottom: 10px; font-weight: 600">Thẻ mẫu:</p>
+                <div class="linastory-template-buttons" style="margin-bottom: 16px">
+                    <button type="button" class="linastory-template-card" data-copy-template="Vollständige Geschichte 👉 {shortlink}" onclick="setLinastoryCopyPreset(this.dataset.copyTemplate)">📖 Vollständige Geschichte 👉 {shortlink}</button>
+                    <button type="button" class="linastory-template-card" data-copy-template="Full Story👉 {shortlink}" onclick="setLinastoryCopyPreset(this.dataset.copyTemplate)">📖 Full Story👉 {shortlink}</button>
+                </div>
+                <p style="color: #475569; margin-bottom: 8px; font-weight: 600">Thẻ mẫu (bấm để chèn):</p>
+                <div class="linastory-dialog-actions linastory-token-buttons" style="margin-top: 0; margin-bottom: 14px">
+                    <button type="button" class="btn-secondary" onclick="insertLinastoryCopyToken('{stt}')">{stt}</button>
+                    <button type="button" class="btn-secondary" onclick="insertLinastoryCopyToken('{ngay}')">{ngay}</button>
+                    <button type="button" class="btn-secondary" onclick="insertLinastoryCopyToken('{title}')">{title}</button>
+                    <button type="button" class="btn-secondary" onclick="insertLinastoryCopyToken('{link}')">{link}</button>
+                    <button type="button" class="btn-secondary" onclick="insertLinastoryCopyToken('{shortlink}')">{shortlink}</button>
+                    <button type="button" class="btn-secondary" onclick="insertLinastoryCopyToken('{tab}')">⇥ Tab</button>
+                </div>
+                <label for="linastoryCopyTemplate" style="display: block; margin: 0 0 8px; color: #334155; font-weight: 600">Mẫu copy (Tab = ô Excel, Enter = dòng tiếp theo):</label>
+                <textarea id="linastoryCopyTemplate" class="linastory-template-input" rows="4" style="margin-bottom: 14px" oninput="updateLinastoryCopyPreview()"></textarea>
+                <p style="color: #475569; margin-bottom: 6px; font-weight: 600">Xem trước:</p>
+                <pre id="linastoryCopyPreview" class="linastory-preview" style="margin-bottom: 16px"></pre>
+                <div class="linastory-dialog-actions" style="margin-top: 0">
+                    <button type="button" class="btn-primary" onclick="saveLinastoryCopyTemplate()">💾 Lưu mẫu</button>
+                    <button type="button" class="btn-secondary" onclick="resetLinastoryCopyTemplate()">♻️ Mặc định</button>
+                    <button type="button" class="btn-secondary" onclick="backToLinastoryArticles()">← Quay lại danh sách</button>
+                </div>
+            </div>
+        </dialog>
         <script>
+            const DEFAULT_LINASTORY_COPY_TEMPLATE = "{title}\t{link}";
+            let matchedLinastoryArticles = [];
+
+            function getLinastoryCopyTemplate() {
+                return localStorage.getItem("linastoryCustomCopyTemplate") || DEFAULT_LINASTORY_COPY_TEMPLATE;
+            }
+
+            function setLinastoryCopyStatus(message, isError = false) {
+                const status = document.getElementById("linastoryCopyStatus");
+                if (!status) return;
+                status.textContent = message;
+                status.style.color = isError ? "#dc2626" : "var(--text-muted)";
+            }
+
+            function openLinastoryCopySettings(event) {
+                event.preventDefault();
+                const articlesDialog = document.getElementById("linastoryArticlesDialog");
+                if (articlesDialog.open) articlesDialog.close();
+                const dialog = document.getElementById("linastoryCopyDialog");
+                document.getElementById("linastoryCopyTemplate").value = getLinastoryCopyTemplate();
+                updateLinastoryCopyPreview();
+                if (!dialog.open) dialog.showModal();
+            }
+
+            function openLinastoryCopySettingsFromList() {
+                const articlesDialog = document.getElementById("linastoryArticlesDialog");
+                if (articlesDialog.open) articlesDialog.close();
+                openLinastoryCopySettings({ preventDefault() {} });
+            }
+
+            function backToLinastoryArticles() {
+                const settingsDialog = document.getElementById("linastoryCopyDialog");
+                if (settingsDialog.open) settingsDialog.close();
+                const articlesDialog = document.getElementById("linastoryArticlesDialog");
+                renderLinastoryArticlesList();
+                if (!articlesDialog.open) articlesDialog.showModal();
+            }
+
+            function closeLinastoryCopySettings() {
+                document.getElementById("linastoryCopyDialog").close();
+            }
+
+            function closeLinastoryArticlesModal() {
+                document.getElementById("linastoryArticlesDialog").close();
+            }
+
+            function setLinastoryCopyPreset(template) {
+                document.getElementById("linastoryCopyTemplate").value = template;
+                updateLinastoryCopyPreview();
+            }
+
+            function insertLinastoryCopyToken(token) {
+                const input = document.getElementById("linastoryCopyTemplate");
+                const start = input.selectionStart;
+                const end = input.selectionEnd;
+                input.value = input.value.slice(0, start) + token + input.value.slice(end);
+                input.focus();
+                input.setSelectionRange(start + token.length, start + token.length);
+                updateLinastoryCopyPreview();
+            }
+
+            function renderLinastoryCopyTemplate(template, row, index) {
+                const now = new Date();
+                const day = String(now.getDate()).padStart(2, "0");
+                const month = String(now.getMonth() + 1).padStart(2, "0");
+                return template
+                    .split("{stt}").join(String(index + 1).padStart(2, "0"))
+                    .split("{ngay}").join(day + month)
+                    .split("{title}").join(row.title || "")
+                    .split("{link}").join(row.link || "")
+                    .split("{shortlink}").join(row.shortlink || "")
+                    .split("{tab}").join("\t");
+            }
+
+            function buildLinastoryExcelRow(text) {
+                const quoteCell = (cell) => {
+                    cell = cell.replace(/~/g, "");
+                    return cell.includes("\n") || cell.includes('"') || cell.includes("\t")
+                        ? '"' + cell.replace(/"/g, '""') + '"'
+                        : cell;
+                };
+                const cells = [];
+                let current = "";
+                let inGroup = false;
+                for (const character of text) {
+                    if (character === "~") {
+                        inGroup = !inGroup;
+                        current += character;
+                    } else if ((character === "\t" || character === "\n") && !inGroup) {
+                        if (character === "\t") {
+                            cells.push(current);
+                            current = "";
+                        } else {
+                            current += "\n";
+                        }
+                    } else {
+                        current += character;
+                    }
+                }
+                cells.push(current);
+                return cells.map(quoteCell).join("\t");
+            }
+
+            function updateLinastoryCopyPreview() {
+                const template = document.getElementById("linastoryCopyTemplate").value;
+                document.querySelectorAll(".linastory-template-card").forEach((card) => {
+                    const selected = card.dataset.copyTemplate === template;
+                    card.classList.toggle("is-selected", selected);
+                    card.setAttribute("aria-pressed", String(selected));
+                });
+                const sample = renderLinastoryCopyTemplate(template, {
+                    title: "Sample title",
+                    link: "https://example.com/post",
+                    shortlink: "https://example.com/?p=1",
+                }, 0);
+                document.getElementById("linastoryCopyPreview").textContent =
+                    buildLinastoryExcelRow(sample).replace(/~/g, "").split("\t").join(" ⇥ ");
+            }
+
+            function saveLinastoryCopyTemplate() {
+                const template = document.getElementById("linastoryCopyTemplate").value;
+                if (!template.trim()) {
+                    setLinastoryCopyStatus("Mẫu copy đang trống.", true);
+                    return;
+                }
+                try {
+                    localStorage.setItem("linastoryCustomCopyTemplate", template);
+                    backToLinastoryArticles();
+                    setLinastoryCopyStatus("Đã lưu mẫu copy Linastory.");
+                } catch (error) {
+                    setLinastoryCopyStatus(error.message || "Không thể lưu mẫu copy.", true);
+                }
+            }
+
+            function resetLinastoryCopyTemplate() {
+                document.getElementById("linastoryCopyTemplate").value = DEFAULT_LINASTORY_COPY_TEMPLATE;
+                updateLinastoryCopyPreview();
+            }
+
+            function normalizeLinastoryTitle(title) {
+                return String(title || "")
+                    .normalize("NFKC")
+                    .replace(/\s*#TP\s*$/i, "")
+                    .replace(/\s+/g, " ")
+                    .trim()
+                    .toLocaleLowerCase();
+            }
+
+            function requestLinastoryRows(titles) {
+                return new Promise((resolve, reject) => {
+                    const requestId = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+                    const timeoutId = setTimeout(() => {
+                        window.removeEventListener("message", onResponse);
+                        reject(new Error("Không nhận được dữ liệu từ extension Linastory. Hãy kiểm tra extension đã bật, reload extension và mở index bằng localhost hoặc 127.0.0.1."));
+                    }, 3000);
+                    const onResponse = (event) => {
+                        if (event.source !== window || event.data?.channel !== "tool-get-post:linastory-bridge") return;
+                        if (event.data.requestId !== requestId || event.data.action !== "response") return;
+                        clearTimeout(timeoutId);
+                        window.removeEventListener("message", onResponse);
+                        if (!event.data.success) {
+                            reject(new Error(event.data.error || "Không thể đọc dữ liệu Linastory."));
+                            return;
+                        }
+                        resolve(Array.isArray(event.data.rows) ? event.data.rows : []);
+                    };
+                    window.addEventListener("message", onResponse);
+                    window.postMessage({
+                        channel: "tool-get-post:linastory-bridge",
+                        action: "request",
+                        requestId,
+                        titles,
+                    }, window.location.origin);
+                });
+            }
+
+            function getLinastoryArticlesForCopy() {
+                const copyMode = document.getElementById("linastoryCopyMode").value;
+                return matchedLinastoryArticles.filter((article) =>
+                    copyMode !== "selected" || selectedArticleIndexes.has(Number(article.index))
+                );
+            }
+
+            function renderLinastoryArticlesList() {
+                const list = document.getElementById("linastoryArticlesList");
+                const matchedCount = matchedLinastoryArticles.filter((article) => article.link).length;
+                const missingCount = matchedLinastoryArticles.length - matchedCount;
+                document.getElementById("linastoryArticlesSummary").textContent =
+                    `${matchedCount} bài có permalink${missingCount ? ` · ${missingCount} bài chưa tìm thấy title tương ứng` : ""}. Thứ tự theo index; title trùng được ghép theo thứ tự trong extension.`;
+                list.replaceChildren();
+
+                matchedLinastoryArticles.forEach((article) => {
+                    const row = document.createElement("tr");
+                    row.style.borderTop = "1px solid #e2e8f0";
+                    const values = [
+                        String(Number(article.index) + 1),
+                        article.title || "(Không có title)",
+                    ];
+                    values.forEach((value, index) => {
+                        const cell = document.createElement("td");
+                        cell.textContent = value;
+                        cell.className = index === 0 ? "linastory-number" : "linastory-title";
+                        row.appendChild(cell);
+                    });
+
+                    [article.link, article.shortlink].forEach((url) => {
+                        const cell = document.createElement("td");
+                        if (url) {
+                            const link = document.createElement("a");
+                            link.href = url;
+                            link.textContent = url;
+                            link.target = "_blank";
+                            link.rel = "noopener noreferrer";
+                            link.style.overflowWrap = "anywhere";
+                            cell.appendChild(link);
+                        } else {
+                            cell.textContent = "—";
+                        }
+                        row.appendChild(cell);
+                    });
+
+                    const statusCell = document.createElement("td");
+                    statusCell.textContent = article.link ? "✅ Khớp" : "⚠️ Không tìm thấy";
+                    statusCell.className = article.link ? "linastory-status" : "linastory-status linastory-status-missing";
+                    row.appendChild(statusCell);
+                    list.appendChild(row);
+                });
+            }
+
+            async function loadMatchedLinastoryArticles() {
+                let saved;
+                try {
+                    saved = JSON.parse(localStorage.getItem("saved_articles") || "[]");
+                } catch (error) {
+                    throw new Error("Dữ liệu bài viết đã lưu không hợp lệ.");
+                }
+                if (!Array.isArray(saved) || saved.length === 0) {
+                    throw new Error("Không có bài viết nào trong index để copy.");
+                }
+                const articles = saved
+                    .slice()
+                    .sort((a, b) => Number(a.index) - Number(b.index))
+                    .filter((article) => Number.isFinite(Number(article.index)));
+                if (articles.length === 0) {
+                    throw new Error("Không có bài viết hợp lệ trong index.");
+                }
+
+                const linastoryRows = await requestLinastoryRows(articles.map((article) => article.title || ""));
+                const rowsByTitle = new Map();
+                linastoryRows.forEach((row) => {
+                    const key = normalizeLinastoryTitle(row.title);
+                    if (!key || !row.link) return;
+                    if (!rowsByTitle.has(key)) rowsByTitle.set(key, []);
+                    rowsByTitle.get(key).push(row);
+                });
+
+                matchedLinastoryArticles = articles.map((article) => {
+                    const matches = rowsByTitle.get(normalizeLinastoryTitle(article.title));
+                    const match = matches?.shift();
+                    return {
+                        index: Number(article.index),
+                        title: article.title || "",
+                        link: match?.link || "",
+                        shortlink: match?.shortlink || "",
+                    };
+                });
+                if (!matchedLinastoryArticles.some((article) => article.link)) {
+                    throw new Error("Không tìm thấy bài nào khớp title. Hãy kiểm tra dữ liệu trong extension Linastory.");
+                }
+                return matchedLinastoryArticles;
+            }
+
+            async function openLinastoryCopyModal(event) {
+                event?.preventDefault();
+                const dialog = document.getElementById("linastoryArticlesDialog");
+                const summary = document.getElementById("linastoryArticlesSummary");
+                const list = document.getElementById("linastoryArticlesList");
+                if (!dialog.open) dialog.showModal();
+                summary.textContent = "Đang tải và đối chiếu dữ liệu từ extension Linastory...";
+                list.replaceChildren();
+
+                const button = document.getElementById("copyLinastoryButton");
+                try {
+                    button.disabled = true;
+                    setLinastoryCopyStatus("Đang tải và đối chiếu bài viết Linastory...");
+                    await loadMatchedLinastoryArticles();
+                    renderLinastoryArticlesList();
+                    setLinastoryCopyStatus("");
+                } catch (error) {
+                    const message = error.message || "Không thể tải dữ liệu Linastory.";
+                    summary.textContent = message;
+                    setLinastoryCopyStatus(message, true);
+                } finally {
+                    button.disabled = false;
+                }
+            }
+
+            async function quickCopyLinastory(event) {
+                event?.preventDefault();
+                const button = document.getElementById("copyLinastoryButton");
+                try {
+                    button.disabled = true;
+                    setLinastoryCopyStatus("Đang lấy permalink Linastory để copy...");
+                    await loadMatchedLinastoryArticles();
+                    await copyMatchedLinastoryCustom();
+                } catch (error) {
+                    setLinastoryCopyStatus(error.message || "Không thể copy dữ liệu Linastory.", true);
+                } finally {
+                    button.disabled = false;
+                }
+            }
+
+            async function copyMatchedLinastoryCustom() {
+                try {
+                    const matchedRows = getLinastoryArticlesForCopy();
+                    if (matchedRows.length === 0) {
+                        throw new Error("Không có bài viết nào được chọn để copy.");
+                    }
+                    const unmatchedCount = matchedRows.filter((article) => !article.link).length;
+                    const rowsToCopy = matchedRows.filter((article) => article.link);
+                    if (rowsToCopy.length === 0) {
+                        throw new Error("Các bài được chọn đều chưa có permalink Linastory.");
+                    }
+                    const template = getLinastoryCopyTemplate().trim();
+                    if (!template) throw new Error("Mẫu copy đang trống. Nhấn chuột phải để chỉnh mẫu.");
+                    const text = rowsToCopy
+                        .map((row, index) => buildLinastoryExcelRow(renderLinastoryCopyTemplate(template, row, index)))
+                        .join("\n");
+                    await navigator.clipboard.writeText(text);
+                    const message = `Đã copy ${rowsToCopy.length} bài theo thứ tự index.${unmatchedCount ? ` Bỏ qua ${unmatchedCount} bài không có link.` : ""}`;
+                    setLinastoryCopyStatus(message);
+                    document.getElementById("linastoryArticlesSummary").textContent = message;
+                } catch (error) {
+                    setLinastoryCopyStatus(error.message || "Không thể copy dữ liệu Linastory.", true);
+                    document.getElementById("linastoryArticlesSummary").textContent =
+                        error.message || "Không thể copy dữ liệu Linastory.";
+                }
+            }
+
             function getStoryModeForCard(card) {
                 return getActiveStoryMode();
             }
@@ -2496,7 +3304,7 @@
                     }
                 }
 
-                return Math.max(14, bestSize - 4);
+                return Math.max(14, bestSize - 2);
             }
 
             function syncStoryTextInputToSavedArticle(markAsCustomized = true) {
@@ -3185,6 +3993,152 @@
             loadStorySuffixSettings();
             document.getElementById("storySuffixEnabled")?.addEventListener("change", saveStorySuffixSettings);
             document.getElementById("storySuffixInput")?.addEventListener("input", saveStorySuffixSettings);
+            const youtubeLanguageDetection = {
+                cache: new Map(),
+                requestId: 0,
+                timer: null,
+                result: null,
+                error: null,
+            };
+
+            function findFirstYoutubeVideoUrl(value) {
+                for (const line of String(value || "").split(/\r?\n/)) {
+                    const match = line.match(/(?:https?:\/\/)?(?:www\.|m\.)?(?:youtube\.com|youtu\.be)\/[^\s]+/i);
+                    if (!match) continue;
+
+                    const candidate = match[0].replace(/[),.;]+$/g, "");
+                    try {
+                        const url = new URL(/^https?:\/\//i.test(candidate) ? candidate : `https://${candidate}`);
+                        const host = url.hostname.toLowerCase();
+                        let videoId = null;
+                        if (host === "youtu.be") {
+                            videoId = url.pathname.split("/").filter(Boolean)[0];
+                        } else if (host === "youtube.com" || host.endsWith(".youtube.com")) {
+                            videoId =
+                                url.searchParams.get("v") ||
+                                url.pathname.match(/^\/(?:embed|shorts|live)\/([^/]+)/)?.[1];
+                        }
+                        if (/^[a-zA-Z0-9_-]{11}$/.test(videoId || "")) {
+                            return `https://www.youtube.com/watch?v=${videoId}`;
+                        }
+                    } catch {
+                        continue;
+                    }
+                }
+                return null;
+            }
+
+            function setYoutubeLanguageStatus(message, state = "info", actionLabel = "") {
+                const status = document.getElementById("youtubeLanguageStatus");
+                const statusText = document.getElementById("youtubeLanguageStatusText");
+                const action = document.getElementById("applyDetectedVideoLanguage");
+                statusText.textContent = message;
+                status.dataset.state = state;
+                status.hidden = !message;
+                action.textContent = actionLabel;
+                action.hidden = !actionLabel;
+            }
+
+            function updateYoutubeLanguageStatus() {
+                const result = youtubeLanguageDetection.result;
+                if (youtubeLanguageDetection.error) {
+                    setYoutubeLanguageStatus(youtubeLanguageDetection.error, "error");
+                    return;
+                }
+                if (!result) return;
+
+                if (!result.detected) {
+                    setYoutubeLanguageStatus(
+                        "Chưa đủ dữ liệu để nhận diện ngôn ngữ video từ metadata, title hoặc description.",
+                    );
+                    return;
+                }
+
+                const source = result.source === "metadata" ? "metadata YouTube" : "title/description";
+                if (!result.supported) {
+                    setYoutubeLanguageStatus(
+                        `Video đầu tiên có vẻ dùng ${result.languageName} (theo ${source}); hiện chỉ hỗ trợ tạo bài bằng English hoặc German. Lựa chọn hiện tại được giữ nguyên.`,
+                        "warning",
+                    );
+                    return;
+                }
+
+                const selectedLanguage = document.getElementById("language-select").value;
+                if (selectedLanguage === result.language) {
+                    setYoutubeLanguageStatus(
+                        `Đã nhận diện video đầu tiên là ${result.language} (theo ${source}); lựa chọn hiện tại khớp.`,
+                        "success",
+                    );
+                    return;
+                }
+
+                const optionLabel = result.language === "German" ? "Deutsch (German)" : "English";
+                setYoutubeLanguageStatus(
+                    `Video đầu tiên có vẻ dùng ${result.language} (theo ${source}), nhưng ngôn ngữ bài viết đang chọn là ${selectedLanguage}.`,
+                    "warning",
+                    `Đổi sang ${optionLabel}`,
+                );
+            }
+
+            function scheduleYoutubeLanguageDetection() {
+                clearTimeout(youtubeLanguageDetection.timer);
+                const requestId = ++youtubeLanguageDetection.requestId;
+                youtubeLanguageDetection.result = null;
+                youtubeLanguageDetection.error = null;
+
+                const input = document.getElementById("youtubeUrl");
+                const firstVideoUrl = findFirstYoutubeVideoUrl(input.value);
+                if (!firstVideoUrl) {
+                    const hasInput = Boolean(input.value.trim());
+                    setYoutubeLanguageStatus(
+                        hasInput ? "Chưa tìm thấy URL YouTube hợp lệ để kiểm tra ngôn ngữ." : "",
+                    );
+                    return;
+                }
+
+                const videoId = new URL(firstVideoUrl).searchParams.get("v");
+                const cached = youtubeLanguageDetection.cache.get(videoId);
+                if (cached) {
+                    youtubeLanguageDetection.result = cached;
+                    updateYoutubeLanguageStatus();
+                    return;
+                }
+
+                setYoutubeLanguageStatus("Đang kiểm tra ngôn ngữ video YouTube đầu tiên...");
+                youtubeLanguageDetection.timer = setTimeout(async () => {
+                    try {
+                        const response = await fetch("/detect-video-language", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ youtubeUrl: firstVideoUrl }),
+                        });
+                        const data = await response.json();
+                        if (!response.ok) {
+                            throw new Error(data.error || "Không thể kiểm tra ngôn ngữ video.");
+                        }
+                        if (requestId !== youtubeLanguageDetection.requestId) return;
+
+                        youtubeLanguageDetection.cache.set(videoId, data);
+                        youtubeLanguageDetection.result = data;
+                        updateYoutubeLanguageStatus();
+                    } catch (error) {
+                        if (requestId !== youtubeLanguageDetection.requestId) return;
+                        youtubeLanguageDetection.error =
+                            error.message || "Không thể kiểm tra ngôn ngữ video.";
+                        updateYoutubeLanguageStatus();
+                    }
+                }, 450);
+            }
+
+            document.getElementById("youtubeUrl")?.addEventListener("input", scheduleYoutubeLanguageDetection);
+            document.getElementById("language-select")?.addEventListener("change", updateYoutubeLanguageStatus);
+            document.getElementById("applyDetectedVideoLanguage")?.addEventListener("click", () => {
+                const detectedLanguage = youtubeLanguageDetection.result?.language;
+                if (!detectedLanguage) return;
+                const languageSelect = document.getElementById("language-select");
+                languageSelect.value = detectedLanguage;
+                languageSelect.dispatchEvent(new Event("change", { bubbles: true }));
+            });
             document.getElementById("language-select")?.addEventListener("change", syncStorySuffixPresetToArticleLanguage);
             syncStoryModeSelection();
 
@@ -3321,6 +4275,7 @@
                     resTitle.innerText = "✅ HTML Editor Mode";
                 }
             }
+
         </script>
     </body>
 </html>

@@ -194,9 +194,125 @@ app.get("/", (req, res) => {
 });
 
 function extractVideoId(url) {
-  const match = url.match(/(?:v=|\/embed\/|\.be\/)([a-zA-Z0-9_-]{11})/);
-  return match ? match[1] : null;
+  const value = String(url || "").trim();
+  if (!value) return null;
+
+  try {
+    const parsed = new URL(
+      /^[a-z][a-z\d+.-]*:\/\//i.test(value) ? value : `https://${value}`,
+    );
+    const host = parsed.hostname.toLowerCase();
+    let videoId = null;
+
+    if (host === "youtu.be") {
+      videoId = parsed.pathname.split("/").filter(Boolean)[0];
+    } else if (
+      host === "youtube.com" ||
+      host.endsWith(".youtube.com") ||
+      host === "youtube-nocookie.com" ||
+      host.endsWith(".youtube-nocookie.com")
+    ) {
+      videoId =
+        parsed.searchParams.get("v") ||
+        parsed.pathname.match(/^\/(?:embed|shorts|live)\/([^/]+)/)?.[1];
+    }
+
+    return videoId && /^[a-zA-Z0-9_-]{11}$/.test(videoId) ? videoId : null;
+  } catch {
+    return null;
+  }
 }
+
+function getLanguageName(languageCode) {
+  const code = String(languageCode || "").toLowerCase();
+  const primaryCode = code.split(/[-_]/)[0];
+  if (["en", "eng"].includes(primaryCode)) return "English";
+  if (["de", "deu", "ger"].includes(primaryCode)) return "German";
+
+  try {
+    return new Intl.DisplayNames(["vi"], { type: "language" }).of(code) || code;
+  } catch {
+    return code;
+  }
+}
+
+async function detectLanguageFromText(text) {
+  const { franc } = await import("franc-min");
+  return franc(String(text || ""), { minLength: 40 });
+}
+
+app.post("/detect-video-language", async (req, res) => {
+  const videoId = extractVideoId(req.body?.youtubeUrl);
+  if (!videoId) {
+    return res.status(400).json({ error: "Invalid YouTube URL" });
+  }
+
+  const youtubeApiKey = process.env.YOUTUBE_API_KEY;
+  if (!youtubeApiKey) {
+    return res.status(503).json({ error: "YouTube API key is not configured" });
+  }
+
+  try {
+    const query = new URLSearchParams({
+      part: "snippet",
+      id: videoId,
+      key: youtubeApiKey,
+    });
+    const ytRes = await fetch(
+      `https://www.googleapis.com/youtube/v3/videos?${query.toString()}`,
+    );
+    if (!ytRes.ok) {
+      console.error("YouTube language metadata API error:", ytRes.status);
+      return res.status(502).json({ error: "YouTube metadata lookup failed" });
+    }
+
+    const ytData = await ytRes.json();
+    const snippet = ytData.items?.[0]?.snippet;
+    if (!snippet) {
+      return res.status(404).json({ error: "Video not found on YouTube" });
+    }
+
+    const metadataLanguage =
+      snippet.defaultAudioLanguage || snippet.defaultLanguage || "";
+    const source = metadataLanguage ? "metadata" : "title-description";
+    const languageCode =
+      metadataLanguage ||
+      (await detectLanguageFromText(
+        `${snippet.title || ""}\n${snippet.description || ""}`,
+      ));
+
+    if (!languageCode || languageCode === "und") {
+      return res.json({
+        detected: false,
+        languageCode: null,
+        languageName: null,
+        supported: false,
+        source,
+      });
+    }
+
+    const normalizedCode = String(languageCode).toLowerCase();
+    const primaryCode = normalizedCode.split(/[-_]/)[0];
+    const language =
+      ["en", "eng"].includes(primaryCode)
+        ? "English"
+        : ["de", "deu", "ger"].includes(primaryCode)
+          ? "German"
+          : null;
+
+    return res.json({
+      detected: true,
+      language,
+      languageCode: normalizedCode,
+      languageName: getLanguageName(normalizedCode),
+      supported: Boolean(language),
+      source,
+    });
+  } catch (error) {
+    console.error("YouTube language detection failed:", error.message);
+    return res.status(502).json({ error: "Unable to detect video language" });
+  }
+});
 
 function getSportsThumbnailTextRequirement(language = "English") {
   const targetLanguage = normalizePromptLanguage(language);

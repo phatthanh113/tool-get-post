@@ -16,6 +16,11 @@
       "run_at": "document_idle"
     },
     {
+      "matches": ["http://localhost/*", "http://127.0.0.1/*"],
+      "js": ["linastory-bridge.js"],
+      "run_at": "document_idle"
+    },
+    {
       "matches": [
         "https://www.google.com/search*",
         "https://www.google.com.vn/search*"
