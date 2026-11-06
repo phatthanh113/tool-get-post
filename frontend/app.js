@@ -1853,7 +1853,7 @@ const DEFAULT_LINASTORY_COPY_TEMPLATE = "{title}\t{link}";
                     }
                 }
 
-                return Math.max(14, bestSize - 2);
+                return Math.max(28, bestSize - 2);
             }
 
             function syncStoryTextInputToSavedArticle(markAsCustomized = true) {
