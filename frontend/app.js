@@ -181,10 +181,20 @@ const DEFAULT_LINASTORY_COPY_TEMPLATE = "{title}\t{link}";
                 );
             }
 
+            function updateLinastoryCopyButtonStatus() {
+                const button = document.getElementById("copyLinastoryButton");
+                if (!button) return;
+
+                const copyRows = getLinastoryArticlesForCopy();
+                const allMatched = copyRows.length > 0 && copyRows.every((article) => Boolean(article.link));
+                button.textContent = `📋 Copy Linastory${allMatched ? " ✅" : ""}`;
+            }
+
             function renderLinastoryArticlesList() {
                 const list = document.getElementById("linastoryArticlesList");
                 const matchedCount = matchedLinastoryArticles.filter((article) => article.link).length;
                 const missingCount = matchedLinastoryArticles.length - matchedCount;
+                updateLinastoryCopyButtonStatus();
                 document.getElementById("linastoryArticlesSummary").textContent =
                     `${matchedCount} bài có permalink${missingCount ? ` · ${missingCount} bài chưa tìm thấy title tương ứng` : ""}. Thứ tự theo index; title trùng được ghép theo thứ tự trong extension.`;
                 list.replaceChildren();
@@ -267,6 +277,7 @@ const DEFAULT_LINASTORY_COPY_TEMPLATE = "{title}\t{link}";
                 if (!matchedLinastoryArticles.some((article) => article.link)) {
                     throw new Error("Không tìm thấy bài nào khớp title. Hãy kiểm tra dữ liệu trong extension Linastory.");
                 }
+                updateLinastoryCopyButtonStatus();
                 return matchedLinastoryArticles;
             }
 
@@ -1017,6 +1028,7 @@ const DEFAULT_LINASTORY_COPY_TEMPLATE = "{title}\t{link}";
                 resetDownloadSelectedStatus();
                 const selectAllBtn = document.getElementById("selectAllBtn");
                 if (selectAllBtn) selectAllBtn.textContent = selectedArticleIndexes.size > 0 ? "Clear" : "Select All";
+                updateLinastoryCopyButtonStatus();
             }
 
             function toggleSelectAll() {
@@ -1033,6 +1045,7 @@ const DEFAULT_LINASTORY_COPY_TEMPLATE = "{title}\t{link}";
                     const selectAllBtn = document.getElementById("selectAllBtn");
                     if (selectAllBtn) selectAllBtn.textContent = "Select All";
                     resetDownloadSelectedStatus();
+                    updateLinastoryCopyButtonStatus();
                     return;
                 }
                 // select all
@@ -1045,6 +1058,7 @@ const DEFAULT_LINASTORY_COPY_TEMPLATE = "{title}\t{link}";
                 const selectAllBtn = document.getElementById("selectAllBtn");
                 if (selectAllBtn) selectAllBtn.textContent = "Clear";
                 resetDownloadSelectedStatus();
+                updateLinastoryCopyButtonStatus();
             }
 
             function getSelectedIndexes() {
@@ -2823,6 +2837,8 @@ const DEFAULT_LINASTORY_COPY_TEMPLATE = "{title}\t{link}";
                 syncStoryTextInputToSavedArticle();
                 renderStoryPreview();
             });
+
+            document.getElementById("linastoryCopyMode")?.addEventListener("change", updateLinastoryCopyButtonStatus);
 
             function toggleView() {
                 const editor = document.getElementById("editorContainer");
