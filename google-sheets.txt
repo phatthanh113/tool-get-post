@@ -36,12 +36,13 @@ function pasteRows_(prefix, rows) {
   });
 
   var lastRow = target.getLastRow();
-  var startRow = 1;
+  var startRow = 2;
   if (lastRow > 0) {
     var columnB = target.getRange(1, 2, lastRow, 1).getValues();
-    var index = 0;
+    var index = 1;
     while (index < columnB.length && String(columnB[index][0]).trim() !== "") index++;
     startRow = index + 1;
+    if (startRow < 2) startRow = 2;
   }
 
   var neededRows = startRow + rows.length - 1;
