@@ -1017,6 +1017,102 @@ app.post("/convert-download", async (req, res) => {
   }
 });
 
+app.post("/save-download-file", async (req, res) => {
+  try {
+    if (!req.files || !req.files.file) {
+      return res.status(400).json({ error: "No file uploaded." });
+    }
+
+    const dir = String(req.body.dir || "").trim();
+    let fileName = String(req.body.fileName || "").trim();
+    if (!dir) {
+      return res.status(400).json({ error: "Thiếu đường dẫn thư mục lưu video." });
+    }
+    if (!/^([a-zA-Z]:\\|\\\\|\/)/.test(dir)) {
+      return res.status(400).json({ error: "Đường dẫn thư mục phải là đường dẫn tuyệt đối." });
+    }
+    if (!fileName) {
+      return res.status(400).json({ error: "Thiếu tên file." });
+    }
+    fileName = fileName.replace(/[^a-zA-Z0-9-_. ]/g, "_");
+
+    const targetDir = path.resolve(dir);
+    await fs.promises.mkdir(targetDir, { recursive: true });
+    const targetPath = path.join(targetDir, fileName);
+    await req.files.file.mv(targetPath);
+    res.json({ ok: true, savedTo: targetPath });
+  } catch (error) {
+    console.error("Save download file error:", error);
+    res.status(500).json({ error: error.message || "Không thể lưu file vào thư mục." });
+  }
+});
+
+async function callSheetsWebApp(payload) {
+  const webAppUrl = String(process.env.GS_WEBAPP_URL || "").trim();
+  if (!webAppUrl) {
+    throw new Error("Chưa cấu hình GS_WEBAPP_URL trong .env. Hãy thêm URL Web App Apps Script rồi restart server.");
+  }
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 20000);
+  try {
+    const response = await fetch(webAppUrl, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify(payload),
+      signal: controller.signal,
+    });
+    const text = await response.text();
+    let data;
+    try {
+      data = JSON.parse(text);
+    } catch (parseError) {
+      throw new Error(`Google Apps Script trả về nội dung không hợp lệ (HTTP ${response.status}).`);
+    }
+    if (!data.ok) {
+      throw new Error(data.error || "Google Apps Script trả lỗi không xác định.");
+    }
+    return data;
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
+app.post("/sheet-paste", async (req, res) => {
+  try {
+    const prefix = String(req.body.prefix || "").trim();
+    const rawRows = Array.isArray(req.body.rows) ? req.body.rows : [];
+    if (!prefix || !/^[a-zA-Z0-9_-]+$/.test(prefix)) {
+      return res.status(400).json({ error: "Prefix không hợp lệ (chỉ gồm chữ, số, dấu - và _)." });
+    }
+    if (rawRows.length === 0) {
+      return res.status(400).json({ error: "Không có hàng nào để dán." });
+    }
+    const rows = rawRows.map((row) =>
+      Array.isArray(row) ? row.map((cell) => String(cell ?? "")) : [String(row ?? "")],
+    );
+    const result = await callSheetsWebApp({ prefix, rows });
+    res.json(result);
+  } catch (error) {
+    console.error("Sheet paste error:", error);
+    res.status(error.name === "AbortError" ? 504 : 500).json({
+      error: error.name === "AbortError" ? "Google Apps Script phản hồi quá chậm (timeout 20s)." : error.message || "Không thể dán vào Google Sheet.",
+    });
+  }
+});
+
+app.get("/sheet-check", async (req, res) => {
+  try {
+    const result = await callSheetsWebApp({ action: "check" });
+    res.json(result);
+  } catch (error) {
+    console.error("Sheet check error:", error);
+    res.status(error.name === "AbortError" ? 504 : 500).json({
+      error: error.name === "AbortError" ? "Google Apps Script phản hồi quá chậm (timeout 20s)." : error.message || "Không thể kiểm tra Google Sheet.",
+    });
+  }
+});
+
+
 app.post("/generate-article", async (req, res) => {
   const {
     youtubeUrl,

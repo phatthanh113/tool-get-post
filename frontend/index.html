@@ -129,7 +129,11 @@
                     <option value="all">Copy tất cả bài viết</option>
                     <option value="selected">Chỉ copy bài đã chọn</option>
                 </select>
-                <button id="copyLinastoryButton" type="button" class="linastory-copy-button" onclick="openLinastoryCopyModal()" oncontextmenu="quickCopyLinastory(event)" title="Chuột trái: xem danh sách bài và link · Chuột phải: copy nhanh">📋 Copy Linastory</button>
+                <button id="copyLinastoryButton" type="button" class="linastory-copy-button" onclick="handleCopyLinastoryClick(event)" oncontextmenu="quickCopyLinastory(event)" title="Chuột trái: xem danh sách bài và link · Chuột phải: copy nhanh">📋 Copy Linastory</button>
+                <label style="display: flex; align-items: center; gap: 6px; color: var(--text-muted); font-size: 0.9rem; cursor: pointer; white-space: nowrap">
+                    <input id="linastorySheetModeCheck" type="checkbox" checked style="cursor: pointer" />
+                    Copy vào Google Sheet
+                </label>
                 <span style="color: var(--text-muted); font-size: 0.9rem">Chuột trái: xem bài và link · Chuột phải: copy nhanh.</span>
             </div>
 
@@ -191,6 +195,20 @@
                     <div style="display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 20px">
                         <span style="color: #475569; font-size: 0.95rem">Result cards appear here after generation.</span>
                         <div style="display: flex; gap: 8px; align-items: center">
+                            <input
+                                id="downloadBasePath"
+                                type="text"
+                                placeholder="D:\video-story (thư mục gốc)"
+                                aria-label="Thư mục gốc lưu video"
+                                style="padding: 8px 12px; border-radius: 10px; border: 1px solid #cbd5e1; font-size: 0.9rem; width: 220px"
+                            />
+                            <input
+                                id="downloadPrefixPath"
+                                type="text"
+                                placeholder="1110 (prefix thư mục)"
+                                aria-label="Prefix thư mục lưu video"
+                                style="padding: 8px 12px; border-radius: 10px; border: 1px solid #cbd5e1; font-size: 0.9rem; width: 130px"
+                            />
                             <button id="downloadSelectedBtn" type="button" class="btn-primary" style="padding: 8px 10px; font-size: 0.9rem" onclick="downloadSelectedArticles()">
                                 Download Selected
                             </button>
@@ -325,6 +343,7 @@
                 </div>
                 <div class="linastory-dialog-actions">
                     <button id="copyLinastoryMatchedButton" type="button" class="btn-primary linastory-copy-action" onclick="copyMatchedLinastoryCustom()" oncontextmenu="openLinastoryCopySettings(event)">📋 Sao chép custom</button>
+                    <button id="pasteLinastorySheetButton" type="button" class="btn-primary linastory-copy-action" onclick="pasteLinastoryToSheet()" title="Dán theo mẫu copy vào tab Google Sheet khớp Video filename prefix (vd: B → tab bear)">🧩 Dán vào Google Sheet</button>
                     <button id="openLinastoryCopySettingsButton" type="button" class="btn-secondary" onclick="openLinastoryCopySettingsFromList()">⚙️ Mẫu copy</button>
                     <button id="closeLinastoryArticlesButton" type="button" class="btn-secondary" onclick="closeLinastoryArticlesModal()">Đóng</button>
                 </div>
@@ -337,13 +356,9 @@
                     <button type="button" class="btn-secondary linastory-dialog-back" onclick="backToLinastoryArticles()">← Quay lại</button>
                 </div>
                 <p class="linastory-dialog-summary">Chọn thẻ mẫu để áp dụng định dạng, hoặc tự điền trường dữ liệu cần sao chép.</p>
-                <p style="color: #475569; margin-bottom: 10px; font-weight: 600">Thẻ mẫu:</p>
-                <div class="linastory-template-buttons" style="margin-bottom: 16px">
-                    <button type="button" class="linastory-template-card" data-copy-template="Vollständige Geschichte 👉 {shortlink}" onclick="setLinastoryCopyPreset(this.dataset.copyTemplate)">📖 Vollständige Geschichte 👉 {shortlink}</button>
-                    <button type="button" class="linastory-template-card" data-copy-template="Full Story👉 {shortlink}" onclick="setLinastoryCopyPreset(this.dataset.copyTemplate)">📖 Full Story👉 {shortlink}</button>
-                </div>
                 <p style="color: #475569; margin-bottom: 8px; font-weight: 600">Thẻ mẫu (bấm để chèn):</p>
                 <div class="linastory-dialog-actions linastory-token-buttons" style="margin-top: 0; margin-bottom: 14px">
+                    <div id="linastoryPresetCards" class="linastory-template-inline"></div>
                     <button type="button" class="btn-secondary" onclick="insertLinastoryCopyToken('{stt}')">{stt}</button>
                     <button type="button" class="btn-secondary" onclick="insertLinastoryCopyToken('{ngay}')">{ngay}</button>
                     <button type="button" class="btn-secondary" onclick="insertLinastoryCopyToken('{title}')">{title}</button>

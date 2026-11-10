@@ -1,0 +1,58 @@
+function doPost(e) {
+  var body = {};
+  try {
+    body = JSON.parse((e && e.postData && e.postData.contents) || "{}");
+  } catch (error) {}
+  if (String(body.action || "paste") === "check") {
+    var names = SpreadsheetApp.getActiveSpreadsheet().getSheets().map(function (sheet) { return sheet.getName(); });
+    return json_({ ok: true, sheets: names });
+  }
+
+  var prefix = String(body.prefix || "").trim();
+  var rows = Array.isArray(body.rows) ? body.rows : [];
+  if (!prefix) return json_({ ok: false, error: "Thiếu prefix." });
+  if (rows.length === 0) return json_({ ok: false, error: "Không có hàng nào để dán." });
+  return json_(pasteRows_(prefix, rows));
+}
+
+function pasteRows_(prefix, rows) {
+  var spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
+  var prefixLower = prefix.toLowerCase();
+  var names = spreadsheet.getSheets().map(function (sheet) { return sheet.getName(); });
+  var matched = names.slice().sort().filter(function (name) {
+    return name.toLowerCase().indexOf(prefixLower) === 0;
+  })[0];
+  if (!matched) {
+    return { ok: false, error: 'Không tìm thấy tab bắt đầu bằng "' + prefix + '". Các tab có sẵn: ' + names.join(", ") };
+  }
+  var target = spreadsheet.getSheetByName(matched);
+
+  var columnWidth = 1;
+  rows.forEach(function (row) { if (Array.isArray(row) && row.length > columnWidth) columnWidth = row.length; });
+  rows = rows.map(function (row) {
+    var padded = [];
+    for (var i = 0; i < columnWidth; i++) padded.push(String((row && row[i]) || ""));
+    return padded;
+  });
+
+  var lastRow = target.getLastRow();
+  var startRow = 1;
+  if (lastRow > 0) {
+    var columnB = target.getRange(1, 2, lastRow, 1).getValues();
+    var index = 0;
+    while (index < columnB.length && String(columnB[index][0]).trim() !== "") index++;
+    startRow = index + 1;
+  }
+
+  var neededRows = startRow + rows.length - 1;
+  if (target.getMaxRows() < neededRows) target.insertRowsAfter(target.getMaxRows(), neededRows - target.getMaxRows());
+  var neededColumns = 1 + columnWidth;
+  if (target.getMaxColumns() < neededColumns) target.insertColumnsAfter(target.getMaxColumns(), neededColumns - target.getMaxColumns());
+
+  target.getRange(startRow, 2, rows.length, columnWidth).setValues(rows);
+  return { ok: true, tab: matched, startRow: startRow, count: rows.length };
+}
+
+function json_(object) {
+  return ContentService.createTextOutput(JSON.stringify(object)).setMimeType(ContentService.MimeType.JSON);
+}

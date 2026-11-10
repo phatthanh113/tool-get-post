@@ -434,7 +434,6 @@
                 max-width: 720px;
             }
 
-            .linastory-template-buttons button,
             .linastory-token-buttons button {
                 flex: 0 0 auto;
                 padding: 9px 13px;
@@ -442,22 +441,21 @@
                 font-size: 0.9rem;
             }
 
-            .linastory-template-buttons {
-                display: grid;
-                grid-template-columns: repeat(2, minmax(0, 1fr));
-                gap: 12px;
+            .linastory-template-inline {
+                display: contents;
             }
 
             .linastory-template-card {
-                min-height: 76px !important;
-                padding: 14px 16px !important;
+                min-height: 42px !important;
+                padding: 9px 13px !important;
                 border: 1px solid #a7f3d0 !important;
-                border-radius: 12px !important;
+                border-radius: 10px !important;
                 background: #ecfdf5 !important;
                 color: #065f46 !important;
                 box-shadow: none !important;
-                text-align: left;
-                line-height: 1.5;
+                text-align: center;
+                line-height: 1.4;
+                white-space: nowrap;
             }
 
             .linastory-template-card:hover {
@@ -1070,8 +1068,8 @@
                 .linastory-dialog-panel {
                     padding: 18px 14px;
                 }
-                .linastory-template-buttons {
-                    grid-template-columns: 1fr;
+                .linastory-token-buttons {
+                    flex-wrap: wrap;
                 }
                 .linastory-dialog-actions button {
                     width: auto;
