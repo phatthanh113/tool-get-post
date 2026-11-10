@@ -1637,6 +1637,41 @@
             }
 
             let activeBuzzGeneration = null;
+            let lastBuzzUrls = "";
+            try {
+                lastBuzzUrls = localStorage.getItem("lastBuzzUrls") || "";
+            } catch (error) {
+                lastBuzzUrls = "";
+            }
+
+            function updateBuzzButtonVisibility() {
+                const buzzBtn = document.getElementById("buzzBtn");
+                const urlInput = document.getElementById("youtubeUrl");
+                const restoreBtn = document.getElementById("restoreBuzzUrlsBtn");
+                if (!buzzBtn || !urlInput) return;
+                const hasUrls = urlInput.value
+                    .split("\n")
+                    .some((line) => line.trim() !== "");
+                buzzBtn.style.display = hasUrls && !activeBuzzGeneration ? "inline-flex" : "none";
+                if (restoreBtn) {
+                    restoreBtn.style.display = !hasUrls && lastBuzzUrls && !activeBuzzGeneration ? "inline-flex" : "none";
+                }
+            }
+
+            function saveLastBuzzUrls(urls) {
+                lastBuzzUrls = urls;
+                try {
+                    localStorage.setItem("lastBuzzUrls", urls);
+                } catch (error) {}
+                updateBuzzButtonVisibility();
+            }
+
+            function restoreBuzzUrls() {
+                const urlInput = document.getElementById("youtubeUrl");
+                if (!urlInput || !lastBuzzUrls) return;
+                urlInput.value = lastBuzzUrls;
+                urlInput.dispatchEvent(new Event("input", { bubbles: true }));
+            }
 
             function finishBuzzGeneration(run) {
                 if (run.finished) return;
@@ -1647,6 +1682,7 @@
                 document.getElementById("loading").style.pointerEvents = "";
                 document.getElementById("buzzBtn").disabled = false;
                 document.getElementById("stopBuzzBtn").style.display = "none";
+                updateBuzzButtonVisibility();
 
                 if (activeBuzzGeneration === run) activeBuzzGeneration = null;
                 run.resolve();
@@ -1680,6 +1716,9 @@
                 }
                 if (activeBuzzGeneration) return;
 
+                saveLastBuzzUrls(urls.join("\n"));
+                urlInput.value = "";
+
                 const loading = document.getElementById("loading");
                 const resultSection = document.getElementById("resultSection");
                 const output = document.getElementById("output");
@@ -1688,6 +1727,7 @@
                 loading.style.pointerEvents = "none";
                 document.getElementById("buzzBtn").disabled = true;
                 document.getElementById("stopBuzzBtn").style.display = "inline-flex";
+                updateBuzzButtonVisibility();
                 resultSection.style.display = "block";
                 output.innerHTML = "";
                 downloadedArticleIndexes.clear();
@@ -3025,6 +3065,9 @@
             }
 
             document.getElementById("youtubeUrl")?.addEventListener("input", scheduleYoutubeLanguageDetection);
+            document.getElementById("youtubeUrl")?.addEventListener("input", updateBuzzButtonVisibility);
+            document.getElementById("youtubeUrl")?.addEventListener("change", updateBuzzButtonVisibility);
+            updateBuzzButtonVisibility();
             document.getElementById("language-select")?.addEventListener("change", updateYoutubeLanguageStatus);
             document.getElementById("applyDetectedVideoLanguage")?.addEventListener("click", () => {
                 const detectedLanguage = youtubeLanguageDetection.result?.language;
