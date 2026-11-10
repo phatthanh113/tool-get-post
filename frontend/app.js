@@ -188,6 +188,30 @@ const DEFAULT_LINASTORY_COPY_TEMPLATE = "{title}\t{link}";
                 const copyRows = getLinastoryArticlesForCopy();
                 const allMatched = copyRows.length > 0 && copyRows.every((article) => Boolean(article.link));
                 button.textContent = `📋 Copy Linastory${allMatched ? " ✅" : ""}`;
+                button.dataset.linastoryMatched = allMatched ? "true" : "false";
+            }
+
+            let linastoryAutoMatchTimer = null;
+            let linastoryAutoMatchInProgress = false;
+
+            function scheduleLinastoryAutoMatch(delay = 800) {
+                if (linastoryAutoMatchTimer) clearTimeout(linastoryAutoMatchTimer);
+                linastoryAutoMatchTimer = setTimeout(() => {
+                    refreshLinastoryMatchStatus();
+                }, delay);
+            }
+
+            async function refreshLinastoryMatchStatus() {
+                if (linastoryAutoMatchInProgress) return;
+                linastoryAutoMatchInProgress = true;
+                try {
+                    await loadMatchedLinastoryArticles();
+                    updateLinastoryCopyButtonStatus();
+                } catch (error) {
+                    updateLinastoryCopyButtonStatus();
+                } finally {
+                    linastoryAutoMatchInProgress = false;
+                }
             }
 
             function renderLinastoryArticlesList() {
@@ -274,9 +298,6 @@ const DEFAULT_LINASTORY_COPY_TEMPLATE = "{title}\t{link}";
                         shortlink: match?.shortlink || "",
                     };
                 });
-                if (!matchedLinastoryArticles.some((article) => article.link)) {
-                    throw new Error("Không tìm thấy bài nào khớp title. Hãy kiểm tra dữ liệu trong extension Linastory.");
-                }
                 updateLinastoryCopyButtonStatus();
                 return matchedLinastoryArticles;
             }
@@ -528,6 +549,7 @@ const DEFAULT_LINASTORY_COPY_TEMPLATE = "{title}\t{link}";
                     saved.push(item);
                 }
                 localStorage.setItem("saved_articles", JSON.stringify(saved));
+                scheduleLinastoryAutoMatch();
             }
 
             function getSavedArticleByIndex(index) {
@@ -649,6 +671,7 @@ const DEFAULT_LINASTORY_COPY_TEMPLATE = "{title}\t{link}";
                 saved = saved.filter((item) => item.url !== url);
                 saved = normalizeSavedArticleIndexes(saved);
                 localStorage.setItem("saved_articles", JSON.stringify(saved));
+                scheduleLinastoryAutoMatch();
                 const nextSelectedIndexes = new Set();
                 const nextDownloadedIndexes = new Set();
                 selectedArticleIndexes.forEach((selectedIndex) => {
@@ -687,6 +710,7 @@ const DEFAULT_LINASTORY_COPY_TEMPLATE = "{title}\t{link}";
 
                 const selectAllBtn = document.getElementById("selectAllBtn");
                 if (selectAllBtn) selectAllBtn.textContent = selectedArticleIndexes.size > 0 ? "Clear" : "Select All";
+                scheduleLinastoryAutoMatch();
             }
 
             function updateSavedArticle(idOrUrl, field, value) {
@@ -711,6 +735,7 @@ const DEFAULT_LINASTORY_COPY_TEMPLATE = "{title}\t{link}";
                 if (idx > -1) {
                     saved[idx][field] = value;
                     localStorage.setItem("saved_articles", JSON.stringify(saved));
+                    scheduleLinastoryAutoMatch();
                 }
             }
 
@@ -734,6 +759,7 @@ const DEFAULT_LINASTORY_COPY_TEMPLATE = "{title}\t{link}";
                 article.players = value;
                 article.storyText = value;
                 localStorage.setItem("saved_articles", JSON.stringify(saved));
+                scheduleLinastoryAutoMatch();
             }
 
             function restoreArticlesFromLocalStorage() {
@@ -787,6 +813,7 @@ const DEFAULT_LINASTORY_COPY_TEMPLATE = "{title}\t{link}";
                     output.appendChild(articleCard);
                 });
                 updateStoryNavigationButtons();
+                scheduleLinastoryAutoMatch(300);
                 alert(`Đã khôi phục thành công ${saved.length} bài viết!`);
             }
 
@@ -2708,7 +2735,15 @@ const DEFAULT_LINASTORY_COPY_TEMPLATE = "{title}\t{link}";
                             headers: { "Content-Type": "application/json" },
                             body: JSON.stringify({ youtubeUrl: firstVideoUrl }),
                         });
-                        const data = await response.json();
+                        const responseText = await response.text();
+                        let data;
+                        try {
+                            data = responseText ? JSON.parse(responseText) : {};
+                        } catch (parseError) {
+                            throw new Error(
+                                `Máy chủ không trả về JSON hợp lệ (HTTP ${response.status}). Hãy restart server bằng npm start và kiểm tra backend/server.js.`,
+                            );
+                        }
                         if (!response.ok) {
                             throw new Error(data.error || "Không thể kiểm tra ngôn ngữ video.");
                         }
@@ -2838,7 +2873,21 @@ const DEFAULT_LINASTORY_COPY_TEMPLATE = "{title}\t{link}";
                 renderStoryPreview();
             });
 
-            document.getElementById("linastoryCopyMode")?.addEventListener("change", updateLinastoryCopyButtonStatus);
+            document.getElementById("linastoryCopyMode")?.addEventListener("change", () => {
+                updateLinastoryCopyButtonStatus();
+                scheduleLinastoryAutoMatch(300);
+            });
+            document.addEventListener("visibilitychange", () => {
+                if (!document.hidden) scheduleLinastoryAutoMatch(300);
+            });
+            window.addEventListener("storage", (event) => {
+                if (event.key === "saved_articles") scheduleLinastoryAutoMatch(300);
+            });
+
+            setTimeout(() => refreshLinastoryMatchStatus(), 500);
+            setInterval(() => {
+                if (!document.hidden) refreshLinastoryMatchStatus();
+            }, 5000);
 
             function toggleView() {
                 const editor = document.getElementById("editorContainer");
