@@ -22,52 +22,49 @@
                     <textarea
                         id="youtubeUrl"
                         class="w-full"
-                        rows="5"
+                        rows="3"
                         placeholder="Paste multiple YouTube links here (Nhập URL video TikTok)&#10;https://youtube.com/watch?v=...&#10;https://youtube.com/watch?v=..."
                         required
                     ></textarea>
                 </div>
 
-                <div class="input-group">
-                    <label for="videoPrefixInput">Video filename prefix</label>
-                    <input
-                        id="videoPrefixInput"
-                        type="text"
-                        class="w-full"
-                        placeholder="Enter prefix, e.g. t"
-                        value=""
-                        style="padding: 12px; border-radius: 12px; border: 1px solid #cbd5e1; width: 100%"
-                    />
-                    <p style="margin-top: 8px; color: var(--text-muted); font-size: 0.9rem">
-                        Enter a prefix like
-                        <strong>t</strong>
-                        , then the files will become
-                        <strong>t1</strong>
-                        ,
-                        <strong>t2</strong>
-                        , etc.
-                    </p>
-                </div>
-                <div class="input-group">
-                    <label for="videoStartNumberInput">Starting video number</label>
-                    <input
-                        id="videoStartNumberInput"
-                        type="number"
-                        class="w-full"
-                        min="1"
-                        placeholder="1"
-                        value="1"
-                        style="padding: 12px; border-radius: 12px; border: 1px solid #cbd5e1; width: 100%"
-                    />
-                    <p style="margin-top: 8px; color: var(--text-muted); font-size: 0.9rem">
-                        Enter the starting number for the first article. If prefix is
-                        <strong>t</strong>
-                        and you enter
-                        <strong>11</strong>
-                        , names will start at
-                        <strong>t11</strong>
-                        .
-                    </p>
+                <div style="grid-column: span 2; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px">
+                    <div class="input-group">
+                        <label for="videoPrefixInput">Video filename prefix</label>
+                        <input
+                            id="videoPrefixInput"
+                            type="text"
+                            class="w-full"
+                            placeholder="Enter prefix, e.g. t"
+                            value=""
+                            style="padding: 12px; border-radius: 12px; border: 1px solid #cbd5e1; width: 100%"
+                        />
+                        <p style="margin-top: 0; color: var(--text-muted); font-size: 0.85rem">
+                            Prefix <strong>t</strong> → <strong>t1</strong>, <strong>t2</strong>...
+                        </p>
+                    </div>
+                    <div class="input-group">
+                        <label for="videoStartNumberInput">Starting video number</label>
+                        <input
+                            id="videoStartNumberInput"
+                            type="number"
+                            class="w-full"
+                            min="1"
+                            placeholder="1"
+                            value="1"
+                            style="padding: 12px; border-radius: 12px; border: 1px solid #cbd5e1; width: 100%"
+                        />
+                        <p style="margin-top: 0; color: var(--text-muted); font-size: 0.85rem">
+                            Nhập 11 → bắt đầu <strong>t11</strong>
+                        </p>
+                    </div>
+                    <div class="input-group">
+                        <label for="language-select">Ngôn ngữ bài viết</label>
+                        <select id="language-select" style="padding: 12px; border-radius: 12px; border: 1px solid #cbd5e1; width: 100%">
+                            <option value="English" selected>English</option>
+                            <option value="German">Deutsch (German)</option>
+                        </select>
+                    </div>
                 </div>
 
                 <div class="input-group" style="display: none">
@@ -79,16 +76,9 @@
                     </select>
                 </div>
 
-                <div class="input-group">
-                    <label for="language-select">Ngôn ngữ bài viết</label>
-                    <select id="language-select" style="padding: 12px; border-radius: 12px; border: 1px solid #cbd5e1; width: 100%">
-                        <option value="English" selected>English</option>
-                        <option value="German">Deutsch (German)</option>
-                    </select>
-                    <div id="youtubeLanguageStatus" class="youtube-language-status" role="status" aria-live="polite" hidden>
-                        <span id="youtubeLanguageStatusText"></span>
-                        <button id="applyDetectedVideoLanguage" type="button" hidden></button>
-                    </div>
+                <div id="youtubeLanguageStatus" class="full-width youtube-language-status" role="status" aria-live="polite" hidden>
+                    <span id="youtubeLanguageStatusText"></span>
+                    <button id="applyDetectedVideoLanguage" type="button" hidden></button>
                 </div>
 
                 <div class="input-group" style="display: none">
@@ -100,7 +90,7 @@
                     </select>
                 </div>
 
-                <div class="input-group">
+                <div class="input-group" style="display: none">
                     <label for="ai-provider">AI Engine</label>
                     <select id="ai-provider">
                         <option value="groq" selected>Groq (Smart Fallback to OpenRouter)</option>
@@ -114,7 +104,7 @@
                     <label for="_r_0_">Enable advanced processing & SEO optimization</label>
                 </div>
 
-                <div class="input-group">
+                <div class="input-group" style="display: none">
                     <label for="generation-mode">Generation Mode</label>
                     <select id="generation-mode" style="padding: 12px; border-radius: 12px; border: 1px solid #cbd5e1; width: 100%">
                         <option value="story">Story</option>
@@ -136,25 +126,21 @@
             </div>
 
             <div class="linastory-copy-toolbar">
-                <select id="linastoryCopyMode" aria-label="Phạm vi copy Linastory">
-                    <option value="all">Copy tất cả bài viết</option>
-                    <option value="selected">Chỉ copy bài đã chọn</option>
+                <select id="linastoryCopyMode" aria-label="Phạm vi copy Linastory" title="Phạm vi copy">
+                    <option value="all">Tất cả bài viết</option>
+                    <option value="selected">Bài đã chọn</option>
                 </select>
-                <button id="copyLinastoryButton" type="button" class="linastory-copy-button" onclick="handleCopyLinastoryClick(event)" oncontextmenu="quickCopyLinastory(event)" title="Chuột trái: xem danh sách bài và link · Chuột phải: copy nhanh">📋 Copy Linastory</button>
-                <label style="display: flex; align-items: center; gap: 6px; color: var(--text-muted); font-size: 0.9rem; cursor: pointer; white-space: nowrap">
+                <button id="copyLinastoryButton" type="button" class="linastory-copy-button" onclick="handleCopyLinastoryClick(event)" oncontextmenu="quickCopyLinastory(event)" title="Chuột trái: xử lý · Chuột phải: copy nhanh">📋 Copy Linastory</button>
+                <label style="display: flex; align-items: center; gap: 6px; color: var(--text-muted); font-size: 0.9rem; cursor: pointer; white-space: nowrap" title="Tick: nút Copy Linastory sẽ dán vào tab Google Sheet khớp prefix. Bỏ tick: mở modal danh sách bài">
                     <input id="linastorySheetModeCheck" type="checkbox" checked style="cursor: pointer" />
                     Copy vào Google Sheet
                 </label>
-                <span style="color: var(--text-muted); font-size: 0.9rem">Chuột trái: xem bài và link · Chuột phải: copy nhanh.</span>
-            </div>
-            <p id="linastoryCopyStatus" role="status" aria-live="polite" style="min-height: 20px; margin-top: 8px; color: var(--text-muted)"></p>
-
-            <div style="display: flex; justify-content: flex-end; margin-top: 10px;">
-                <label style="display: inline-flex; align-items: center; gap: 8px; font-weight: 600; color: var(--text-muted);">
-                    <input id="autoPublishCheckbox" type="checkbox" checked />
+                <label style="display: inline-flex; align-items: center; gap: 8px; font-weight: 600; color: var(--text-muted); cursor: pointer; white-space: nowrap; margin-left: auto">
+                    <input id="autoPublishCheckbox" type="checkbox" checked style="cursor: pointer" />
                     Tự động Publish Linastory
                 </label>
             </div>
+            <p id="linastoryCopyStatus" role="status" aria-live="polite" style="min-height: 20px; margin-top: 8px; color: var(--text-muted)"></p>
 
             <div id="loading" class="loading-overlay">
                 <div class="spinner"></div>

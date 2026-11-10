@@ -71,8 +71,8 @@
             .form-section {
                 display: grid;
                 grid-template-columns: 1fr 1fr;
-                gap: 24px;
-                margin-bottom: 30px;
+                gap: 14px 24px;
+                margin-bottom: 16px;
             }
 
             .full-width {
@@ -191,7 +191,8 @@
                 flex-wrap: wrap;
                 align-items: center;
                 gap: 8px;
-                margin-top: 20px;
+                margin-top: 16px;
+                margin-bottom: 18px;
             }
 
             .button-group > button {
