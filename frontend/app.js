@@ -578,7 +578,11 @@
                     });
                     const data = await response.json().catch(() => ({}));
                     if (!response.ok) throw new Error(data.error || "Không thể dán vào Google Sheet.");
-                    const message = `Đã dán ${data.count} hàng vào tab "${data.tab}", bắt đầu từ row ${data.startRow}.${unmatchedCount ? ` Bỏ qua ${unmatchedCount} bài không có link.` : ""}`;
+                    let message = `Đã dán ${data.count} hàng vào tab "${data.tab}", bắt đầu từ row ${data.startRow}.${unmatchedCount ? ` Bỏ qua ${unmatchedCount} bài không có link.` : ""}`;
+                    const closedCount = await closeLinastoryTabsAfterQuickCopy();
+                    if (closedCount > 0) {
+                        message += ` Đã đóng ${closedCount} tab Linastory.`;
+                    }
                     setLinastoryCopyStatus(message);
                     document.getElementById("linastoryArticlesSummary").textContent = message;
                     linastoryPasteState.signature = getLinastoryRowsSignature();
