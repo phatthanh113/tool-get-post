@@ -1845,11 +1845,6 @@
                 return Boolean(document.getElementById("autoFlowDownloadCheck")?.checked);
             }
 
-            function countStoryTextWords(text) {
-                const matches = String(text || "").match(/[\p{L}\p{N}]+(?:['’\-][\p{L}\p{N}]+)*/gu);
-                return matches ? matches.length : 0;
-            }
-
             function probeThumbnailVariant(videoId, variants = ["maxresdefault", "sddefault", "hqdefault"]) {
                 return new Promise((resolve) => {
                     const tryLoad = (index) => {
@@ -2016,9 +2011,9 @@
                                 const article = getSavedArticleByIndex(articleIndex);
                                 if (!article) continue;
                                 const text = (article.players || "").trim() || buildSportsThumbnailText(article.article || "");
-                                if (countStoryTextWords(text) >= 50) continue;
+                                if (storyGetRawAutoFontSize(text) <= 35) continue;
 
-                                setAutoFlowButton("running", stepLabel(5, `Gen lại text bài ${articleIndex + 1} (< 50 chữ)...`));
+                                setAutoFlowButton("running", stepLabel(5, `Gen lại text bài ${articleIndex + 1} (font > 35)...`));
                                 try {
                                     const language = document.getElementById("language-select")?.value || "English";
                                     const provider = document.getElementById("ai-provider")?.value || "groq";
@@ -2620,8 +2615,8 @@
                 unlockBodyScroll();
             }
 
-            function storyGetAutoFontSize(text, mode = getActiveStoryMode()) {
-                if (!text || !text.trim()) return 33;
+            function storyGetRawAutoFontSize(text, mode = getActiveStoryMode()) {
+                if (!text || !text.trim()) return 38;
 
                 const canvas = document.getElementById("storyExportCanvas");
                 const ctx = canvas.getContext("2d");
@@ -2649,7 +2644,11 @@
                     }
                 }
 
-                return Math.min(33, Math.max(28, bestSize - 2));
+                return bestSize - 2;
+            }
+
+            function storyGetAutoFontSize(text, mode = getActiveStoryMode()) {
+                return Math.min(33, Math.max(28, storyGetRawAutoFontSize(text, mode)));
             }
 
             function syncStoryTextInputToSavedArticle(markAsCustomized = true) {
