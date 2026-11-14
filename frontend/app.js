@@ -1886,7 +1886,7 @@
                     const badge = document.createElement("span");
                     badge.className = "auto-flow-warning";
                     badge.textContent = "⚠️";
-                    badge.title = `Auto: thumbnail text sau regen vẫn quá dài (font auto = ${fontSize} ≤ 33) — bài này CHƯA được tải video. Sửa Thumbnail Text rồi bấm 🔄 hoặc download lại tay.`;
+                    badge.title = `Auto: thumbnail text sau regen chưa đủ dài (font auto = ${fontSize} ≥ 32) — bài này CHƯA được tải video. Sửa Thumbnail Text rồi bấm 🔄 hoặc download lại tay.`;
                     badge.style.fontSize = "1.1rem";
                     badge.style.marginLeft = "4px";
                     controls.appendChild(badge);
@@ -2057,10 +2057,11 @@
                                     console.warn(`⚠️ Auto regen text bài ${articleIndex + 1} thất bại: ${error.message}`);
                                 }
 
-                                // Font thô sau regen vẫn ≤ 33 (32/33 trở xuống) → để lại bài cho user, bỏ qua tải
+                                // Font thô sau regen phải < 32 (text đủ dài) mới chấp nhận tải;
+                                // từ 32 trở lên → để lại bài cho user
                                 if (regenText) {
                                     const afterFont = storyGetRawAutoFontSize(regenText);
-                                    if (afterFont <= 33) {
+                                    if (afterFont >= 32) {
                                         markAutoFlowWarningCard(articleIndex, afterFont);
                                         leftOutArticles.push(`#${articleIndex + 1} (font ${afterFont})`);
                                         selectedArticleIndexes.delete(articleIndex);
@@ -2080,7 +2081,7 @@
                             if (leftOutArticles.length > 0) {
                                 setAutoFlowButton("done", "✅ Đã hoàn thành");
                                 setLinastoryCopyStatus(
-                                    `🤖 Auto: đã tải video. Đã để lại ${leftOutArticles.length} bài chưa tải (text sau regen vẫn dài, xem ⚠️ trên card): ${leftOutArticles.join(", ")}.`,
+                                    `🤖 Auto: đã tải video. Đã để lại ${leftOutArticles.length} bài chưa tải (text sau regen chưa đủ dài, font ≥ 32, xem ⚠️ trên card): ${leftOutArticles.join(", ")}.`,
                                     true,
                                 );
                             }
