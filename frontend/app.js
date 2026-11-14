@@ -2621,7 +2621,7 @@
             }
 
             function storyGetAutoFontSize(text, mode = getActiveStoryMode()) {
-                if (!text || !text.trim()) return 38;
+                if (!text || !text.trim()) return 33;
 
                 const canvas = document.getElementById("storyExportCanvas");
                 const ctx = canvas.getContext("2d");
