@@ -700,6 +700,7 @@
                                             <option value="maxresdefault" ${variant === "maxresdefault" ? "selected" : ""}>maxresdefault.jpg</option>
                                             <option value="maxres1" ${variant === "maxres1" ? "selected" : ""}>maxres1.jpg</option>
                                             <option value="maxres2" ${variant === "maxres2" ? "selected" : ""}>maxres2.jpg</option>
+                                            <option value="hqdefault" ${variant === "hqdefault" ? "selected" : ""}>hqdefault.jpg</option>
                                             <option value="custom" ${variant === "custom" ? "selected" : ""}>Tải ảnh ngoài</option>
                                         </select>
                                         <button type="button" class="btn-secondary" style="padding: 10px 14px; font-size: 0.9rem;" onclick="document.getElementById('thumbnail-file-${item.index}').click()">
@@ -1845,7 +1846,7 @@
                 return Boolean(document.getElementById("autoFlowDownloadCheck")?.checked);
             }
 
-            function probeThumbnailVariant(videoId, variants = ["maxresdefault", "sddefault", "hqdefault"]) {
+            function probeThumbnailVariant(videoId, variants = ["maxresdefault", "maxres1", "maxres2", "hqdefault"]) {
                 return new Promise((resolve) => {
                     const tryLoad = (index) => {
                         if (index >= variants.length) {
@@ -2535,7 +2536,7 @@
                 const currentItem = getSavedArticleByIndex(activeStoryCardIndex);
                 const isCustom = currentItem?.thumbnailVariant === "custom";
                 if (!isCustom && currentItem) {
-                    ["sddefault", "hqdefault"].forEach((variant) => {
+                    ["maxres1", "maxres2", "hqdefault"].forEach((variant) => {
                         const url = currentItem.videoId
                             ? getThumbnailVariantUrl(currentItem.videoId, variant)
                             : null;
