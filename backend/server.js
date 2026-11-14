@@ -8,7 +8,6 @@ const ffmpeg = require("fluent-ffmpeg");
 const fs = require("fs");
 const os = require("os");
 const { GoogleGenerativeAI } = require("@google/generative-ai");
-const { default: Groq } = require("groq-sdk");
 
 // Add detailed environment logging
 console.log("Environment Check:");
@@ -148,11 +147,7 @@ function getRandomDuration(min = 8, max = 15) {
   return Math.random() * (max - min) + min;
 }
 
-// Timeout helpers and default values for thumbnail operations
-const DEFAULT_THUMB_OCR_TIMEOUT = parseInt(
-  process.env.THUMB_OCR_TIMEOUT_MS || "5000",
-  10,
-);
+// Timeout values for clickbait generation
 const DEFAULT_CLICKBAIT_TIMEOUT = parseInt(
   process.env.CLICKBAIT_TIMEOUT_MS || "30000",
   10,
@@ -538,54 +533,6 @@ async function generateWithOpenRouter(
   return content;
 }
 
-async function generateWithLocalAI(
-  youtubeUrl,
-  title,
-  truncatedDescription,
-  thumbnailText,
-  generationMode = "story",
-  language = "English",
-) {
-  const localUrl =
-    process.env.LOCAL_AI_URL || "http://localhost:8080/v1/chat/completions";
-  const localModel = process.env.LOCAL_AI_MODEL || "Qwen3.7-Plus";
-
-  console.log(
-    `📡 Sending request to Local AI using model: ${localModel} at ${localUrl} for: ${title}`,
-  );
-
-  const apiRes = await fetch(localUrl, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      model: localModel,
-      messages: [
-        {
-          role: "user",
-          content: getPrompt(
-            youtubeUrl,
-            title,
-            truncatedDescription,
-            thumbnailText,
-            generationMode,
-            language,
-          ),
-        },
-      ],
-    }),
-  });
-
-  if (!apiRes.ok) {
-    const errorData = await apiRes.text().catch(() => "");
-    throw new Error(`Local AI API Error: ${apiRes.status} ${errorData}`);
-  }
-
-  const apiData = await apiRes.json();
-  return apiData.choices[0].message.content;
-}
-
 // API Key Rotation Logic
 const groqKeys = (process.env.GROQ_API_KEYS || "")
   .split(",")
@@ -692,8 +639,8 @@ function validateSportsThumbnailText(text = "") {
   if (
     headlineWordCount < 8 ||
     headlineWordCount > 15 ||
-    bodyWordCount < 90 ||
-    bodyWordCount > 120
+    bodyWordCount < 80 ||
+    bodyWordCount > 100
   ) {
     return null;
   }
@@ -701,16 +648,31 @@ function validateSportsThumbnailText(text = "") {
   return `${headline}\n${body}`;
 }
 
+function stripHtmlToText(value = "") {
+  return String(value || "")
+    .replace(/<style[\s\S]*?<\/style>/gi, " ")
+    .replace(/<script[\s\S]*?<\/script>/gi, " ")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/&nbsp;/gi, " ")
+    .replace(/&amp;/gi, "&")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 async function generateValidatedSportsThumbnailText(
   sourceText,
   title,
   provider,
   language = "English",
+  options = {},
 ) {
+  const { allowInvalid = false } = options;
+  // Strip HTML tags so the model reads clean text instead of markup noise.
+  const cleanSource = stripHtmlToText(sourceText);
   let previousDraft = "";
 
-  for (let attempt = 0; attempt < 2; attempt++) {
-    const prompt = buildSportsClickbaitPrompt(sourceText, title, language);
+  for (let attempt = 0; attempt < 1; attempt++) {
+    const prompt = buildSportsClickbaitPrompt(cleanSource, title, language);
     const targetLanguage = normalizePromptLanguage(language);
     const retryPrompt =
       attempt === 0
@@ -728,12 +690,27 @@ async function generateValidatedSportsThumbnailText(
 
     previousDraft = draft;
     console.warn(
-      `⚠️ Sports thumbnail text failed word-count validation (attempt ${attempt + 1}/2).`,
+      "⚠️ Sports thumbnail text failed word-count validation (attempt 1/1).",
     );
   }
 
+  // Fallback: hand back the raw (unvalidated) draft instead of failing outright.
+  if (allowInvalid && previousDraft) {
+    const cleanedDraft = (
+      extractSportsThumbnailText(previousDraft) || previousDraft
+    )
+      .replace(/```(?:\w+)?/gi, "")
+      .trim();
+    if (cleanedDraft) {
+      console.warn(
+        "⚠️ Returning unvalidated sports thumbnail text (allowInvalid).",
+      );
+      return cleanedDraft;
+    }
+  }
+
   throw new Error(
-    "AI failed to generate sports thumbnail text with an 8-15 word headline and a 90-120 word body after 2 attempts.",
+    "AI failed to generate sports thumbnail text with an 8-15 word headline and a 80-100 word body.",
   );
 }
 
@@ -789,34 +766,6 @@ async function generateClickbaitText(
     return isVietnameseText(rawText)
       ? buildLanguageFallbackClickbait(title, language)
       : rawText;
-  } else if (provider === "local") {
-    const localUrl =
-      process.env.LOCAL_AI_URL || "http://localhost:8080/v1/chat/completions";
-    const localModel = process.env.LOCAL_AI_MODEL || "Qwen3.7-Plus";
-
-    const apiRes = await fetch(localUrl, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: localModel,
-        messages: [{ role: "user", content: prompt }],
-      }),
-    });
-
-    if (!apiRes.ok) {
-      const errorData = await apiRes.text().catch(() => "");
-      throw new Error(
-        `Local AI clickbait error: ${apiRes.status} ${errorData}`,
-      );
-    }
-
-    const apiData = await apiRes.json();
-    const rawText = apiData.choices?.[0]?.message?.content?.trim() || "";
-    return isVietnameseText(rawText)
-      ? buildLanguageFallbackClickbait(title, language)
-      : rawText;
   }
 
   let activeKey = null;
@@ -826,66 +775,29 @@ async function generateClickbaitText(
     console.warn("⚠️ Failed to get Groq key for clickbait:", keyErr.message);
   }
 
-  if (activeKey) {
-    try {
-      const apiRes = await fetch(
-        process.env.CUSTOM_API_URL ||
-          "https://api.groq.com/openai/v1/chat/completions",
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${activeKey}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            model: process.env.GROQ_MODEL || "llama-3.1-8b-instant",
-            messages: [{ role: "user", content: prompt }],
-          }),
-        },
-      );
-
-      if (apiRes.ok) {
-        const apiData = await apiRes.json();
-        const rawText = apiData.choices?.[0]?.message?.content?.trim() || "";
-        return isVietnameseText(rawText)
-          ? buildLanguageFallbackClickbait(title, language)
-          : rawText;
-      } else {
-        const errorData = await apiRes.json().catch(() => ({}));
-        console.warn(
-          `⚠️ Groq clickbait API error: ${JSON.stringify(errorData)}. Falling back to Local AI...`,
-        );
-      }
-    } catch (err) {
-      console.warn(
-        `⚠️ Groq clickbait failed: ${err.message}. Falling back to Local AI...`,
-      );
-    }
-  } else {
-    console.warn(
-      "⚠️ No Groq API key available for clickbait. Falling back to Local AI...",
-    );
+  if (!activeKey) {
+    throw new Error("No Groq API key available for clickbait.");
   }
 
-  console.log("📡 [Fallback] Requesting Local AI for clickbait...");
-  const localUrl =
-    process.env.LOCAL_AI_URL || "http://localhost:8080/v1/chat/completions";
-  const localModel = process.env.LOCAL_AI_MODEL || "Qwen3.7-Plus";
-
-  const apiRes = await fetch(localUrl, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
+  const apiRes = await fetch(
+    process.env.CUSTOM_API_URL ||
+      "https://api.groq.com/openai/v1/chat/completions",
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${activeKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: process.env.GROQ_MODEL || "llama-3.1-8b-instant",
+        messages: [{ role: "user", content: prompt }],
+      }),
     },
-    body: JSON.stringify({
-      model: localModel,
-      messages: [{ role: "user", content: prompt }],
-    }),
-  });
+  );
 
   if (!apiRes.ok) {
-    const errorData = await apiRes.text().catch(() => "");
-    throw new Error(`Local AI clickbait error: ${apiRes.status} ${errorData}`);
+    const errorData = await apiRes.json().catch(() => ({}));
+    throw new Error(`Groq clickbait API error: ${JSON.stringify(errorData)}`);
   }
 
   const apiData = await apiRes.json();
@@ -1113,6 +1025,40 @@ app.get("/sheet-check", async (req, res) => {
 });
 
 
+app.post("/generate-thumbnail-text", async (req, res) => {
+  const {
+    title = "",
+    article = "",
+    language = "English",
+    provider = "groq",
+  } = req.body || {};
+
+  if (!String(article).trim()) {
+    return res.status(400).json({ error: "Thiếu nội dung bài viết (article)." });
+  }
+  if (!String(title).trim()) {
+    return res.status(400).json({ error: "Thiếu title của bài viết." });
+  }
+
+  try {
+    const players = await generateValidatedSportsThumbnailText(
+      String(article),
+      String(title),
+      provider,
+      normalizePromptLanguage(language),
+      { allowInvalid: true },
+    );
+    const validated = Boolean(validateSportsThumbnailText(players));
+    res.json({ players, validated });
+  } catch (error) {
+    console.error("❌ Thumbnail text generation failed:", error.message);
+    res.status(500).json({
+      error: "Không tạo được thumbnail text.",
+      details: error.message,
+    });
+  }
+});
+
 app.post("/generate-article", async (req, res) => {
   const {
     youtubeUrl,
@@ -1132,10 +1078,6 @@ app.post("/generate-article", async (req, res) => {
   try {
     // Test YouTube API key first
     const ytRes = await fetch(
-      `https://www.googleapis.com/youtube/v3/videos?part=snippet&id=${videoId}&key=${youtubeApiKey}`,
-    );
-    console.log(ytRes);
-    console.log(
       `https://www.googleapis.com/youtube/v3/videos?part=snippet&id=${videoId}&key=${youtubeApiKey}`,
     );
     if (!ytRes.ok) {
@@ -1162,209 +1104,12 @@ app.post("/generate-article", async (req, res) => {
         ? description.substring(0, 1200) + "..."
         : description;
 
-    // Extract text from thumbnail using Gemini Vision OCR
-    // Đặt 2 key vào .env, cách nhau bởi dấu phẩy
-    // GEMINI_API_KEYS=key_cua_VvtQ,key_cua_r7Sw
-
-    const GROQ_KEYS = (process.env.GROQ_THUMB_API || "")
-      .split(",")
-      .map((k) => k.trim())
-      .filter(Boolean);
-
-    const GROQ_MODEL =
-      process.env.GROQ_THUMB_MODEL ||
-      "meta-llama/llama-4-scout-17b-16e-instruct";
-
+    // OCR removed: thumbnail text is no longer extracted from images.
     let thumbnailText = "";
     const effectiveMode =
       generationMode === "thumbnail" || generationMode === "buzz-thumbnail"
         ? thumbnailMode || "story"
         : generationMode;
-
-    if (
-      (effectiveMode !== "sports" ||
-        generationMode === "thumbnail" ||
-        generationMode === "buzz-thumbnail") &&
-      GROQ_KEYS.length > 0
-    ) {
-      try {
-        const thumbnailUrl = `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
-        console.log(`📸 Fetching thumbnail: ${thumbnailUrl}`);
-
-        const thumbnailFetch = await runWithTimeout(
-          () => fetch(thumbnailUrl),
-          DEFAULT_THUMB_OCR_TIMEOUT,
-        );
-
-        if (thumbnailFetch.timedOut) {
-          console.warn(
-            `⚠️ Thumbnail fetch timed out after ${DEFAULT_THUMB_OCR_TIMEOUT}ms; continuing without thumbnail text.`,
-          );
-          throw new Error("Thumbnail fetch timed out");
-        }
-
-        if (thumbnailFetch.error) {
-          throw thumbnailFetch.error;
-        }
-
-        const imgRes = thumbnailFetch.value;
-
-        if (imgRes.ok) {
-          const buffer = await imgRes.buffer();
-          const base64Image = buffer.toString("base64");
-
-          const ocrPrompt = `
-Extract ALL visible text from this image.
-
-Rules:
-- Return ONLY the extracted text.
-- Preserve line breaks.
-- Do NOT translate.
-- Do NOT summarize.
-- Do NOT explain.
-- Do NOT include any thinking, analysis, or XML tags like <think>.
-If there is no text, return an empty string.
-`;
-
-          // encapsulate OCR attempts so we can apply a timeout
-          const performOcr = async () => {
-            let rawText = "";
-
-            for (let i = 0; i < GROQ_KEYS.length; i++) {
-              const apiKey = GROQ_KEYS[i];
-              const shortKey = apiKey.slice(-4);
-
-              try {
-                console.log(
-                  `⚡ Requesting OCR with key ...${shortKey} (${i + 1}/${GROQ_KEYS.length})`,
-                );
-
-                const groq = new Groq({ apiKey });
-
-                const completion = await groq.chat.completions.create({
-                  model: GROQ_MODEL,
-                  temperature: 0,
-                  max_tokens: 150,
-                  reasoning_effort: "none",
-                  messages: [
-                    {
-                      role: "user",
-                      content: [
-                        { type: "text", text: ocrPrompt },
-                        {
-                          type: "image_url",
-                          image_url: {
-                            url: `data:image/jpeg;base64,${base64Image}`,
-                          },
-                        },
-                      ],
-                    },
-                  ],
-                });
-
-                rawText =
-                  completion.choices?.[0]?.message?.content?.trim() || "";
-
-                if (rawText) {
-                  console.log(`✅ OCR success with key ...${shortKey}`);
-                  return rawText;
-                }
-              } catch (err) {
-                console.warn(`⚠️ Key ...${shortKey} failed: ${err.message}`);
-              }
-            }
-
-            // Groq failed or returned empty — try Local AI
-            try {
-              console.log(
-                "❌ All Groq API keys failed for OCR. Falling back to Local AI...",
-              );
-              const localUrl =
-                process.env.LOCAL_AI_URL ||
-                "http://localhost:8080/v1/chat/completions";
-              const localModel = process.env.LOCAL_AI_MODEL || "Qwen3.7-Plus";
-
-              console.log(
-                `⚡ Requesting Local AI OCR using model: ${localModel}`,
-              );
-              const localRes = await fetch(localUrl, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                  model: localModel,
-                  messages: [
-                    {
-                      role: "user",
-                      content: [
-                        { type: "text", text: ocrPrompt },
-                        {
-                          type: "image_url",
-                          image_url: {
-                            url: `data:image/jpeg;base64,${base64Image}`,
-                          },
-                        },
-                      ],
-                    },
-                  ],
-                }),
-              });
-
-              if (localRes.ok) {
-                const localData = await localRes.json();
-                const localText =
-                  localData.choices?.[0]?.message?.content?.trim() || "";
-                console.log("✅ Local AI OCR success!");
-                return localText;
-              } else {
-                console.error(
-                  `❌ Local AI OCR failed with status: ${localRes.status}`,
-                );
-              }
-            } catch (localErr) {
-              console.error("❌ Local AI OCR error:", localErr.message);
-            }
-
-            return "";
-          };
-
-          const ocrTimeoutMs = DEFAULT_THUMB_OCR_TIMEOUT;
-          const ocrResult = await runWithTimeout(performOcr, ocrTimeoutMs);
-
-          let rawText = "";
-          if (ocrResult.timedOut) {
-            console.warn(
-              `⚠️ Thumbnail OCR timed out after ${ocrTimeoutMs}ms; skipping thumbnail text.`,
-            );
-          } else if (ocrResult.error) {
-            console.error(
-              "❌ Error during thumbnail OCR:",
-              ocrResult.error.message,
-            );
-          } else {
-            rawText = ocrResult.value || "";
-          }
-
-          if (rawText && rawText !== "NO_TEXT") {
-            thumbnailText = rawText;
-          }
-
-          console.log(`🔍 Extracted thumbnail text: "${thumbnailText}"`);
-        } else {
-          console.warn(
-            `⚠️ Failed to fetch thumbnail (${imgRes.status}): ${imgRes.statusText}`,
-          );
-        }
-      } catch (ocrErr) {
-        console.error(
-          "❌ Error during thumbnail text extraction:",
-          ocrErr.message,
-        );
-      }
-    } else {
-      console.warn(
-        "⚠️ No GROQ_THUMB_API found in environment, skipping thumbnail OCR.",
-      );
-    }
 
     try {
       let article = null;
@@ -1374,15 +1119,6 @@ If there is no text, return an empty string.
       // AI generation logic with fallback
       if (provider === "openrouter") {
         article = await generateWithOpenRouter(
-          youtubeUrl,
-          title,
-          truncatedDescription,
-          thumbnailText,
-          generationMode,
-          promptLanguage,
-        );
-      } else if (provider === "local") {
-        article = await generateWithLocalAI(
           youtubeUrl,
           title,
           truncatedDescription,

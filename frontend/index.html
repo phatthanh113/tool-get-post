@@ -58,7 +58,7 @@
                             Nhập 11 → bắt đầu <strong>t11</strong>
                         </p>
                     </div>
-                    <div class="input-group">
+                    <div class="input-group" style="display: none">
                         <label for="language-select">Ngôn ngữ bài viết</label>
                         <select id="language-select" style="padding: 12px; border-radius: 12px; border: 1px solid #cbd5e1; width: 100%">
                             <option value="English" selected>English</option>
@@ -95,7 +95,6 @@
                     <select id="ai-provider">
                         <option value="groq" selected>Groq (Smart Fallback to OpenRouter)</option>
                         <option value="openrouter">OpenRouter (Gemini 2.0 Flash)</option>
-                        <option value="local">Local AI (Qwen3.7-Plus)</option>
                     </select>
                 </div>
 
@@ -122,6 +121,7 @@
                 <button onclick="generateThumbnailOnly()" class="btn-secondary" style="display: none; background-color: #f59e0b; border-color: #f59e0b; color: white">🖼️ Thumbnail</button>
                 <button id="autoSelectImagesBtn" type="button" onclick="startAutoSelectImages()" class="btn-secondary" style="background-color: #ff9800; border-color: #ff9800; color: white">⚡ Auto Select Img</button>
                 <button onclick="generate()" id="buzzBtn" class="btn-primary button-primary-custom">Buzz</button>
+                <button onclick="runFullAutoFlow()" id="autoFlowBtn" type="button" class="btn-secondary" style="background: #8b5cf6; border-color: #8b5cf6; color: white" title="Chạy trọn bộ: Buzz → Auto Select Img → đợi permalink Lina → dán Google Sheet">🤖 Auto</button>
                 <button onclick="restoreBuzzUrls()" id="restoreBuzzUrlsBtn" type="button" class="btn-secondary" style="display: none; background: #10b981; border-color: #10b981; color: white" title="Điền lại các YouTube URL của lần Buzz trước (đã bị xóa sau khi bấm Buzz)">↩ URL cũ</button>
                 <button onclick="stopBuzzGeneration()" id="stopBuzzBtn" type="button" class="btn-secondary" style="display: none; background: #ef4444; color: white">⏹ Stop</button>
             </div>
@@ -139,6 +139,10 @@
                 <label style="display: inline-flex; align-items: center; gap: 8px; font-weight: 600; color: var(--text-muted); cursor: pointer; white-space: nowrap; margin-left: auto">
                     <input id="autoPublishCheckbox" type="checkbox" checked style="cursor: pointer" />
                     Tự động Publish Linastory
+                </label>
+                <label style="display: inline-flex; align-items: center; gap: 8px; font-weight: 600; color: var(--text-muted); cursor: pointer; white-space: nowrap" title="Bật: Auto Flow chạy thêm bước 5 — tự gen lại thumbnail text nếu dưới 50 chữ rồi download toàn bộ bài đã chọn về thư mục đã nhập">
+                    <input id="autoFlowDownloadCheck" type="checkbox" style="cursor: pointer" />
+                    ⬇ Tải video sau Auto (tự sửa text &lt; 50 chữ)
                 </label>
             </div>
             <p id="linastoryCopyStatus" role="status" aria-live="polite" style="min-height: 20px; margin-top: 8px; color: var(--text-muted)"></p>
@@ -212,6 +216,7 @@
                 <div class="story-modal-header">
                     <h3>Video Story Creator</h3>
                     <div style="display: flex; gap: 8px; align-items: center">
+                        <button id="storyRegenThumbButton" type="button" class="btn-secondary" style="padding: 8px 10px; font-size: 0.9rem" title="Ép load lại Thumbnail Text của bài đang mở (chỉ text, không đụng bài viết)" onclick="regenerateThumbnailTextFromStoryModal()">🔄</button>
                         <button id="storyCopyAllButton" type="button" class="btn-secondary" style="padding: 8px 10px; font-size: 0.9rem" onclick="storyCopyAll()">Copy All</button>
                         <button type="button" class="story-modal-close" onclick="closeStoryTool()">✕</button>
                     </div>

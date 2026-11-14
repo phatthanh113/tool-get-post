@@ -958,6 +958,79 @@
                 scheduleLinastoryAutoMatch();
             }
 
+            function buildThumbnailTextRegenButton(index) {
+                return `<button id="regenThumbBtn-${index}" type="button" class="icon-btn" title="Ép load lại Thumbnail Text (chỉ text, không đụng bài viết)" style="background: #eef2ff; border: 1px solid #e2e8f0;" onclick="regenerateThumbnailText(${index})">🔄</button>`;
+            }
+
+            function regenerateThumbnailTextFromStoryModal() {
+                if (!Number.isFinite(activeStoryCardIndex)) {
+                    storyUpdateMessage("Không xác định được bài viết đang mở trong modal.", true);
+                    return;
+                }
+                return regenerateThumbnailText(activeStoryCardIndex, { syncStoryModal: true });
+            }
+
+            async function regenerateThumbnailText(index, options = {}) {
+                const { syncStoryModal = false } = options;
+                const button = document.getElementById(syncStoryModal ? "storyRegenThumbButton" : `regenThumbBtn-${index}`);
+                if (!button || button.disabled) return;
+
+                const savedArticle = getSavedArticleByIndex(index);
+                if (!savedArticle) {
+                    setLinastoryCopyStatus("Không tìm thấy bài viết đã lưu để tạo lại thumbnail text.", true);
+                    return;
+                }
+
+                const originalHtml = button.innerHTML;
+                button.disabled = true;
+                button.innerHTML = '<span class="button-spinner" style="border-color: rgba(139, 92, 246, 0.35); border-top-color: #8b5cf6;" aria-hidden="true"></span>';
+
+                try {
+                    const language = document.getElementById("language-select")?.value || "English";
+                    const provider = document.getElementById("ai-provider")?.value || "groq";
+                    const res = await fetch("/generate-thumbnail-text", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                            title: savedArticle.title || "",
+                            article: savedArticle.article || "",
+                            language,
+                            provider,
+                        }),
+                    });
+                    const data = await res.json().catch(() => ({}));
+                    if (!res.ok) throw new Error(data.error || "Không thể tạo lại thumbnail text.");
+
+                    const players = data.players || "";
+                    updateThumbnailText(index, players);
+
+                    const card = document.getElementById(`card-${index}`);
+                    const textarea = card?.querySelector("textarea.player-input");
+                    if (textarea) textarea.value = players;
+
+                    const refreshed = getSavedArticleByIndex(index);
+                    if (refreshed) {
+                        updateCardThumbnailPreview(index, refreshed);
+                        if (!syncStoryModal) renderStoryPreview();
+                    }
+
+                    if (syncStoryModal) {
+                        const storyTextInput = document.getElementById("storyTextInput");
+                        activeStoryBaseText = removeStorySuffix(players);
+                        if (storyTextInput) storyTextInput.value = applyStorySuffix(activeStoryBaseText);
+                        await renderStoryPreview();
+                        storyUpdateMessage("Đã tạo lại thumbnail text cho bài đang mở.");
+                    }
+
+                    setLinastoryCopyStatus(`Đã tạo lại thumbnail text cho bài ${Number(index) + 1}.`);
+                } catch (error) {
+                    setLinastoryCopyStatus(`Tạo lại thumbnail text thất bại: ${error.message || "lỗi không xác định."}`, true);
+                } finally {
+                    button.disabled = false;
+                    button.innerHTML = originalHtml;
+                }
+            }
+
             function restoreArticlesFromLocalStorage() {
                 let saved = [];
                 try {
@@ -995,15 +1068,18 @@
 
                                         <div style="display: grid; grid-template-columns: 1fr; gap: 10px; margin-bottom: 15px;">
                                             <div>
-                                                <label style="display:block; margin-bottom:8px; color:var(--text-muted);">Thumbnail Text</label>
-                                                <textarea class="player-input border" style="width: 100%; min-height: 80px; font-family: monospace; font-size: 0.85rem;" placeholder="Thumbnail text from OCR..." oninput="updateThumbnailText('${item.url}', this.value)">${item.players || ""}</textarea>
+                                                <div style="display:flex; align-items:center; gap:6px; margin-bottom:8px;">
+                                                    <label style="color:var(--text-muted);">Thumbnail Text</label>
+                                                    ${buildThumbnailTextRegenButton(item.index)}
+                                                </div>
+                                                <textarea class="player-input border" style="width: 100%; min-height: 80px; font-family: monospace; font-size: 0.85rem;" placeholder="Thumbnail text..." oninput="updateThumbnailText('${item.url}', this.value)">${item.players || ""}</textarea>
                                                 ${buildThumbnailControls(item)}
                                                 ${buildStoryActionMarkup(item.index, item.url, "story")}
                                             </div>
                                         </div>
 
                                         <label style="display:block; margin-bottom:8px; color:var(--text-muted); cursor:pointer;" ondblclick="showStoryRetryButton(${item.index})">Article ${item.index + 1} Content (HTML)</label>
-                                        <textarea class="w-full min-h-52" style="min-height: 400px; font-family: 'Inter', monospace; font-size: 0.9rem;" oninput="updateSavedArticle('${item.url}', 'article', this.value)">${item.article}</textarea>
+                                        <textarea class="w-full min-h-52" style="min-height: 100px; font-family: 'Inter', monospace; font-size: 0.9rem;" oninput="updateSavedArticle('${item.url}', 'article', this.value)">${item.article}</textarea>
                                     </div>
                                 `;
                     output.appendChild(articleCard);
@@ -1200,7 +1276,12 @@
                         article.videoId = videoId;
                         const existingVariant = getExistingThumbnailVariant(article.article || "", videoId);
                         if (!existingVariant) {
-                            article.thumbnailVariant = "maxresdefault";
+                            if (isAutoFlowDownloadEnabled()) {
+                                const workingVariant = await probeThumbnailVariant(videoId);
+                                article.thumbnailVariant = workingVariant || "maxresdefault";
+                            } else {
+                                article.thumbnailVariant = "maxresdefault";
+                            }
                             article.customThumbnailUrl = "";
                         }
                         article.article = injectAutoSelectedImages(article.article || "", videoId);
@@ -1434,6 +1515,52 @@
                 }
             }
 
+            function sortCardsInDom() {
+                const output = document.getElementById("output");
+                if (!output) return;
+                const cards = Array.from(output.children).filter((node) => /^card-\d+$/.test(node.id || ""));
+                cards.sort((a, b) => Number(a.id.replace("card-", "")) - Number(b.id.replace("card-", "")));
+                cards.forEach((card) => output.appendChild(card));
+            }
+
+            function appendBuzzErrorCard(currentIndex, url, heading, detail, buttonLabel) {
+                const output = document.getElementById("output");
+                if (!output) return;
+
+                const card = document.createElement("div");
+                card.className = "result-card";
+                card.id = `card-${currentIndex}`;
+                card.style.borderColor = "#ef4444";
+                card.style.marginBottom = "20px";
+
+                const titleP = document.createElement("p");
+                titleP.style.color = "#ef4444";
+                titleP.style.fontWeight = "bold";
+                titleP.textContent = heading;
+                card.appendChild(titleP);
+
+                if (detail) {
+                    const detailP = document.createElement("p");
+                    detailP.style.fontSize = "0.8rem";
+                    detailP.style.color = "var(--text-muted)";
+                    detailP.style.marginBottom = "15px";
+                    detailP.textContent = detail;
+                    card.appendChild(detailP);
+                }
+
+                const retryButton = document.createElement("button");
+                retryButton.textContent = buttonLabel;
+                retryButton.className = "btn-primary";
+                retryButton.style.padding = "8px 16px";
+                retryButton.style.fontSize = "0.8rem";
+                retryButton.style.width = "auto";
+                retryButton.setAttribute("onclick", `retrySingle('${url}', ${currentIndex})`);
+                card.appendChild(retryButton);
+
+                output.appendChild(card);
+                sortCardsInDom();
+            }
+
             function sortResultCards() {
                 let saved = [];
                 try {
@@ -1469,15 +1596,18 @@
 
                                         <div style="display: grid; grid-template-columns: 1fr; gap: 10px; margin-bottom: 15px;">
                                             <div>
-                                                <label style="display:block; margin-bottom:8px; color:var(--text-muted);">Thumbnail Text</label>
-                                                <textarea class="player-input border" style="width: 100%; min-height: 80px; font-family: monospace; font-size: 0.85rem;" placeholder="Thumbnail text from OCR..." oninput="updateThumbnailText('${item.url}', this.value)">${item.players || ""}</textarea>
+                                                <div style="display:flex; align-items:center; gap:6px; margin-bottom:8px;">
+                                                    <label style="color:var(--text-muted);">Thumbnail Text</label>
+                                                    ${buildThumbnailTextRegenButton(item.index)}
+                                                </div>
+                                                <textarea class="player-input border" style="width: 100%; min-height: 80px; font-family: monospace; font-size: 0.85rem;" placeholder="Thumbnail text..." oninput="updateThumbnailText('${item.url}', this.value)">${item.players || ""}</textarea>
                                                 ${buildThumbnailControls(item)}
                                                 ${buildStoryActionMarkup(item.index, item.url, "story")}
                                             </div>
                                         </div>
 
                                         <label style="display:block; margin-bottom:8px; color:var(--text-muted); cursor:pointer;" ondblclick="showStoryRetryButton(${item.index})">Article ${item.index + 1} Content (HTML)</label>
-                                        <textarea class="w-full min-h-52" style="min-height: 400px; font-family: 'Inter', monospace; font-size: 0.9rem;" oninput="updateSavedArticle('${item.url}', 'article', this.value)">${item.article}</textarea>
+                                        <textarea class="w-full min-h-52" style="min-height: 100px; font-family: 'Inter', monospace; font-size: 0.9rem;" oninput="updateSavedArticle('${item.url}', 'article', this.value)">${item.article}</textarea>
                                     </div>
                                 `;
                     output.appendChild(articleCard);
@@ -1588,7 +1718,7 @@
                                                     <div style="display: grid; grid-template-columns: 1fr; gap: 10px; margin-bottom: 15px;">
                                                         <div>
                                                             <label style="display:block; margin-bottom:8px; color:var(--text-muted);">Thumbnail Text</label>
-                                                            <textarea class="player-input border" style="width: 100%; min-height: 80px; font-family: monospace; font-size: 0.85rem;" placeholder="Thumbnail text from OCR..." oninput="updateThumbnailText(${index}, this.value)">${(data.players || "").replace(/</g, "&lt;").replace(/>/g, "&gt;")}</textarea>
+                                                            <textarea class="player-input border" style="width: 100%; min-height: 80px; font-family: monospace; font-size: 0.85rem;" placeholder="Thumbnail text..." oninput="updateThumbnailText(${index}, this.value)">${(data.players || "").replace(/</g, "&lt;").replace(/>/g, "&gt;")}</textarea>
                                                             ${buildThumbnailControls({
                                                                 index,
                                                                 url,
@@ -1602,7 +1732,7 @@
                                                         </div>
                                                     </div>
                                                     <label style="display:block; margin-bottom:8px; color:var(--text-muted); cursor:pointer;" ondblclick="showStoryRetryButton(${index})">Article ${index + 1} Content (HTML)</label>
-                                                    <textarea class="w-full min-h-52" style="min-height: 400px; font-family: 'Inter', monospace; font-size: 0.9rem;">${finalArticle}</textarea>
+                                                    <textarea class="w-full min-h-52" style="min-height: 100px; font-family: 'Inter', monospace; font-size: 0.9rem;">${finalArticle}</textarea>
                                                 </div>
                                             `;
                                 output.appendChild(articleCard);
@@ -1682,6 +1812,7 @@
                 document.getElementById("loading").style.pointerEvents = "";
                 document.getElementById("buzzBtn").disabled = false;
                 document.getElementById("stopBuzzBtn").style.display = "none";
+                sortCardsInDom();
                 updateBuzzButtonVisibility();
 
                 if (activeBuzzGeneration === run) activeBuzzGeneration = null;
@@ -1689,8 +1820,12 @@
             }
 
             function stopBuzzGeneration() {
+                if (activeAutoFlowRun) activeAutoFlowRun.cancelled = true;
                 const run = activeBuzzGeneration;
-                if (!run) return;
+                if (!run) {
+                    setAutoFlowStopButton(false);
+                    return;
+                }
 
                 run.stopped = true;
                 if (run.cooldownTimeout) {
@@ -1699,6 +1834,243 @@
                 }
                 run.controller.abort();
                 if (!run.inFlight) finishBuzzGeneration(run);
+            }
+
+            // ===================== 🤖 Auto Flow: Buzz → Ảnh → Lina → Google Sheet =====================
+            const AUTO_FLOW_LINA_WAIT_MS = 180000;
+            const AUTO_FLOW_POLL_MS = 5000;
+            let activeAutoFlowRun = null;
+
+            function isAutoFlowDownloadEnabled() {
+                return Boolean(document.getElementById("autoFlowDownloadCheck")?.checked);
+            }
+
+            function countStoryTextWords(text) {
+                const matches = String(text || "").match(/[\p{L}\p{N}]+(?:['’\-][\p{L}\p{N}]+)*/gu);
+                return matches ? matches.length : 0;
+            }
+
+            function probeThumbnailVariant(videoId, variants = ["maxresdefault", "sddefault", "hqdefault"]) {
+                return new Promise((resolve) => {
+                    const tryLoad = (index) => {
+                        if (index >= variants.length) {
+                            resolve(null);
+                            return;
+                        }
+                        const variant = variants[index];
+                        const img = new Image();
+                        const timer = setTimeout(() => {
+                            img.onload = null;
+                            img.onerror = null;
+                            tryLoad(index + 1);
+                        }, 5000);
+                        img.onload = () => {
+                            clearTimeout(timer);
+                            if (img.naturalWidth <= 120 && img.naturalHeight <= 90) {
+                                tryLoad(index + 1);
+                                return;
+                            }
+                            resolve(variant);
+                        };
+                        img.onerror = () => {
+                            clearTimeout(timer);
+                            tryLoad(index + 1);
+                        };
+                        img.src = getThumbnailVariantUrl(videoId, variant);
+                    };
+                    tryLoad(0);
+                });
+            }
+
+            function setAutoFlowButton(state, text) {
+                const button = document.getElementById("autoFlowBtn");
+                if (!button) return;
+                const colors = {
+                    ready: "#8b5cf6",
+                    running: "#f59e0b",
+                    done: "#10b981",
+                    error: "#ef4444",
+                };
+                const color = colors[state] || colors.ready;
+                button.style.background = color;
+                button.style.borderColor = color;
+                button.style.color = "white";
+                button.disabled = state === "running";
+                button.innerHTML = state === "running"
+                    ? `<span class="button-spinner" aria-hidden="true"></span><span>${text}</span>`
+                    : text;
+            }
+
+            function setAutoFlowStopButton(visible) {
+                const button = document.getElementById("stopBuzzBtn");
+                if (button) button.style.display = visible ? "inline-flex" : "none";
+            }
+
+            async function runFullAutoFlow() {
+                if (activeAutoFlowRun || activeBuzzGeneration) return;
+
+                const urlInput = document.getElementById("youtubeUrl");
+                const urls = (urlInput?.value || "")
+                    .split("\n")
+                    .map((u) => u.trim())
+                    .filter((u) => u !== "");
+                if (urls.length === 0) {
+                    alert("Vui lòng dán ít nhất một YouTube URL trước khi chạy Auto.");
+                    return;
+                }
+
+                const run = { cancelled: false };
+                activeAutoFlowRun = run;
+                setLinastoryPasteButtonState("default");
+
+                const downloadEnabled = isAutoFlowDownloadEnabled();
+                const totalSteps = downloadEnabled ? 5 : 4;
+                const stepLabel = (step, text) => `${step}/${totalSteps} ${text}`;
+
+                try {
+                    // Bước 1: Buzz - tạo bài viết
+                    setAutoFlowButton("running", stepLabel(1, `Buzz ${urls.length} bài...`));
+                    setLinastoryCopyStatus("🤖 Auto: đang tạo bài viết (Buzz)...");
+                    await generate();
+                    if (run.cancelled) throw new Error("AUTO_FLOW_CANCELLED");
+
+                    // Bước 2: Auto Select Img + đẩy bài sang Lina
+                    let saved;
+                    try {
+                        saved = JSON.parse(localStorage.getItem("saved_articles") || "[]");
+                    } catch (error) {
+                        saved = [];
+                    }
+                    const validArticles = Array.isArray(saved)
+                        ? saved.filter((item) => Number.isFinite(Number(item.index)))
+                        : [];
+                    if (validArticles.length === 0) {
+                        throw new Error("Không có bài viết nào tạo thành công để chạy tiếp quy trình Auto.");
+                    }
+                    validArticles.forEach((item) => selectArticleIndexByDefault(item.index));
+
+                    const copyModeSelect = document.getElementById("linastoryCopyMode");
+                    const previousCopyMode = copyModeSelect?.value || "all";
+                    if (copyModeSelect) copyModeSelect.value = "all";
+
+                    setAutoFlowButton("running", stepLabel(2, `Chọn ảnh + đẩy Lina (${validArticles.length} bài)...`));
+                    setLinastoryCopyStatus("🤖 Auto: đang chọn ảnh và đẩy bài sang Lina...");
+                    await startAutoSelectImages();
+                    if (run.cancelled) throw new Error("AUTO_FLOW_CANCELLED");
+
+                    // Bước 3: đợi permalink từ Lina
+                    setAutoFlowStopButton(true);
+                    const deadline = Date.now() + AUTO_FLOW_LINA_WAIT_MS;
+                    let matchedCount = 0;
+                    let missingTitles = [];
+                    while (Date.now() < deadline) {
+                        if (run.cancelled) throw new Error("AUTO_FLOW_CANCELLED");
+                        try {
+                            await loadMatchedLinastoryArticles();
+                        } catch (error) {
+                            // Extension chưa phản hồi, thử lại ở vòng poll sau
+                        }
+                        const matched = matchedLinastoryArticles.filter((article) => article.link);
+                        matchedCount = matched.length;
+                        missingTitles = matchedLinastoryArticles
+                            .filter((article) => !article.link)
+                            .map((article) => `#${Number(article.index) + 1} ${article.title || "(không có title)"}`);
+                        if (matchedCount >= validArticles.length) break;
+                        setAutoFlowButton("running", stepLabel(3, `Đợi permalink Lina (${matchedCount}/${validArticles.length})...`));
+                        setLinastoryCopyStatus(`🤖 Auto: đã khớp ${matchedCount}/${validArticles.length} permalink Lina. Đang đợi...`);
+                        await new Promise((resolve) => setTimeout(resolve, AUTO_FLOW_POLL_MS));
+                    }
+                    setAutoFlowStopButton(false);
+                    if (run.cancelled) throw new Error("AUTO_FLOW_CANCELLED");
+
+                    if (matchedCount < validArticles.length) {
+                        throw new Error(
+                            `Hết thời gian đợi ${Math.round(AUTO_FLOW_LINA_WAIT_MS / 1000)}s mà còn ${validArticles.length - matchedCount} bài chưa lấy được permalink từ Lina: ${missingTitles.join(", ")}. Đã hủy dán Google Sheet.`
+                        );
+                    }
+
+                    // Bước 4: dán Google Sheet
+                    setAutoFlowButton("running", stepLabel(4, "Dán Google Sheet..."));
+                    setLinastoryCopyStatus("🤖 Auto: đang dán vào Google Sheet...");
+                    if (getLinastorySheetMode()) {
+                        const pasted = await pasteLinastoryToSheet();
+                        if (!pasted) throw new Error("AUTO_FLOW_PASTE_FAILED");
+                    } else {
+                        await openLinastoryCopyModal();
+                        setLinastoryCopyStatus("🤖 Auto: không tick 'Copy vào Google Sheet' nên chỉ mở danh sách bài để copy thủ công.");
+                    }
+
+                    if (copyModeSelect) copyModeSelect.value = previousCopyMode;
+
+                    // Bước 5: kiểm tra text + tải video
+                    if (downloadEnabled) {
+                        const dirPath = getDownloadDirPath();
+                        if (!dirPath) {
+                            setAutoFlowButton("done", "✅ Đã hoàn thành");
+                            setLinastoryCopyStatus("🤖 Auto: thiếu thư mục gốc lưu video (ô path bên cạnh) — bỏ qua bước tải video.", true);
+                        } else {
+                            setLinastoryCopyStatus("🤖 Auto: kiểm tra thumbnail text trước khi tải video...");
+                            for (const item of validArticles) {
+                                if (run.cancelled) throw new Error("AUTO_FLOW_CANCELLED");
+                                const articleIndex = Number(item.index);
+                                const article = getSavedArticleByIndex(articleIndex);
+                                if (!article) continue;
+                                const text = (article.players || "").trim() || buildSportsThumbnailText(article.article || "");
+                                if (countStoryTextWords(text) >= 50) continue;
+
+                                setAutoFlowButton("running", stepLabel(5, `Gen lại text bài ${articleIndex + 1} (< 50 chữ)...`));
+                                try {
+                                    const language = document.getElementById("language-select")?.value || "English";
+                                    const provider = document.getElementById("ai-provider")?.value || "groq";
+                                    const res = await fetch("/generate-thumbnail-text", {
+                                        method: "POST",
+                                        headers: { "Content-Type": "application/json" },
+                                        body: JSON.stringify({
+                                            title: article.title || "",
+                                            article: article.article || "",
+                                            language,
+                                            provider,
+                                        }),
+                                    });
+                                    const data = await res.json().catch(() => ({}));
+                                    if (res.ok && data.players) {
+                                        updateThumbnailText(articleIndex, data.players);
+                                        const card = document.getElementById(`card-${articleIndex}`);
+                                        const textarea = card?.querySelector("textarea.player-input");
+                                        if (textarea) textarea.value = data.players;
+                                    }
+                                } catch (error) {
+                                    console.warn(`⚠️ Auto regen text bài ${articleIndex + 1} thất bại: ${error.message}`);
+                                }
+                                // Dù regen thành công hay sai vẫn tiếp tục để tải video
+                            }
+
+                            setAutoFlowButton("running", stepLabel(5, `Tải ${validArticles.length} video...`));
+                            setLinastoryCopyStatus("🤖 Auto: đang tải video về thư mục đã nhập...");
+                            await downloadSelectedArticles();
+                        }
+                    }
+
+                    setAutoFlowButton("done", "✅ Đã hoàn thành");
+                    console.log(`🤖 Auto flow hoàn tất: ${validArticles.length} bài đã xử lý trọn bộ.`);
+                } catch (error) {
+                    if (activeAutoFlowRun === run) {
+                        const message = error?.message || "";
+                        if (message === "AUTO_FLOW_CANCELLED") {
+                            setAutoFlowButton("ready", "🤖 Auto");
+                            setLinastoryCopyStatus("🤖 Auto: đã dừng theo yêu cầu.", true);
+                        } else if (message === "AUTO_FLOW_PASTE_FAILED") {
+                            setAutoFlowButton("error", "⚠️ Lỗi dán Sheet - bấm để chạy lại");
+                            // pasteLinastoryToSheet đã tự hiển thị lỗi chi tiết
+                        } else {
+                            setAutoFlowButton("error", "⚠️ Lỗi - bấm để chạy lại");
+                            setLinastoryCopyStatus(`🤖 Auto: ${message || "Lỗi không xác định."}`, true);
+                        }
+                    }
+                } finally {
+                    setAutoFlowStopButton(false);
+                    if (activeAutoFlowRun === run) activeAutoFlowRun = null;
+                }
             }
 
             async function generate() {
@@ -1739,8 +2111,8 @@
                     console.warn("Failed to clear saved_articles:", e);
                 }
 
-                // Concurrency control: limit to 3 parallel requests
-                const concurrencyLimit = 1;
+                // Concurrency control: 2 parallel requests (multi-key Groq rotation)
+                const concurrencyLimit = 2;
                 let nextIndex = 0;
                 let completedCount = 0;
                 const total = urls.length;
@@ -1788,13 +2160,13 @@
                             if (run.stopped) return;
 
                             if (data.error) {
-                                output.innerHTML += `
-                                                <div class="result-card" id="card-${currentIndex}" style="border-color: #ef4444; margin-bottom: 20px;">
-                                                    <p style="color: #ef4444; font-weight: bold;">❌ Failed [${currentIndex + 1}]: ${url}</p>
-                                                    <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 15px;">${data.error}</p>
-                                                    <button onclick="retrySingle('${url}', ${currentIndex})" class="btn-primary" style="padding: 8px 16px; font-size: 0.8rem; width: auto;">🔄 Thử lại bài này</button>
-                                                </div>
-                                            `;
+                                appendBuzzErrorCard(
+                                    currentIndex,
+                                    url,
+                                    `❌ Failed [${currentIndex + 1}]: ${url}`,
+                                    data.error,
+                                    "🔄 Thử lại bài này",
+                                );
                             } else {
                                 const finalArticle = generationMode === "buzz-thumbnail" ? injectImage("", data.videoId) : injectImage(data.article, data.videoId);
                                 saveArticleToLocalStorage(currentIndex, url, data.title, data.players, data.videoId, finalArticle);
@@ -1814,29 +2186,34 @@
 
                                                     <div style="display: grid; grid-template-columns: 1fr; gap: 10px; margin-bottom: 15px;">
                                                         <div>
-                                                            <label style="display:block; margin-bottom:8px; color:var(--text-muted);">Thumbnail Text</label>
-                                                            <textarea class="player-input border" style="width: 100%; min-height: 80px; font-family: monospace; font-size: 0.85rem;" placeholder="Thumbnail text from OCR..." oninput="updateThumbnailText(${currentIndex}, this.value)">${data.players || ""}</textarea>
+                                                            <div style="display:flex; align-items:center; gap:6px; margin-bottom:8px;">
+                                                                <label style="color:var(--text-muted);">Thumbnail Text</label>
+                                                                ${buildThumbnailTextRegenButton(currentIndex)}
+                                                            </div>
+                                                            <textarea class="player-input border" style="width: 100%; min-height: 80px; font-family: monospace; font-size: 0.85rem;" placeholder="Thumbnail text..." oninput="updateThumbnailText(${currentIndex}, this.value)">${data.players || ""}</textarea>
                                                             ${buildThumbnailControls({ index: currentIndex, url, videoId: data.videoId })}
                                                             ${buildStoryActionMarkup(currentIndex, url, "story")}
                                                         </div>
                                                     </div>
 
                                                     <label style="display:block; margin-bottom:8px; color:var(--text-muted); cursor:pointer;" ondblclick="showStoryRetryButton(${currentIndex})">Article ${currentIndex + 1} Content (HTML)</label>
-                                                    <textarea class="w-full min-h-52" style="min-height: 400px; font-family: 'Inter', monospace; font-size: 0.9rem;" oninput="updateSavedArticle(${currentIndex}, 'article', this.value)">${finalArticle}</textarea>
+                                                    <textarea class="w-full min-h-52" style="min-height: 100px; font-family: 'Inter', monospace; font-size: 0.9rem;" oninput="updateSavedArticle(${currentIndex}, 'article', this.value)">${finalArticle}</textarea>
                                                 </div>
                                             `;
                                 output.appendChild(articleCard);
+                                sortCardsInDom();
                                 selectArticleIndexByDefault(currentIndex);
                                 updateStoryNavigationButtons();
                             }
                         } catch (err) {
                             if (!run.stopped) {
-                                output.innerHTML += `
-                                            <div class="result-card" id="card-${currentIndex}" style="border-color: #ef4444; margin-bottom: 20px;">
-                                                <p style="color: #ef4444; font-weight: bold;">❌ Network error [${currentIndex + 1}]</p>
-                                                <button onclick="retrySingle('${url}', ${currentIndex})" class="btn-primary" style="padding: 8px 16px; font-size: 0.8rem; width: auto;">🔄 Thử lại ngay</button>
-                                            </div>
-                                        `;
+                                appendBuzzErrorCard(
+                                    currentIndex,
+                                    url,
+                                    `❌ Network error [${currentIndex + 1}]`,
+                                    "",
+                                    "🔄 Thử lại ngay",
+                                );
                             }
                         } finally {
                             run.inFlight = false;
@@ -1850,12 +2227,12 @@
                                 console.log("🏁 Batch process completed.");
                                 finishBuzzGeneration(run);
                             } else {
-                                // Add a 3-second delay before picking up the next link to avoid rate limits
-                                console.log("⏳ Waiting 3s for API cooldown...");
+                                // Add a 1-second delay before picking up the next link to avoid rate limits
+                                console.log("⏳ Waiting 1s for API cooldown...");
                                 run.cooldownTimeout = setTimeout(() => {
                                     run.cooldownTimeout = null;
                                     processNext();
-                                }, 3000);
+                                }, 1000);
                             }
                         }
                     };
@@ -1915,19 +2292,23 @@
 
                                             <div style="display: grid; grid-template-columns: 1fr; gap: 10px; margin-bottom: 15px;">
                                                 <div>
-                                                    <label style="display:block; margin-bottom:8px; color:var(--text-muted);">Thumbnail Text</label>
-                                                    <textarea class="player-input border" style="width: 100%; min-height: 80px; font-family: monospace; font-size: 0.85rem;" placeholder="Thumbnail text from OCR..." oninput="updateThumbnailText(${index}, this.value)">${data.players || ""}</textarea>
+                                                    <div style="display:flex; align-items:center; gap:6px; margin-bottom:8px;">
+                                                        <label style="color:var(--text-muted);">Thumbnail Text</label>
+                                                        ${buildThumbnailTextRegenButton(index)}
+                                                    </div>
+                                                    <textarea class="player-input border" style="width: 100%; min-height: 80px; font-family: monospace; font-size: 0.85rem;" placeholder="Thumbnail text..." oninput="updateThumbnailText(${index}, this.value)">${data.players || ""}</textarea>
                                                     ${buildThumbnailControls({ index, url, videoId: data.videoId })}
                                                     ${buildStoryActionMarkup(index, url, getStoryModeForCard(card))}
                                                 </div>
                                             </div>
 
                                             <label style="display:block; margin-bottom:8px; color:var(--text-muted); cursor:pointer;" ondblclick="showStoryRetryButton(${index})">Article ${index + 1} Content (HTML)</label>
-                                            <textarea class="w-full min-h-52" style="min-height: 400px; font-family: 'Inter', monospace; font-size: 0.9rem;" oninput="updateSavedArticle(${index}, 'article', this.value)">${finalArticle}</textarea>
+                                            <textarea class="w-full min-h-52" style="min-height: 100px; font-family: 'Inter', monospace; font-size: 0.9rem;" oninput="updateSavedArticle(${index}, 'article', this.value)">${finalArticle}</textarea>
                                         </div>
                                     `;
                         selectArticleIndexByDefault(index);
                         card.style.borderColor = "var(--border)";
+                        sortCardsInDom();
                     }
                 } catch (err) {
                     card.innerHTML = originalHTML; // Restore original error with button
@@ -2142,13 +2523,51 @@
 
             function loadStoryCoverImage() {
                 if (storyCoverImagePromise) return storyCoverImagePromise;
-                storyCoverImagePromise = new Promise((resolve) => {
+
+                if (!isAutoFlowDownloadEnabled()) {
+                    // Checkbox tắt: giữ nguyên hành vi cũ — chỉ load 1 URL duy nhất.
+                    storyCoverImagePromise = new Promise((resolve) => {
+                        const img = new Image();
+                        img.crossOrigin = "anonymous";
+                        img.src = getCurrentThumbnailUrl();
+                        img.onload = () => resolve(img);
+                        img.onerror = () => resolve(null);
+                    });
+                    return storyCoverImagePromise;
+                }
+
+                const candidateUrls = [getCurrentThumbnailUrl()];
+                const currentItem = getSavedArticleByIndex(activeStoryCardIndex);
+                const isCustom = currentItem?.thumbnailVariant === "custom";
+                if (!isCustom && currentItem) {
+                    ["sddefault", "hqdefault"].forEach((variant) => {
+                        const url = currentItem.videoId
+                            ? getThumbnailVariantUrl(currentItem.videoId, variant)
+                            : null;
+                        if (url && !candidateUrls.includes(url)) candidateUrls.push(url);
+                    });
+                }
+
+                const tryLoad = (urls) => new Promise((resolve) => {
+                    if (urls.length === 0) {
+                        resolve(null);
+                        return;
+                    }
                     const img = new Image();
                     img.crossOrigin = "anonymous";
-                    img.src = getCurrentThumbnailUrl();
-                    img.onload = () => resolve(img);
-                    img.onerror = () => resolve(null);
+                    img.onload = () => {
+                        // ytimg trả ảnh placeholder 120x90 khi variant không tồn tại
+                        if (img.naturalWidth <= 120 && img.naturalHeight <= 90) {
+                            resolve(tryLoad(urls.slice(1)));
+                            return;
+                        }
+                        resolve(img);
+                    };
+                    img.onerror = () => resolve(tryLoad(urls.slice(1)));
+                    img.src = urls[0];
                 });
+
+                storyCoverImagePromise = tryLoad(candidateUrls);
                 return storyCoverImagePromise;
             }
 
@@ -2230,7 +2649,7 @@
                     }
                 }
 
-                return Math.max(28, bestSize - 2);
+                return Math.min(33, Math.max(28, bestSize - 2));
             }
 
             function syncStoryTextInputToSavedArticle(markAsCustomized = true) {
@@ -2256,7 +2675,9 @@
 
             let storyFontSizeOverride = false;
 
+            let storyPreviewRenderSeq = 0;
             async function renderStoryPreview() {
+                const seq = ++storyPreviewRenderSeq;
                 const preview = document.getElementById("storyPreview");
                 const storyTextInput = document.getElementById("storyTextInput");
                 const text = storyTextInput.value.trim();
@@ -2293,6 +2714,7 @@
                 }
 
                 const dataUrl = await storyCreatePreviewDataURL(text, fontSize);
+                if (seq !== storyPreviewRenderSeq) return;
                 preview.innerHTML = `
                                 <img src="${dataUrl}" alt="Story preview" />
                             `;
@@ -2992,17 +3414,20 @@
                 const selectedLanguage = document.getElementById("language-select").value;
                 if (selectedLanguage === result.language) {
                     setYoutubeLanguageStatus(
-                        `Đã nhận diện video đầu tiên là ${result.language} (theo ${source}); lựa chọn hiện tại khớp.`,
+                        `Đã nhận diện video đầu tiên là ${result.language} (theo ${source}); ngôn ngữ bài viết khớp.`,
                         "success",
                     );
                     return;
                 }
 
-                const optionLabel = result.language === "German" ? "Deutsch (German)" : "English";
+                const languageSelect = document.getElementById("language-select");
+                if (languageSelect) {
+                    languageSelect.value = result.language;
+                    languageSelect.dispatchEvent(new Event("change", { bubbles: true }));
+                }
                 setYoutubeLanguageStatus(
-                    `Video đầu tiên có vẻ dùng ${result.language} (theo ${source}), nhưng ngôn ngữ bài viết đang chọn là ${selectedLanguage}.`,
-                    "warning",
-                    `Đổi sang ${optionLabel}`,
+                    `Đã tự chọn ${result.language} theo ngôn ngữ video đầu tiên (theo ${source}).`,
+                    "success",
                 );
             }
 
@@ -3069,13 +3494,6 @@
             document.getElementById("youtubeUrl")?.addEventListener("change", updateBuzzButtonVisibility);
             updateBuzzButtonVisibility();
             document.getElementById("language-select")?.addEventListener("change", updateYoutubeLanguageStatus);
-            document.getElementById("applyDetectedVideoLanguage")?.addEventListener("click", () => {
-                const detectedLanguage = youtubeLanguageDetection.result?.language;
-                if (!detectedLanguage) return;
-                const languageSelect = document.getElementById("language-select");
-                languageSelect.value = detectedLanguage;
-                languageSelect.dispatchEvent(new Event("change", { bubbles: true }));
-            });
             document.getElementById("language-select")?.addEventListener("change", syncStorySuffixPresetToArticleLanguage);
             document.getElementById("language-select")?.addEventListener("change", syncLinastoryCopyTemplateToArticleLanguage);
 
