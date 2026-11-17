@@ -772,32 +772,64 @@ async function generateClickbaitText(
     throw new Error("No Groq API key available for clickbait.");
   }
 
-  const apiRes = await fetch(
-    process.env.CUSTOM_API_URL ||
-      "https://api.groq.com/openai/v1/chat/completions",
-    {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${activeKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: process.env.GROQ_MODEL || "llama-3.1-8b-instant",
-        messages: [{ role: "user", content: prompt }],
-      }),
-    },
-  );
+  for (let attempt = 0; attempt < 2; attempt++) {
+    if (attempt > 0) {
+      try {
+        activeKey = getNextGroqKey();
+      } catch (keyErr) {
+        console.warn(
+          "⚠️ Failed to rotate Groq key for clickbait retry:",
+          keyErr.message,
+        );
+        break;
+      }
+    }
 
-  if (!apiRes.ok) {
-    const errorData = await apiRes.json().catch(() => ({}));
-    throw new Error(`Groq clickbait API error: ${JSON.stringify(errorData)}`);
+    const apiRes = await fetch(
+      process.env.CUSTOM_API_URL ||
+        "https://api.groq.com/openai/v1/chat/completions",
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${activeKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: process.env.GROQ_MODEL || "llama-3.1-8b-instant",
+          messages: [{ role: "user", content: prompt }],
+        }),
+      },
+    );
+
+    if (!apiRes.ok) {
+      const errorData = await apiRes.json().catch(() => ({}));
+      const apiError = new Error(
+        `Groq clickbait API error: ${JSON.stringify(errorData)}`,
+      );
+      if (attempt === 0) {
+        console.warn(
+          "⚠️ Groq clickbait attempt 1 failed, rotating key and retrying:",
+          apiError.message,
+        );
+        continue;
+      }
+      throw apiError;
+    }
+
+    const apiData = await apiRes.json();
+    const rawText = apiData.choices?.[0]?.message?.content?.trim() || "";
+    if (!rawText && attempt === 0) {
+      console.warn(
+        "⚠️ Groq clickbait returned an empty response, rotating key and retrying.",
+      );
+      continue;
+    }
+    return isVietnameseText(rawText)
+      ? buildLanguageFallbackClickbait(title, language)
+      : rawText;
   }
 
-  const apiData = await apiRes.json();
-  const rawText = apiData.choices?.[0]?.message?.content?.trim() || "";
-  return isVietnameseText(rawText)
-    ? buildLanguageFallbackClickbait(title, language)
-    : rawText;
+  return "";
 }
 
 app.post("/convert-download", async (req, res) => {

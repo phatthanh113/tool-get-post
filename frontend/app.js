@@ -1024,7 +1024,7 @@
 
                     setLinastoryCopyStatus(`Đã tạo lại thumbnail text cho bài ${Number(index) + 1}.`);
                 } catch (error) {
-                    setLinastoryCopyStatus(`Tạo lại thumbnail text thất bại: ${error.message || "lỗi không xác định."}`, true);
+                    setLinastoryCopyStatus(`⚠️ Tạo lại thumbnail text thất bại (${error.message || "lỗi không xác định."}) — giữ nguyên thumbnail text cũ.`, true);
                 } finally {
                     button.disabled = false;
                     button.innerHTML = originalHtml;
