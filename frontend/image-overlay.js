@@ -88,6 +88,7 @@ const imageOverlayState = {
     thirdPosition: { x: 0, y: 0, initialized: false },
     allowVerticalMove: false,
     contributors: [],
+    activeContributors: [],
     currentBingQuery: "",
     currentBingFirstIndex: 1,
     drag: null,
@@ -263,7 +264,24 @@ function imageOverlayRenderContributors(article) {
         btn.addEventListener("click", () => {
             const input = document.getElementById("imageOverlaySearchInput");
             if (!input) return;
+            const active = imageOverlayState.activeContributors;
+            const pos = active.indexOf(contributor);
+            if (pos > -1) {
+                active.splice(pos, 1);
+                btn.classList.remove("is-active");
+            } else {
+                active.push(contributor);
+                btn.classList.add("is-active");
+            }
+            input.value = active.join(" ");
+        });
+        btn.addEventListener("dblclick", () => {
+            const input = document.getElementById("imageOverlaySearchInput");
+            if (!input) return;
+            imageOverlayState.activeContributors = [contributor];
             input.value = contributor;
+            quickSelects.querySelectorAll(".image-overlay-quick-btn").forEach(el => el.classList.remove("is-active"));
+            btn.classList.add("is-active");
             imageOverlayRunSearch();
         });
         quickSelects.appendChild(btn);
@@ -492,6 +510,7 @@ async function imageOverlayActivate() {
     imageOverlayState.currentBingQuery = "";
     imageOverlayState.currentBingFirstIndex = 1;
     imageOverlayState.drag = null;
+    imageOverlayState.activeContributors = [];
 
     const fileName = getImageFileName(index);
     const fileNameElement = document.getElementById("imageOverlayFileName");
@@ -508,6 +527,9 @@ async function imageOverlayActivate() {
     imageOverlaySetResultsHint();
     imageOverlayUpdateSlotStatus();
 
+    imageOverlayState.activeContributors = imageOverlayState.contributors.slice(0, 2);
+    if (searchInput) searchInput.value = imageOverlayState.activeContributors.join(" ");
+
     imageOverlayBindCanvasEvents();
     imageOverlayDraw();
     await imageOverlayLoadTopImage(article);
@@ -515,8 +537,6 @@ async function imageOverlayActivate() {
     // Tự gắn base/third: mỗi tên contributor đầu tìm riêng 1 ảnh để tránh
     // trùng ảnh giữa các bài khi trùng tên.
     if (imageOverlayState.contributors.length > 0) {
-        const input = document.getElementById("imageOverlaySearchInput");
-        if (input) input.value = imageOverlayState.contributors[0];
         imageOverlayAutoFillSlots(imageOverlayState.contributors);
     }
 }
