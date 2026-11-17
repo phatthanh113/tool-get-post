@@ -598,6 +598,33 @@ function imageOverlayFileToDataUrl(file) {
     });
 }
 
+async function imageOverlayChangeTopVariant(variant) {
+    const index = imageOverlayState.index;
+    if (index === null || index === undefined) return;
+    const article = getSavedArticleByIndex(index);
+    if (!article || !article.videoId) return;
+
+    const url = getThumbnailVariantUrl(article.videoId, variant);
+    const img = await imageOverlayLoadImage(url, true);
+    if (!img) {
+        imageOverlaySetMessage(`${variant} không tồn tại cho video này.`, true);
+        const select = document.getElementById("imageOverlayTopVariantSelect");
+        if (select) {
+            select.value = ["maxresdefault", "maxres1", "maxres2", "hqdefault"].includes(article.thumbnailVariant)
+                ? article.thumbnailVariant
+                : "maxresdefault";
+        }
+        return;
+    }
+
+    updateThumbnailVariant(article.url, variant, index);
+    imageOverlayState.overlayImage = img;
+    imageOverlayState.overlayLabel = `${variant}.jpg`;
+    imageOverlaySaveCache();
+    imageOverlayDraw();
+    imageOverlaySetMessage("");
+}
+
 function switchStoryTab(tab) {
     const storyPane = document.getElementById("storyPane");
     const imagePane = document.getElementById("imagePane");
@@ -658,6 +685,12 @@ async function imageOverlayActivate() {
     if (layoutSelect) layoutSelect.value = "1:3";
     const searchInput = document.getElementById("imageOverlaySearchInput");
     if (searchInput) searchInput.value = "";
+    const topSelect = document.getElementById("imageOverlayTopVariantSelect");
+    if (topSelect) {
+        topSelect.value = ["maxresdefault", "maxres1", "maxres2", "hqdefault"].includes(article.thumbnailVariant)
+            ? article.thumbnailVariant
+            : "maxresdefault";
+    }
     imageOverlaySetMessage("");
 
     imageOverlayRenderContributors(article);

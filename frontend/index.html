@@ -336,7 +336,13 @@
                                     </div>
                                 </div>
                                 <div class="image-overlay-block">
-                                    <label>Ảnh đang dùng</label>
+                                    <label>Top thumbnail (maxres1 / maxres2)</label>
+                                    <select id="imageOverlayTopVariantSelect" onchange="imageOverlayChangeTopVariant(this.value)" style="width: 100%; padding: 8px 10px; border-radius: 10px; border: 1px solid #cbd5e1; font-size: 0.9rem; margin-bottom: 8px">
+                                        <option value="maxresdefault">maxresdefault.jpg</option>
+                                        <option value="maxres1">maxres1.jpg</option>
+                                        <option value="maxres2">maxres2.jpg</option>
+                                        <option value="hqdefault">hqdefault.jpg</option>
+                                    </select>
                                     <div id="imageOverlaySlotStatus" class="image-overlay-slot-status"></div>
                                 </div>
                                 <div class="image-overlay-block">
