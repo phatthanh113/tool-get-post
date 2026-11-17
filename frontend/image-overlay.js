@@ -255,12 +255,11 @@ function imageOverlayRenderContributors(article) {
         list.appendChild(tag);
     });
 
-    imageOverlayState.contributors.forEach((contributor, idx) => {
+    imageOverlayState.contributors.forEach(contributor => {
         const btn = document.createElement("button");
         btn.type = "button";
         btn.className = "image-overlay-quick-btn";
         btn.textContent = contributor;
-        if (idx < 2) btn.classList.add("is-active");
         btn.addEventListener("click", () => {
             const input = document.getElementById("imageOverlaySearchInput");
             if (!input) return;
@@ -526,9 +525,6 @@ async function imageOverlayActivate() {
     imageOverlayRenderContributors(article);
     imageOverlaySetResultsHint();
     imageOverlayUpdateSlotStatus();
-
-    imageOverlayState.activeContributors = imageOverlayState.contributors.slice(0, 2);
-    if (searchInput) searchInput.value = imageOverlayState.activeContributors.join(" ");
 
     imageOverlayBindCanvasEvents();
     imageOverlayDraw();
