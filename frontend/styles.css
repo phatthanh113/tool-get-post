@@ -1012,6 +1012,7 @@
                 gap: 18px;
                 align-items: start;
                 grid-template-areas:
+                    "navRow navRow navRow"
                     "controls controls controls"
                     "storyThumbnailSelector storyPreview storyPreview"
                     "storyTextarea storyTextarea storyTextarea"
@@ -1019,6 +1020,25 @@
                     "message message message"
                     "batch batch batch"
                     "canvas canvas canvas";
+            }
+
+            #storyPane > .story-modal-navigation {
+                grid-area: navRow;
+            }
+
+            .story-icon-btn {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                gap: 8px;
+                padding: 8px 14px;
+                font-size: 0.9rem;
+                font-weight: 600;
+                border-radius: 12px;
+            }
+
+            .story-icon-btn svg {
+                flex: none;
             }
 
             .story-modal-navigation {
