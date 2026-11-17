@@ -704,8 +704,52 @@
                 overflow-y: auto;
             }
 
-            .story-modal-card.image-overlay-modal-card {
-                width: min(100%, 1440px);
+            .story-modal-card.image-tab-active {
+                width: min(100%, 1420px);
+            }
+
+            .story-modal-tabs {
+                display: flex;
+                gap: 8px;
+                margin-bottom: 16px;
+            }
+
+            .story-tab {
+                padding: 8px 18px;
+                border-radius: 999px;
+                border: 1px solid #cbd5e1;
+                background: #f1f5f9;
+                color: #475569;
+                font-weight: 600;
+                font-size: 0.95rem;
+                cursor: pointer;
+            }
+
+            .story-tab.active {
+                background: var(--primary);
+                color: #ffffff;
+                border-color: var(--primary);
+            }
+
+            .story-pane {
+                display: none;
+            }
+
+            .story-pane.active {
+                display: block;
+            }
+
+            #storyPane.active {
+                display: grid;
+            }
+
+            .image-overlay-pane-title {
+                display: flex;
+                align-items: baseline;
+                gap: 10px;
+                font-weight: 600;
+                color: #1e293b;
+                margin-bottom: 12px;
             }
 
             .image-overlay-layout {
@@ -963,6 +1007,10 @@
             }
 
             .story-modal-body {
+                min-width: 0;
+            }
+
+            #storyPane.active {
                 display: grid;
                 grid-template-columns: minmax(240px, 1fr) minmax(300px, 1.2fr) minmax(300px, 1.4fr);
                 gap: 18px;
@@ -978,7 +1026,7 @@
                     "canvas canvas canvas";
             }
 
-            .story-modal-body > .story-modal-navigation {
+            #storyPane > .story-modal-navigation {
                 grid-area: navigation;
                 grid-column: 1 / -1;
                 display: grid;
@@ -987,7 +1035,7 @@
                 gap: 10px;
             }
 
-            .story-modal-body > .story-modal-navigation button {
+            #storyPane > .story-modal-navigation button {
                 width: 44px;
                 height: 44px;
                 border-radius: 9999px;
@@ -1039,14 +1087,14 @@
                 border-color: rgba(59, 130, 246, 0.08);
             }
 
-            .story-modal-body > .story-modal-navigation #storyArticleCounter {
+            #storyPane > .story-modal-navigation #storyArticleCounter {
                 justify-self: center;
                 font-weight: 700;
                 color: #334155;
                 font-size: 0.95rem;
             }
 
-            .story-modal-body > .story-modal-full.controls {
+            #storyPane > .story-modal-full.controls {
                 grid-area: controls;
             }
 
@@ -1091,7 +1139,7 @@
                 font-size: 0.9rem;
             }
 
-            .story-modal-body > .story-modal-actions {
+            #storyPane > .story-modal-actions {
                 grid-area: actions;
             }
 
@@ -1107,11 +1155,11 @@
                 grid-area: canvas;
             }
 
-            .story-modal-body textarea,
-            .story-modal-body > .story-modal-actions,
-            .story-modal-body > #storyMessage,
-            .story-modal-body > #storyBatchPreview,
-            .story-modal-body > #storyExportCanvas {
+            #storyPane textarea,
+            #storyPane > .story-modal-actions,
+            #storyPane > #storyMessage,
+            #storyPane > #storyBatchPreview,
+            #storyPane > #storyExportCanvas {
                 grid-column: 1 / -1;
             }
 
@@ -1142,7 +1190,7 @@
             }
 
             @media screen and (max-width: 920px) {
-                .story-modal-body {
+                #storyPane.active {
                     grid-template-columns: 1fr;
                 }
 

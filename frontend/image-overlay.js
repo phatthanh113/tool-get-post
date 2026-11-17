@@ -434,14 +434,46 @@ function imageOverlayBindCanvasEvents() {
     canvas.addEventListener("pointercancel", endDrag);
 }
 
-async function openImageOverlayModal(index) {
-    const article = getSavedArticleByIndex(index);
-    if (!article || !article.videoId) {
-        alert("Chưa có bài viết cho bài " + (index + 1) + ".");
+function switchStoryTab(tab) {
+    const storyPane = document.getElementById("storyPane");
+    const imagePane = document.getElementById("imagePane");
+    const storyTabButton = document.getElementById("storyTabButton");
+    const imageTabButton = document.getElementById("imageTabButton");
+    const card = document.querySelector("#storyModal .story-modal-card");
+    if (!storyPane || !imagePane) return;
+
+    if (tab === "image") {
+        storyPane.classList.remove("active");
+        imagePane.classList.add("active");
+        if (storyTabButton) storyTabButton.classList.remove("active");
+        if (imageTabButton) imageTabButton.classList.add("active");
+        if (card) card.classList.add("image-tab-active");
+        imageOverlayState.open = true;
+        imageOverlayActivate();
         return;
     }
 
-    imageOverlayState.open = true;
+    storyPane.classList.add("active");
+    imagePane.classList.remove("active");
+    if (storyTabButton) storyTabButton.classList.add("active");
+    if (imageTabButton) imageTabButton.classList.remove("active");
+    if (card) card.classList.remove("image-tab-active");
+    imageOverlayState.open = false;
+    imageOverlayState.drag = null;
+}
+
+async function imageOverlayActivate() {
+    const index = typeof activeStoryCardIndex === "number" ? activeStoryCardIndex : null;
+    if (index === null) {
+        imageOverlaySetMessage("Không xác định được bài viết đang mở.", true);
+        return;
+    }
+    const article = getSavedArticleByIndex(index);
+    if (!article || !article.videoId) {
+        imageOverlaySetMessage("Chưa có bài viết cho bài " + (index + 1) + ".", true);
+        return;
+    }
+
     imageOverlayState.index = index;
     imageOverlayState.layoutId = "1:3";
     imageOverlayState.overlayImage = null;
@@ -472,23 +504,9 @@ async function openImageOverlayModal(index) {
     imageOverlaySetResultsHint();
     imageOverlayUpdateSlotStatus();
 
-    const modal = document.getElementById("imageOverlayModal");
-    if (modal) modal.classList.add("open");
-    document.body.style.overflow = "hidden";
-    document.body.style.position = "";
-
     imageOverlayBindCanvasEvents();
     imageOverlayDraw();
     await imageOverlayLoadTopImage(article);
-}
-
-function closeImageOverlayModal() {
-    const modal = document.getElementById("imageOverlayModal");
-    if (modal) modal.classList.remove("open");
-    imageOverlayState.open = false;
-    imageOverlayState.drag = null;
-    document.body.style.overflow = "";
-    document.body.style.position = "";
 }
 
 function imageOverlayToBlob() {
@@ -555,12 +573,6 @@ document.addEventListener("DOMContentLoaded", () => {
         layoutSelect.addEventListener("change", event => {
             imageOverlayState.layoutId = event.target.value;
             imageOverlayDraw();
-        });
-    }
-    const modal = document.getElementById("imageOverlayModal");
-    if (modal) {
-        modal.addEventListener("click", event => {
-            if (event.target === modal) closeImageOverlayModal();
         });
     }
 });

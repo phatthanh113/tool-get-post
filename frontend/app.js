@@ -655,8 +655,7 @@
             function buildStoryActionMarkup(index, url) {
                 return `
                                 <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-top:12px;">
-                                    <button type="button" onclick="handleStoryActionButtonClick(${index})" class="btn-secondary" style="padding: 10px 16px; font-size: 0.92rem;">🎬 Create Story</button>
-                                    <button type="button" onclick="openImageOverlayModal(${index})" class="btn-secondary" style="padding: 10px 16px; font-size: 0.92rem;">🖼 Create Image</button>
+                                    <button type="button" onclick="openStoryTool(${index})" class="btn-secondary" style="padding: 10px 16px; font-size: 0.92rem;">🎬 Create</button>
                                     <button type="button" onclick="retrySingle('${url}', ${index})" class="btn-secondary story-retry-btn" style="display:none; padding: 10px 16px; font-size: 0.92rem; background-color: #3b82f6; border-color: #3b82f6; color: white;">🔄</button>
                                 </div>
                             `;
@@ -2616,6 +2615,7 @@
             function openStoryTool(cardIndex) {
                 activeStoryCardIndex = cardIndex;
                 storyCoverImagePromise = null;
+                switchStoryTab("story");
                 const savedArticle = getSavedArticleByIndex(cardIndex);
                 const savedFontSize = Number(savedArticle?.storyFontSize);
                 storyFontSizeOverride = Number.isFinite(savedFontSize) && savedFontSize >= 14 && savedFontSize <= 90;
