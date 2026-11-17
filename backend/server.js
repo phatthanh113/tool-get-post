@@ -696,10 +696,16 @@ async function generateValidatedSportsThumbnailText(
       .trim();
     if (cleanedDraft) {
       console.warn(
-        "⚠️ Returning unvalidated sports thumbnail text (allowInvalid).",
+        "⚠️ Returning unvalidated sports thumbnail text (failed word count, but draft is not empty → use the failed-count draft).",
       );
       return cleanedDraft;
     }
+  }
+
+  if (!previousDraft || !previousDraft.trim()) {
+    throw new Error(
+      "AI trả về response rỗng — giữ nguyên thumbnail text cũ.",
+    );
   }
 
   throw new Error(
