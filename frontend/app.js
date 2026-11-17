@@ -1624,6 +1624,7 @@
 
             function buildSportsThumbnailText(articleText) {
                 const cleanText = (articleText || "")
+                    .replace(/\[\[CONTRIBUTORS:\s*([\s\S]*?)\s*\]\]/gi, " ")
                     .replace(/<[^>]+>/g, " ")
                     .replace(/&nbsp;/g, " ")
                     .replace(/\s+/g, " ")

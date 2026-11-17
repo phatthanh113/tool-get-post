@@ -599,6 +599,13 @@ function extractContributors(articleText = "") {
   return match && match[1] ? match[1].trim() : "";
 }
 
+function stripContributorMarker(value = "") {
+  return String(value || "").replace(
+    /\[\[CONTRIBUTORS:\s*([\s\S]*?)\s*\]\]/gi,
+    " ",
+  );
+}
+
 function validateSportsThumbnailText(text = "") {
   const candidate = (extractSportsThumbnailText(text) || text)
     .replace(/```(?:\w+)?/gi, "")
@@ -647,8 +654,11 @@ async function generateValidatedSportsThumbnailText(
   options = {},
 ) {
   const { allowInvalid = false, longerHint = false } = options;
-  // Strip HTML tags so the model reads clean text instead of markup noise.
-  const cleanSource = stripHtmlToText(sourceText);
+  // Strip the [[CONTRIBUTORS]] marker so contributor names never leak into
+  // the generated thumbnail text (and therefore never into the story text).
+  const cleanSource = stripHtmlToText(
+    stripContributorMarker(sourceText),
+  );
   const longerHintText = longerHint
     ? "\n\nIMPORTANT: The body must contain at least 140 words — the previous draft was too short. Expand with more evidence, stakes, consequences."
     : "";
