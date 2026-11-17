@@ -598,10 +598,6 @@
                 }
             }
 
-            function getStoryModeForCard(card) {
-                return getActiveStoryMode();
-            }
-
             function showStoryRetryButton(index) {
                 const card = document.getElementById(`card-${index}`);
                 const retryButton = card?.querySelector(".story-retry-btn");
@@ -656,7 +652,7 @@
                 }
             }
 
-            function buildStoryActionMarkup(index, url, selectedMode = "story") {
+            function buildStoryActionMarkup(index, url) {
                 return `
                                 <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-top:12px;">
                                     <button type="button" onclick="handleStoryActionButtonClick(${index})" class="btn-secondary" style="padding: 10px 16px; font-size: 0.92rem;">🎬 Create Story</button>
@@ -1076,7 +1072,7 @@
                                                 </div>
                                                 <textarea class="player-input border" style="width: 100%; min-height: 80px; font-family: monospace; font-size: 0.85rem;" placeholder="Thumbnail text..." oninput="updateThumbnailText('${item.url}', this.value)">${item.players || ""}</textarea>
                                                 ${buildThumbnailControls(item)}
-                                                ${buildStoryActionMarkup(item.index, item.url, "story")}
+                                                ${buildStoryActionMarkup(item.index, item.url)}
                                             </div>
                                         </div>
 
@@ -1433,11 +1429,10 @@
                 // Prepare story image for this article
                 activeStoryCardIndex = index;
                 storyCoverImagePromise = null;
-                const mode = setActiveStoryMode(getActiveStoryMode());
                 const text = applyStorySuffix(article.players || buildSportsThumbnailText(article.article || ""));
                 document.getElementById("storyTextInput").value = text;
                 const savedFontSize = Number(article.storyFontSize);
-                const fontSize = Number.isFinite(savedFontSize) && savedFontSize >= 14 && savedFontSize <= 90 ? savedFontSize : storyGetAutoFontSize(text, mode);
+                const fontSize = Number.isFinite(savedFontSize) && savedFontSize >= 14 && savedFontSize <= 90 ? savedFontSize : storyGetAutoFontSize(text);
 
                 const imgBlob = await storyCreateImageBlob(text, "#ffffff", fontSize);
 
@@ -1604,7 +1599,7 @@
                                                 </div>
                                                 <textarea class="player-input border" style="width: 100%; min-height: 80px; font-family: monospace; font-size: 0.85rem;" placeholder="Thumbnail text..." oninput="updateThumbnailText('${item.url}', this.value)">${item.players || ""}</textarea>
                                                 ${buildThumbnailControls(item)}
-                                                ${buildStoryActionMarkup(item.index, item.url, "story")}
+                                                ${buildStoryActionMarkup(item.index, item.url)}
                                             </div>
                                         </div>
 
@@ -1672,7 +1667,7 @@
                 }
 
                 const provider = document.getElementById("ai-provider").value;
-                const selectedMode = document.getElementById("generation-mode")?.value || "story";
+                const selectedMode = document.getElementById("generation-mode")?.value || "sports";
                 const language = document.getElementById("language-select")?.value || "English";
                 const total = urls.length;
                 let completedCount = 0;
@@ -1730,7 +1725,7 @@
                                                                 thumbnailVariant: "maxresdefault",
                                                                 customThumbnailUrl: "",
                                                             })}
-                                                            ${buildStoryActionMarkup(index, url, selectedMode)}
+                                                            ${buildStoryActionMarkup(index, url)}
                                                         </div>
                                                     </div>
                                                     <label style="display:block; margin-bottom:8px; color:var(--text-muted); cursor:pointer;" ondblclick="showStoryRetryButton(${index})">Article ${index + 1} Content (HTML)</label>
@@ -2204,7 +2199,7 @@
 
                         try {
                             const provider = document.getElementById("ai-provider").value;
-                            const generationMode = document.getElementById("generation-mode")?.value || "story";
+                            const generationMode = document.getElementById("generation-mode")?.value || "sports";
                             const language = document.getElementById("language-select")?.value || "English";
                             run.inFlight = true;
                             const res = await fetch("/generate-article", {
@@ -2255,7 +2250,7 @@
                                                             </div>
                                                             <textarea class="player-input border" style="width: 100%; min-height: 80px; font-family: monospace; font-size: 0.85rem;" placeholder="Thumbnail text..." oninput="updateThumbnailText(${currentIndex}, this.value)">${data.players || ""}</textarea>
                                                             ${buildThumbnailControls({ index: currentIndex, url, videoId: data.videoId })}
-                                                            ${buildStoryActionMarkup(currentIndex, url, "story")}
+                                                            ${buildStoryActionMarkup(currentIndex, url)}
                                                         </div>
                                                     </div>
 
@@ -2310,7 +2305,6 @@
             async function retrySingle(url, index) {
                 const card = document.getElementById(`card-${index}`);
                 const originalHTML = card.innerHTML;
-                const currentMode = getStoryModeForCard(card);
 
                 // Show local loading
                 card.innerHTML = `<div style="text-align:center; padding: 20px;">⏳ Đang thử lại bài ${index + 1}...</div>`;
@@ -2318,7 +2312,7 @@
 
                 try {
                     const provider = document.getElementById("ai-provider").value;
-                    const generationMode = document.getElementById("generation-mode")?.value || "story";
+                    const generationMode = document.getElementById("generation-mode")?.value || "sports";
                     const language = document.getElementById("language-select")?.value || "English";
                     const res = await fetch("/generate-article", {
                         method: "POST",
@@ -2361,7 +2355,7 @@
                                                     </div>
                                                     <textarea class="player-input border" style="width: 100%; min-height: 80px; font-family: monospace; font-size: 0.85rem;" placeholder="Thumbnail text..." oninput="updateThumbnailText(${index}, this.value)">${data.players || ""}</textarea>
                                                     ${buildThumbnailControls({ index, url, videoId: data.videoId })}
-                                                    ${buildStoryActionMarkup(index, url, getStoryModeForCard(card))}
+                                                    ${buildStoryActionMarkup(index, url)}
                                                 </div>
                                             </div>
 
@@ -2555,24 +2549,6 @@
                 document.body.style.position = "";
             }
 
-            function getActiveStoryMode() {
-                return document.getElementById("storyModeSelect")?.value || "story";
-            }
-
-            function setActiveStoryMode(mode) {
-                const modeSelect = document.getElementById("storyModeSelect");
-                const generationModeSelect = document.getElementById("generation-mode");
-                const effectiveMode = mode || generationModeSelect?.value || "story";
-
-                if (modeSelect) {
-                    modeSelect.value = effectiveMode;
-                }
-                if (generationModeSelect) {
-                    generationModeSelect.value = effectiveMode;
-                }
-                return effectiveMode;
-            }
-
             function getCurrentThumbnailUrl() {
                 const currentItem = getSavedArticleByIndex(activeStoryCardIndex);
                 if (!currentItem) {
@@ -2641,41 +2617,33 @@
                 const savedFontSize = Number(savedArticle?.storyFontSize);
                 storyFontSizeOverride = Number.isFinite(savedFontSize) && savedFontSize >= 14 && savedFontSize <= 90;
                 const card = document.getElementById(`card-${cardIndex}`);
-                const mode = setActiveStoryMode(getStoryModeForCard(card));
                 const textArea = card?.querySelector("textarea.player-input");
                 const articleTextArea = card?.querySelector("textarea.w-full.min-h-52");
                 const storyTextInput = document.getElementById("storyTextInput");
                 const modalTitle = document.querySelector("#storyModal .story-modal-header h3");
 
-                if (mode === "sports") {
-                    const generatedSportsText = buildSportsThumbnailText(articleTextArea?.value || "");
-                    const savedStoryText = savedArticle?.storyText?.trim();
-                    activeStoryBaseText = textArea?.value.trim() || savedStoryText || generatedSportsText;
-                    if (modalTitle) modalTitle.textContent = "Sports Hook Creator";
-                    storyTextInput.placeholder = "Enter the sports hook text or use the generated clickbait.";
-                    storyUpdateMessage("Use the sports hook text from the generated article or enter your own high-impact caption.");
-                } else {
-                    activeStoryBaseText = textArea?.value.trim() || savedArticle?.storyText || "";
-                    if (modalTitle) modalTitle.textContent = "Video Story Creator";
-                    storyTextInput.placeholder = "Enter the story text here or use thumbnail text from the article.";
-                    storyUpdateMessage("Use the story text from the thumbnail or enter your own narrative.");
-                }
+                const generatedSportsText = buildSportsThumbnailText(articleTextArea?.value || "");
+                const savedStoryText = savedArticle?.storyText?.trim();
+                activeStoryBaseText = textArea?.value.trim() || savedStoryText || generatedSportsText;
+                if (modalTitle) modalTitle.textContent = "Sports Hook Creator";
+                storyTextInput.placeholder = "Enter the sports hook text or use the generated clickbait.";
+                storyUpdateMessage("Use the sports hook text from the generated article or enter your own high-impact caption.");
 
                 activeStorySuffix = getStorySuffixText();
                 storyTextInput.value = applyStorySuffix(activeStoryBaseText);
 
                 lockBodyScroll();
                 document.getElementById("storyModal").classList.add("open");
-                updateStoryThumbnailSelectorVisibility(mode);
+                updateStoryThumbnailSelectorVisibility();
                 renderThumbnailSelectorForActiveCard();
                 renderStoryPreview();
                 updateStoryNavigationButtons();
             }
 
-            function updateStoryThumbnailSelectorVisibility(mode) {
+            function updateStoryThumbnailSelectorVisibility() {
                 const selector = document.getElementById("storyThumbnailSelector");
                 if (!selector) return;
-                selector.style.display = mode === "sports" ? "grid" : "none";
+                selector.style.display = "grid";
             }
 
             function closeStoryTool() {
@@ -2683,21 +2651,21 @@
                 unlockBodyScroll();
             }
 
-            function storyGetRawAutoFontSize(text, mode = getActiveStoryMode()) {
+            function storyGetRawAutoFontSize(text) {
                 if (!text || !text.trim()) return 38;
 
                 const canvas = document.getElementById("storyExportCanvas");
                 const ctx = canvas.getContext("2d");
-                const lineHeightRatio = mode === "sports" ? CELEB_STORY_THEME.layout.summaryLineHeight : 1.2;
+                const lineHeightRatio = CELEB_STORY_THEME.layout.summaryLineHeight;
                 const width = canvas.width;
                 const height = canvas.height;
                 const boxSideInset = CELEB_STORY_THEME.layout.summaryBoxSideInset ?? CELEB_STORY_THEME.layout.textSidePadding;
-                const maxWidth = mode === "sports" ? width - boxSideInset * 2 - CELEB_STORY_THEME.layout.summaryBoxPaddingX * 2 : width - 120;
+                const maxWidth = width - boxSideInset * 2 - CELEB_STORY_THEME.layout.summaryBoxPaddingX * 2;
                 const sportsImageBottomEstimate = CELEB_STORY_THEME.layout.frameTop + CELEB_STORY_THEME.layout.frameFullWidthHeight * CELEB_STORY_THEME.layout.imageZoom + 40;
                 const summaryBoxPaddingTop = CELEB_STORY_THEME.layout.summaryBoxPaddingTop ?? CELEB_STORY_THEME.layout.summaryBoxPaddingY;
                 const summaryBoxPaddingBottom = CELEB_STORY_THEME.layout.summaryBoxPaddingBottom ?? CELEB_STORY_THEME.layout.summaryBoxPaddingY;
                 const summaryBoxOffsetY = CELEB_STORY_THEME.layout.summaryBoxOffsetY || 0;
-                const maxHeight = mode === "sports" ? height - sportsImageBottomEstimate - summaryBoxOffsetY - summaryBoxPaddingTop - summaryBoxPaddingBottom - 40 : height - 120;
+                const maxHeight = height - sportsImageBottomEstimate - summaryBoxOffsetY - summaryBoxPaddingTop - summaryBoxPaddingBottom - 40;
                 let bestSize = 42;
 
                 for (let size = 90; size >= 14; size -= 1) {
@@ -2715,8 +2683,8 @@
                 return bestSize - 2;
             }
 
-            function storyGetAutoFontSize(text, mode = getActiveStoryMode()) {
-                return Math.min(33, Math.max(28, storyGetRawAutoFontSize(text, mode)));
+            function storyGetAutoFontSize(text) {
+                return Math.min(33, Math.max(28, storyGetRawAutoFontSize(text)));
             }
 
             function syncStoryTextInputToSavedArticle(markAsCustomized = true) {
@@ -2748,8 +2716,7 @@
                 const preview = document.getElementById("storyPreview");
                 const storyTextInput = document.getElementById("storyTextInput");
                 const text = storyTextInput.value.trim();
-                const mode = getActiveStoryMode();
-                const autoFontSize = storyGetAutoFontSize(text, mode);
+                const autoFontSize = storyGetAutoFontSize(text);
 
                 const fontSizeInput = document.getElementById("storyFontSize");
                 const savedFontSize = Number(getSavedArticleByIndex(activeStoryCardIndex)?.storyFontSize);
@@ -2785,42 +2752,6 @@
                 preview.innerHTML = `
                                 <img src="${dataUrl}" alt="Story preview" />
                             `;
-            }
-
-            function storyWrapTextLines(text, maxWidth, ctx, fontSize) {
-                const words = text.split(/\s+/).filter(Boolean);
-                const lines = [];
-                let currentLine = "";
-
-                words.forEach((word) => {
-                    const candidate = currentLine ? `${currentLine} ${word}` : word;
-                    if (ctx.measureText(candidate).width > maxWidth && currentLine) {
-                        lines.push(currentLine);
-                        currentLine = word;
-                    } else {
-                        currentLine = candidate;
-                    }
-                });
-
-                if (currentLine) {
-                    lines.push(currentLine);
-                }
-
-                return lines;
-            }
-
-            function storyDrawRoundedRect(ctx, x, y, width, height, radius) {
-                ctx.beginPath();
-                ctx.moveTo(x + radius, y);
-                ctx.lineTo(x + width - radius, y);
-                ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
-                ctx.lineTo(x + width, y + height - radius);
-                ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
-                ctx.lineTo(x + radius, y + height);
-                ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
-                ctx.lineTo(x, y + radius);
-                ctx.quadraticCurveTo(x, y, x + radius, y);
-                ctx.closePath();
             }
 
             const STORY_ALT_COLOR_DEFAULT = "#F245E4";
@@ -2913,23 +2844,6 @@
                 }
 
                 return lines;
-            }
-
-            function storyMeasureLineWidth(lineTokens, ctx) {
-                return lineTokens.reduce((sum, token) => sum + ctx.measureText(token.text).width, 0);
-            }
-
-            let storyBackgroundImagePromise = null;
-            function loadStoryBackgroundImage() {
-                if (storyBackgroundImagePromise) return storyBackgroundImagePromise;
-                storyBackgroundImagePromise = new Promise((resolve) => {
-                    const img = new Image();
-                    img.crossOrigin = "anonymous";
-                    img.src = "bg.png";
-                    img.onload = () => resolve(img);
-                    img.onerror = () => resolve(null);
-                });
-                return storyBackgroundImagePromise;
             }
 
             const CELEB_STORY_THEME = {
@@ -3040,100 +2954,49 @@
                     await document.fonts.load(`900 ${themeFontSize}px ${theme.layout.fontFamily}`);
                 }
 
-                const mode = getActiveStoryMode();
-                if (mode === "sports") {
-                    ctx.fillStyle = theme.colors.backgroundColor;
-                    ctx.fillRect(0, 0, width, height);
-
-                    await storyDrawLowerBackground(ctx, 0, width, height);
-
-                    let imageBottom = theme.layout.frameTop + theme.layout.frameFullWidthHeight;
-                    const coverImage = await loadStoryCoverImage();
-                    if (coverImage) {
-                        const sourceWidth = coverImage.naturalWidth || coverImage.width;
-                        const sourceHeight = coverImage.naturalHeight || coverImage.height;
-                        const frameX = theme.layout.frameFullWidth ? 0 : theme.layout.frameSideInset;
-                        const frameY = theme.layout.frameTop;
-                        const frameW = theme.layout.frameFullWidth ? width : width - theme.layout.frameSideInset * 2;
-                        const frameH = theme.layout.frameFullWidthHeight;
-                        const scale = Math.max(frameW / sourceWidth, frameH / sourceHeight) * theme.layout.imageZoom;
-                        const drawWidth = sourceWidth * scale;
-                        const drawHeight = sourceHeight * scale;
-                        const offsetX = frameX + (frameW - drawWidth) / 2 + theme.layout.imageOffsetX;
-                        const offsetY = frameY + (frameH - drawHeight) / 2 + theme.layout.imageOffsetY;
-                        imageBottom = offsetY + drawHeight;
-                        ctx.drawImage(coverImage, offsetX, offsetY, drawWidth, drawHeight);
-                    }
-
-                    ctx.font = `900 ${themeFontSize}px ${theme.layout.fontFamily}`;
-                    ctx.textAlign = "left";
-                    ctx.textBaseline = "top";
-                    const boxSideInset = theme.layout.summaryBoxSideInset ?? theme.layout.textSidePadding;
-                    const maxWidth = width - boxSideInset * 2 - theme.layout.summaryBoxPaddingX * 2;
-                    const lineHeight = themeFontSize * theme.layout.summaryLineHeight;
-                    const lines = storyBuildTextLines(line, maxWidth, lineHeight, ctx);
-                    const textHeight = lines.length * lineHeight;
-                    const summaryBoxPaddingTop = theme.layout.summaryBoxPaddingTop ?? theme.layout.summaryBoxPaddingY;
-                    const summaryBoxPaddingBottom = theme.layout.summaryBoxPaddingBottom ?? theme.layout.summaryBoxPaddingY;
-                    const boxX = boxSideInset;
-                    const boxY = Math.max(theme.layout.textTop, imageBottom + 16) + (theme.layout.summaryBoxOffsetY || 0);
-                    const boxW = width - boxSideInset * 2;
-                    const boxH = textHeight + summaryBoxPaddingTop + summaryBoxPaddingBottom;
-
-                    if (theme.layout.summaryBoxEnabled) {
-                        await storyDrawSummaryBoxBackdrop(ctx, boxX, boxY, boxW, boxH, theme);
-                    }
-
-                    let y = boxY + summaryBoxPaddingTop;
-                    lines.forEach((lineTokens) => {
-                        let x = boxX + theme.layout.summaryBoxPaddingX;
-                        lineTokens.forEach((token) => {
-                            ctx.fillStyle = token.color === storyGetAltColor(1) ? theme.colors.accentColor : theme.colors.textColor;
-                            ctx.fillText(token.text, x, y);
-                            x += ctx.measureText(token.text).width;
-                        });
-                        y += lineHeight;
-                    });
-                    return;
-                }
-
                 ctx.fillStyle = theme.colors.backgroundColor;
                 ctx.fillRect(0, 0, width, height);
 
-                const frameX = theme.layout.frameFullWidth ? 0 : theme.layout.frameSideInset;
-                const frameY = theme.layout.frameTop;
-                const frameW = theme.layout.frameFullWidth ? width : width - theme.layout.frameSideInset * 2;
-                const frameH = theme.layout.frameFullWidthHeight;
+                await storyDrawLowerBackground(ctx, 0, width, height);
+
+                let imageBottom = theme.layout.frameTop + theme.layout.frameFullWidthHeight;
                 const coverImage = await loadStoryCoverImage();
                 if (coverImage) {
                     const sourceWidth = coverImage.naturalWidth || coverImage.width;
                     const sourceHeight = coverImage.naturalHeight || coverImage.height;
+                    const frameX = theme.layout.frameFullWidth ? 0 : theme.layout.frameSideInset;
+                    const frameY = theme.layout.frameTop;
+                    const frameW = theme.layout.frameFullWidth ? width : width - theme.layout.frameSideInset * 2;
+                    const frameH = theme.layout.frameFullWidthHeight;
                     const scale = Math.max(frameW / sourceWidth, frameH / sourceHeight) * theme.layout.imageZoom;
                     const drawWidth = sourceWidth * scale;
                     const drawHeight = sourceHeight * scale;
                     const offsetX = frameX + (frameW - drawWidth) / 2 + theme.layout.imageOffsetX;
                     const offsetY = frameY + (frameH - drawHeight) / 2 + theme.layout.imageOffsetY;
+                    imageBottom = offsetY + drawHeight;
                     ctx.drawImage(coverImage, offsetX, offsetY, drawWidth, drawHeight);
                 }
 
                 ctx.font = `900 ${themeFontSize}px ${theme.layout.fontFamily}`;
                 ctx.textAlign = "left";
                 ctx.textBaseline = "top";
-                const maxWidth = width - theme.layout.textSidePadding * 2 - theme.layout.summaryBoxPaddingX * 2;
+                const boxSideInset = theme.layout.summaryBoxSideInset ?? theme.layout.textSidePadding;
+                const maxWidth = width - boxSideInset * 2 - theme.layout.summaryBoxPaddingX * 2;
                 const lineHeight = themeFontSize * theme.layout.summaryLineHeight;
                 const lines = storyBuildTextLines(line, maxWidth, lineHeight, ctx);
                 const textHeight = lines.length * lineHeight;
-                const boxX = theme.layout.textSidePadding;
-                const boxY = theme.layout.textTop;
-                const boxW = width - theme.layout.textSidePadding * 2;
-                const boxH = textHeight + theme.layout.summaryBoxPaddingY * 2;
+                const summaryBoxPaddingTop = theme.layout.summaryBoxPaddingTop ?? theme.layout.summaryBoxPaddingY;
+                const summaryBoxPaddingBottom = theme.layout.summaryBoxPaddingBottom ?? theme.layout.summaryBoxPaddingY;
+                const boxX = boxSideInset;
+                const boxY = Math.max(theme.layout.textTop, imageBottom + 16) + (theme.layout.summaryBoxOffsetY || 0);
+                const boxW = width - boxSideInset * 2;
+                const boxH = textHeight + summaryBoxPaddingTop + summaryBoxPaddingBottom;
 
                 if (theme.layout.summaryBoxEnabled) {
                     await storyDrawSummaryBoxBackdrop(ctx, boxX, boxY, boxW, boxH, theme);
                 }
 
-                ctx.fillStyle = theme.colors.textColor;
-                let y = boxY + theme.layout.summaryBoxPaddingY;
+                let y = boxY + summaryBoxPaddingTop;
                 lines.forEach((lineTokens) => {
                     let x = boxX + theme.layout.summaryBoxPaddingX;
                     lineTokens.forEach((token) => {
@@ -3373,38 +3236,24 @@
                 });
             }
 
-            const generationModeSelect = document.getElementById("generation-mode");
-            const storyModeSelect = document.getElementById("storyModeSelect");
-
-            const syncStoryModeSelection = (event) => {
-                const sourceSelect = event?.target;
-                const selectedMode = sourceSelect?.value || generationModeSelect?.value || storyModeSelect?.value || "story";
-                const mode = setActiveStoryMode(selectedMode);
+            const syncStoryModeSelection = () => {
                 const card = document.getElementById(`card-${activeStoryCardIndex}`);
                 const textArea = card?.querySelector("textarea.player-input");
                 const articleTextArea = card?.querySelector("textarea.w-full.min-h-52");
                 const storyTextInput = document.getElementById("storyTextInput");
                 const modalTitle = document.querySelector("#storyModal .story-modal-header h3");
 
-                if (mode === "sports") {
-                    activeStoryBaseText = textArea?.value.trim() || buildSportsThumbnailText(articleTextArea?.value || "");
-                    storyTextInput.placeholder = "Enter the sports hook text or use the generated clickbait.";
-                    if (modalTitle) modalTitle.textContent = "Sports Hook Creator";
-                } else {
-                    activeStoryBaseText = textArea?.value.trim() || activeStoryBaseText || storyTextInput.value.trim() || "";
-                    storyTextInput.placeholder = "Enter the story text here or use thumbnail text from the article.";
-                    if (modalTitle) modalTitle.textContent = "Video Story Creator";
-                }
+                activeStoryBaseText = textArea?.value.trim() || buildSportsThumbnailText(articleTextArea?.value || "");
+                storyTextInput.placeholder = "Enter the sports hook text or use the generated clickbait.";
+                if (modalTitle) modalTitle.textContent = "Sports Hook Creator";
 
                 activeStorySuffix = getStorySuffixText();
                 storyTextInput.value = applyStorySuffix(activeStoryBaseText);
 
-                updateStoryThumbnailSelectorVisibility(mode);
+                updateStoryThumbnailSelectorVisibility();
                 renderStoryPreview();
             };
 
-            generationModeSelect?.addEventListener("change", syncStoryModeSelection);
-            storyModeSelect?.addEventListener("change", syncStoryModeSelection);
             loadStorySuffixSettings();
             document.getElementById("storySuffixEnabled")?.addEventListener("change", saveStorySuffixSettings);
             document.getElementById("storySuffixInput")?.addEventListener("input", saveStorySuffixSettings);

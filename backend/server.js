@@ -80,11 +80,7 @@ if (ffmpegPath && ffprobePath) {
   console.log("Checked ffprobe candidates:", ffprobeCandidates.filter(Boolean));
 }
 
-const storyAudioCandidates = [
-  path.join(__dirname, "..", "hard-to-miss.mp3"),
-  path.join(__dirname, "hard-to-miss.mp3"),
-];
-const sportsAudioCandidates = [
+const audioCandidates = [
   path.join(__dirname, "..", "hard-to-miss.mp3"),
   path.join(__dirname, "hard-to-miss.mp3"),
 ];
@@ -106,17 +102,7 @@ function resolveAudioPath(audioCandidates, label) {
   return { audioPath, hasAudio };
 }
 
-const storyAudio = resolveAudioPath(storyAudioCandidates, "Story");
-const sportsAudio = resolveAudioPath(sportsAudioCandidates, "Sports");
-
-function getAudioForMode(generationMode = "story") {
-  const mode = String(generationMode || "story").toLowerCase();
-  if (mode === "sports") {
-    return { audioPath: sportsAudio.audioPath, hasAudio: sportsAudio.hasAudio };
-  }
-
-  return { audioPath: storyAudio.audioPath, hasAudio: storyAudio.hasAudio };
-}
+const resolvedAudio = resolveAudioPath(audioCandidates, "Sports");
 
 function safeDeleteFile(filePath, maxRetries = 5, delay = 1000) {
   return new Promise((resolve) => {
@@ -361,40 +347,26 @@ function getPrompt(
   title,
   truncatedDescription,
   thumbnailText,
-  generationMode = "story",
+  generationMode = "sports",
   language = "English",
 ) {
   const targetLanguage = normalizePromptLanguage(language);
   let topicInstruction = "";
   let languageInstruction = "";
-  let roleInstruction = "";
-  let taskInstruction = "";
-
-  if (generationMode === "sports") {
-    roleInstruction = `
+  const roleInstruction = `
 ### SYSTEM ROLE:
 You are an elite sports journalist and viral clickbait writer specializing in dramatic, high-engagement sports coverage.
 `;
-    taskInstruction = `
+  let taskInstruction = `
 ### TASK:
 Transform this YouTube video into a highly dramatic sports article with a strong hook, cinematic pacing, and massive clickbait energy.
 `;
-    topicInstruction = `
+  topicInstruction = `
 - The article should be based on the video title, description, and the emotional stakes of the sports story.`;
-    languageInstruction = `
+  languageInstruction = `
   - The article MUST be written entirely in ${targetLanguage}. Do not use another language, even if the video title uses another language.`;
 
-    taskInstruction += `${getSportsThumbnailTextRequirement(targetLanguage)}\n- Write the headline and body in ${targetLanguage}.`;
-  } else {
-    roleInstruction = `
-### SYSTEM ROLE:
-You are an elite multimedia storyteller and viral content architect. Your expertise spans across multiple high-stakes arenas: MLB insider baseball, blockbuster cinema, geopolitical chess matches, tech disruptors, and pop culture frenzies. You write with the urgency of a breaking-news desk, the flair of a screenwriter, and the analytical depth of a Harvard case study. Every piece you craft is designed to stop the scroll, ignite comment sections, and dominate Twitter/X trends within 60 minutes of publication. Your tone is bold, provocative, and unapologetically dramatic—turning dry statistics into bloody rivalries, corporate earnings into gladiator battles, and celebrity feuds into Shakespearean tragedies. You don't just report news; you weaponize it into must-read, shareable, water-cooler content.
-`;
-    taskInstruction = `
-### TASK:
-Transform this YouTube video into a highly dramatic long-form sports article.
-`;
-  }
+  taskInstruction += `${getSportsThumbnailTextRequirement(targetLanguage)}\n- Write the headline and body in ${targetLanguage}.`;
 
   if (thumbnailText) {
     topicInstruction = `
@@ -446,7 +418,7 @@ async function generateWithOpenRouter(
   title,
   truncatedDescription,
   thumbnailText,
-  generationMode = "story",
+  generationMode = "sports",
   language = "English",
 ) {
   const openRouterKey = process.env.OPENROUTER_API_KEY;
@@ -827,9 +799,8 @@ app.post("/convert-download", async (req, res) => {
 
     let duration = parseFloat(req.body.duration);
     const randomDuration = req.body.randomDuration === "true";
-    const generationMode = req.body.generationMode || req.body.mode || "story";
     const { audioPath: selectedAudioPath, hasAudio: selectedHasAudio } =
-      getAudioForMode(generationMode);
+      resolvedAudio;
     if (randomDuration || Number.isNaN(duration)) {
       duration = null;
     }
@@ -1067,8 +1038,8 @@ app.post("/generate-article", async (req, res) => {
   const {
     youtubeUrl,
     provider = "groq",
-    generationMode = "story",
-    thumbnailMode = "story",
+    generationMode = "sports",
+    thumbnailMode = "sports",
     language = "English",
   } = req.body;
   const promptLanguage = normalizePromptLanguage(language);
@@ -1112,7 +1083,7 @@ app.post("/generate-article", async (req, res) => {
     let thumbnailText = "";
     const effectiveMode =
       generationMode === "thumbnail" || generationMode === "buzz-thumbnail"
-        ? thumbnailMode || "story"
+        ? thumbnailMode || "sports"
         : generationMode;
 
     try {
