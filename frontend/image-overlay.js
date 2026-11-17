@@ -373,7 +373,7 @@ function imageOverlayToggleMove() {
     imageOverlayState.allowVerticalMove = !imageOverlayState.allowVerticalMove;
     const btn = document.getElementById("imageOverlayMoveBtn");
     if (btn) {
-        btn.textContent = imageOverlayState.allowVerticalMove ? "↔ Move X" : "🔒 Lock Y";
+        btn.textContent = imageOverlayState.allowVerticalMove ? "🔒 Lock Y" : "↔ Move X";
     }
     const canvas = document.getElementById("imageOverlayCanvas");
     if (canvas) {
@@ -497,7 +497,7 @@ async function imageOverlayActivate() {
     const fileNameElement = document.getElementById("imageOverlayFileName");
     if (fileNameElement) fileNameElement.textContent = `— ${fileName}`;
     const moveBtn = document.getElementById("imageOverlayMoveBtn");
-    if (moveBtn) moveBtn.textContent = "🔒 Lock Y";
+    if (moveBtn) moveBtn.textContent = "↔ Move X";
     const layoutSelect = document.getElementById("imageOverlayLayoutSelect");
     if (layoutSelect) layoutSelect.value = "1:3";
     const searchInput = document.getElementById("imageOverlaySearchInput");
