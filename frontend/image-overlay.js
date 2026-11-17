@@ -361,6 +361,8 @@ function imageOverlayDisplayResults(urls) {
         img.draggable = false;
         img.src = imageOverlayProxyUrl(imageUrl);
         img.addEventListener("error", () => {
+            if (img.dataset.fallbackTried) return;
+            img.dataset.fallbackTried = "1";
             img.src = imageUrl;
         });
         container.appendChild(img);
