@@ -1022,13 +1022,12 @@
             }
 
             .story-modal-navigation {
-                display: grid;
-                grid-template-columns: auto 1fr auto;
+                display: flex;
                 align-items: center;
                 gap: 10px;
             }
 
-            .story-modal-navigation button {
+            .story-nav-buttons button {
                 width: 44px;
                 height: 44px;
                 border-radius: 9999px;
@@ -1080,11 +1079,11 @@
                 border-color: rgba(59, 130, 246, 0.08);
             }
 
-            .story-modal-navigation #storyArticleCounter {
-                justify-self: center;
+            #storyArticleCounter {
                 font-weight: 700;
                 color: #334155;
-                font-size: 0.95rem;
+                font-size: 0.9rem;
+                white-space: nowrap;
             }
 
             #storyPane > .story-modal-full.controls {

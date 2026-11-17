@@ -214,9 +214,21 @@
             <div class="story-modal-card">
                 <div class="story-modal-header">
                     <h3>Sports Hook Creator</h3>
-                    <div style="display: flex; gap: 8px; align-items: center">
-                        <button id="storyRegenThumbButton" type="button" class="btn-secondary" style="padding: 8px 10px; font-size: 0.9rem" title="Ép load lại Thumbnail Text của bài đang mở (chỉ text, không đụng bài viết)" onclick="regenerateThumbnailTextFromStoryModal()">🔄</button>
-                        <button id="storyCopyAllButton" type="button" class="btn-secondary" style="padding: 8px 10px; font-size: 0.9rem" onclick="storyCopyAll()">Copy All</button>
+                    <div style="display: flex; gap: 10px; align-items: center">
+                        <div class="story-nav-buttons">
+                            <button id="storyPrevButton" type="button" class="btn-secondary" onclick="goToStoryCard(-1)" aria-label="Previous">‹</button>
+                            <button id="storyNextButton" type="button" class="btn-secondary" onclick="goToStoryCard(1)" aria-label="Next">›</button>
+                            <button
+                                id="storyDownloadButton"
+                                type="button"
+                                class="btn-secondary"
+                                onclick="storyDownload()"
+                                title="Download video"
+                            >
+                                ⬇
+                            </button>
+                        </div>
+                        <span id="storyArticleCounter">Article 1</span>
                         <button type="button" class="story-modal-close" onclick="closeStoryTool()">✕</button>
                     </div>
                 </div>
@@ -225,24 +237,11 @@
                     <button id="imageTabButton" type="button" class="story-tab" onclick="switchStoryTab('image')">🖼 Image</button>
                 </div>
                 <div class="story-modal-body">
-                    <div class="story-modal-navigation story-modal-full" style="margin-bottom: 12px">
-                        <div class="story-nav-buttons">
-                            <button id="storyPrevButton" type="button" class="btn-secondary" style="padding: 8px 12px; font-size: 1rem" onclick="goToStoryCard(-1)" aria-label="Previous">‹</button>
-                            <button id="storyNextButton" type="button" class="btn-secondary" style="padding: 8px 12px; font-size: 1rem" onclick="goToStoryCard(1)" aria-label="Next">›</button>
-                            <button
-                                id="storyDownloadButton"
-                                type="button"
-                                class="btn-secondary"
-                                style="padding: 8px 10px; font-size: 0.95rem; width: 44px; height: 44px"
-                                onclick="storyDownload()"
-                                title="Download video"
-                            >
-                                ⬇
-                            </button>
-                        </div>
-                        <div id="storyArticleCounter">Article 1</div>
-                    </div>
                     <div id="storyPane" class="story-pane active">
+                    <div class="story-modal-navigation story-modal-full" style="margin-bottom: 12px">
+                        <button id="storyRegenThumbButton" type="button" class="btn-secondary" style="padding: 8px 10px; font-size: 0.9rem" title="Ép load lại Thumbnail Text của bài đang mở (chỉ text, không đụng bài viết)" onclick="regenerateThumbnailTextFromStoryModal()">🔄</button>
+                        <button id="storyCopyAllButton" type="button" class="btn-secondary" style="padding: 8px 10px; font-size: 0.9rem" onclick="storyCopyAll()">Copy All</button>
+                    </div>
                     <div class="story-modal-full controls" style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap">
                         <label style="font-weight: 600; color: #475569; display: none">Accent</label>
                         <select id="storyAccentColorSelect" style="padding: 8px 10px; border-radius: 10px; border: 1px solid #cbd5e1; min-width: 120px; display: none">
