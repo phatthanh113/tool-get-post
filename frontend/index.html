@@ -225,7 +225,6 @@
                     <button id="imageTabButton" type="button" class="story-tab" onclick="switchStoryTab('image')">🖼 Image</button>
                 </div>
                 <div class="story-modal-body">
-                    <div id="storyPane" class="story-pane active">
                     <div class="story-modal-navigation story-modal-full" style="margin-bottom: 12px">
                         <div class="story-nav-buttons">
                             <button id="storyPrevButton" type="button" class="btn-secondary" style="padding: 8px 12px; font-size: 1rem" onclick="goToStoryCard(-1)" aria-label="Previous">‹</button>
@@ -243,9 +242,10 @@
                         </div>
                         <div id="storyArticleCounter">Article 1</div>
                     </div>
+                    <div id="storyPane" class="story-pane active">
                     <div class="story-modal-full controls" style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap">
-                        <label style="font-weight: 600; color: #475569">Accent</label>
-                        <select id="storyAccentColorSelect" style="padding: 8px 10px; border-radius: 10px; border: 1px solid #cbd5e1; min-width: 120px">
+                        <label style="font-weight: 600; color: #475569; display: none">Accent</label>
+                        <select id="storyAccentColorSelect" style="padding: 8px 10px; border-radius: 10px; border: 1px solid #cbd5e1; min-width: 120px; display: none">
                             <option value="#efca19">Yellow</option>
                             <option value="#F245E4" selected>Purple</option>
                         </select>

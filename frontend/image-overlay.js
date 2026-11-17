@@ -439,7 +439,8 @@ function switchStoryTab(tab) {
     const imagePane = document.getElementById("imagePane");
     const storyTabButton = document.getElementById("storyTabButton");
     const imageTabButton = document.getElementById("imageTabButton");
-    const card = document.querySelector("#storyModal .story-modal-card");
+    const regenButton = document.getElementById("storyRegenThumbButton");
+    const copyAllButton = document.getElementById("storyCopyAllButton");
     if (!storyPane || !imagePane) return;
 
     if (tab === "image") {
@@ -447,7 +448,8 @@ function switchStoryTab(tab) {
         imagePane.classList.add("active");
         if (storyTabButton) storyTabButton.classList.remove("active");
         if (imageTabButton) imageTabButton.classList.add("active");
-        if (card) card.classList.add("image-tab-active");
+        if (regenButton) regenButton.style.display = "none";
+        if (copyAllButton) copyAllButton.style.display = "none";
         imageOverlayState.open = true;
         imageOverlayActivate();
         return;
@@ -457,7 +459,8 @@ function switchStoryTab(tab) {
     imagePane.classList.remove("active");
     if (storyTabButton) storyTabButton.classList.add("active");
     if (imageTabButton) imageTabButton.classList.remove("active");
-    if (card) card.classList.remove("image-tab-active");
+    if (regenButton) regenButton.style.display = "";
+    if (copyAllButton) copyAllButton.style.display = "";
     imageOverlayState.open = false;
     imageOverlayState.drag = null;
 }
