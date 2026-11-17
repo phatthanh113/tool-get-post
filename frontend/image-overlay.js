@@ -512,12 +512,55 @@ async function imageOverlayActivate() {
     imageOverlayDraw();
     await imageOverlayLoadTopImage(article);
 
-    // Tự tìm 2 ảnh gắn mặc định vào base/third theo tên contributor đầu tiên
+    // Tự gắn base/third: mỗi tên contributor đầu tìm riêng 1 ảnh để tránh
+    // trùng ảnh giữa các bài khi trùng tên.
     if (imageOverlayState.contributors.length > 0) {
-        const first = imageOverlayState.contributors[0];
         const input = document.getElementById("imageOverlaySearchInput");
-        if (input) input.value = first;
-        imageOverlayRunSearch();
+        if (input) input.value = imageOverlayState.contributors[0];
+        imageOverlayAutoFillSlots(imageOverlayState.contributors);
+    }
+}
+
+async function imageOverlayFetchBingImages(query) {
+    const response = await fetch(
+        `/bing-image-search?q=${encodeURIComponent(query)}&first=1`,
+    );
+    const data = await response.json();
+    if (data.error) throw new Error(data.error);
+    return data.images || [];
+}
+
+async function imageOverlayAutoFillSlots(names) {
+    imageOverlayState.currentBingQuery = names[0];
+    imageOverlayState.currentBingFirstIndex = 1;
+
+    try {
+        const baseImages = await imageOverlayFetchBingImages(names[0]);
+        if (baseImages.length === 0) {
+            const results = document.getElementById("imageOverlaySearchResults");
+            if (results) {
+                results.innerHTML = "<p class=\"image-overlay-results-hint\">Không tìm thấy ảnh. Thử lại nhé!</p>";
+            }
+            return;
+        }
+
+        const thirdImages = names.length > 1
+            ? await imageOverlayFetchBingImages(names[1]).catch(() => [])
+            : [];
+
+        if (thirdImages.length > 0) {
+            await imageOverlayLoadImageToSlot(baseImages[0], "base");
+            await imageOverlayLoadImageToSlot(thirdImages[0], "third");
+            imageOverlayDisplayResults(thirdImages);
+        } else {
+            await imageOverlayLoadImageToSlot(baseImages[0], "base");
+            if (baseImages.length > 1) {
+                await imageOverlayLoadImageToSlot(baseImages[1], "third");
+            }
+            imageOverlayDisplayResults(baseImages);
+        }
+    } catch (error) {
+        imageOverlaySetMessage(error.message || "Lỗi khi tự tìm ảnh.", true);
     }
 }
 
