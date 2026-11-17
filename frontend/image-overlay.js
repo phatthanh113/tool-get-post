@@ -7,7 +7,7 @@ const IMAGE_OVERLAY_LAYOUTS = {
         topHeight: 600,
         bottomHeight: 600,
         bottomHalfWidth: 500,
-        draw(ctx, state) {
+        draw(ctx, state, highlightSlot) {
             const topHeight = this.topHeight;
             const bottomHeight = this.bottomHeight;
             const bottomHalfWidth = this.bottomHalfWidth;
@@ -66,6 +66,18 @@ const IMAGE_OVERLAY_LAYOUTS = {
                 ctx.drawImage(state.thirdImage, state.thirdPosition.x, state.thirdPosition.y, scaledWidth, scaledHeight);
                 ctx.restore();
             }
+
+            if (highlightSlot === "base" || highlightSlot === "third") {
+                const cell = highlightSlot === "base"
+                    ? { x: 0, y: topHeight, w: bottomHalfWidth - 5, h: bottomHeight }
+                    : { x: bottomHalfWidth + 5, y: topHeight, w: bottomHalfWidth - 5, h: bottomHeight };
+                ctx.save();
+                ctx.setLineDash([14, 10]);
+                ctx.lineWidth = 5;
+                ctx.strokeStyle = "#2563eb";
+                ctx.strokeRect(cell.x + 4, cell.y + 4, cell.w - 8, cell.h - 8);
+                ctx.restore();
+            }
         },
         hitTest(x, y) {
             if (y <= this.topHeight) return null;
@@ -92,6 +104,7 @@ const imageOverlayState = {
     currentBingQuery: "",
     currentBingFirstIndex: 1,
     drag: null,
+    dropSlot: null,
 };
 
 const imageOverlayCache = new Map();
@@ -123,7 +136,7 @@ function imageOverlayDraw() {
         canvas.width = layout.width;
         canvas.height = layout.height;
     }
-    layout.draw(ctx, imageOverlayState);
+    layout.draw(ctx, imageOverlayState, imageOverlayState.dropSlot);
     imageOverlayUpdateSlotStatus();
 }
 
@@ -176,9 +189,18 @@ function imageOverlayProxyUrl(imageUrl) {
 }
 
 async function imageOverlayLoadImageToSlot(imageUrl, type) {
-    const label = imageUrl.length > 60 ? imageUrl.slice(0, 57) + "..." : imageUrl;
-    let img = await imageOverlayLoadImage(imageOverlayProxyUrl(imageUrl), true);
-    if (!img) img = await imageOverlayLoadImage(imageUrl, false);
+    const label = imageUrl.startsWith("data:")
+        ? "Ảnh kéo thả"
+        : imageUrl.length > 60
+            ? imageUrl.slice(0, 57) + "..."
+            : imageUrl;
+    let img;
+    if (imageUrl.startsWith("data:")) {
+        img = await imageOverlayLoadImage(imageUrl, false);
+    } else {
+        img = await imageOverlayLoadImage(imageOverlayProxyUrl(imageUrl), true);
+        if (!img) img = await imageOverlayLoadImage(imageUrl, false);
+    }
     if (!img) {
         imageOverlaySetMessage("Không thể tải ảnh này.", true);
         return;
@@ -328,8 +350,15 @@ function imageOverlayDisplayResults(urls) {
     urls.forEach(imageUrl => {
         const container = document.createElement("div");
         container.className = "image-overlay-result-item";
+        container.draggable = true;
+        container.addEventListener("dragstart", event => {
+            event.dataTransfer.setData("text/x-overlay-url", imageUrl);
+            event.dataTransfer.setData("text/uri-list", imageUrl);
+            event.dataTransfer.effectAllowed = "copy";
+        });
         const img = document.createElement("img");
         img.loading = "lazy";
+        img.draggable = false;
         img.src = imageOverlayProxyUrl(imageUrl);
         img.addEventListener("error", () => {
             img.src = imageUrl;
@@ -459,7 +488,7 @@ function imageOverlayBindCanvasEvents() {
         } else {
             position.y = imageOverlayState.drag.originY + (point.y - imageOverlayState.drag.startY);
         }
-        layout.draw(canvas.getContext("2d"), imageOverlayState);
+        layout.draw(canvas.getContext("2d"), imageOverlayState, imageOverlayState.dropSlot);
     });
 
     const endDrag = () => {
@@ -468,6 +497,105 @@ function imageOverlayBindCanvasEvents() {
     };
     canvas.addEventListener("pointerup", endDrag);
     canvas.addEventListener("pointercancel", endDrag);
+
+    const wrap = canvas.closest(".image-overlay-canvas-wrap");
+    canvas.addEventListener("dragover", event => {
+        if (!imageOverlayState.open) return;
+        event.preventDefault();
+        event.dataTransfer.dropEffect = "copy";
+        const point = getCanvasPoint(event);
+        const slot = imageOverlayGetLayout().hitTest(point.x, point.y);
+        if (slot !== imageOverlayState.dropSlot) {
+            imageOverlayState.dropSlot = slot;
+            imageOverlayDraw();
+        }
+        if (wrap) wrap.classList.add("drag-over");
+    });
+
+    const clearDropHighlight = () => {
+        imageOverlayState.dropSlot = null;
+        imageOverlayDraw();
+        if (wrap) wrap.classList.remove("drag-over");
+    };
+
+    canvas.addEventListener("dragleave", clearDropHighlight);
+
+    canvas.addEventListener("drop", async event => {
+        if (!imageOverlayState.open) return;
+        event.preventDefault();
+        const point = getCanvasPoint(event);
+        const slot = imageOverlayGetLayout().hitTest(point.x, point.y);
+        clearDropHighlight();
+        if (!slot) {
+            imageOverlaySetMessage("Chỉ thả vào ô Base (trái) hoặc Third (phải).", true);
+            return;
+        }
+        const payload = imageOverlayResolveDropData(event.dataTransfer);
+        if (!payload) {
+            imageOverlaySetMessage("Không tìm thấy ảnh trong dữ liệu kéo thả.", true);
+            return;
+        }
+        try {
+            if (payload.kind === "file") {
+                const dataUrl = await imageOverlayFileToDataUrl(payload.file);
+                await imageOverlayLoadImageToSlot(dataUrl, slot);
+            } else {
+                await imageOverlayLoadImageToSlot(payload.url, slot);
+            }
+            imageOverlaySetMessage("");
+        } catch (error) {
+            imageOverlaySetMessage(error.message || "Không thể gán ảnh vừa thả.", true);
+        }
+    });
+}
+
+function imageOverlayResolveDropData(dataTransfer) {
+    if (!dataTransfer) return null;
+
+    if (dataTransfer.files && dataTransfer.files.length > 0) {
+        const file = [...dataTransfer.files].find(file => file.type.startsWith("image/"));
+        if (file) return { kind: "file", file };
+    }
+
+    const customUrl = dataTransfer.getData("text/x-overlay-url");
+    if (customUrl && /^https?:\/\//i.test(customUrl)) {
+        return { kind: "url", url: customUrl };
+    }
+
+    const uriList = dataTransfer.getData("text/uri-list");
+    if (uriList) {
+        const url = uriList
+            .split(/\r?\n/)
+            .map(line => line.trim())
+            .find(line => line && !line.startsWith("#"));
+        if (url && /^https?:\/\//i.test(url)) {
+            return { kind: "url", url };
+        }
+    }
+
+    const html = dataTransfer.getData("text/html");
+    if (html) {
+        const match = html.match(/<img[^>]+src=["']([^"']+)["']/i);
+        if (match && /^https?:\/\//i.test(match[1])) {
+            return { kind: "url", url: match[1] };
+        }
+    }
+
+    const text = dataTransfer.getData("text/plain");
+    if (text && /^https?:\/\//i.test(text.trim())) {
+        return { kind: "url", url: text.trim() };
+    }
+
+    return null;
+}
+
+function imageOverlayFileToDataUrl(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = () => reject(new Error("Không đọc được file ảnh."));
+        reader.readAsDataURL(file);
+    });
 }
 
 function switchStoryTab(tab) {
