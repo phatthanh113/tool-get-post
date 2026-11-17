@@ -2615,7 +2615,8 @@
             function openStoryTool(cardIndex) {
                 activeStoryCardIndex = cardIndex;
                 storyCoverImagePromise = null;
-                switchStoryTab("story");
+                const imagePane = document.getElementById("imagePane");
+                switchStoryTab(imagePane?.classList.contains("active") ? "image" : "story");
                 const savedArticle = getSavedArticleByIndex(cardIndex);
                 const savedFontSize = Number(savedArticle?.storyFontSize);
                 storyFontSizeOverride = Number.isFinite(savedFontSize) && savedFontSize >= 14 && savedFontSize <= 90;
@@ -2630,7 +2631,7 @@
                 activeStoryBaseText = textArea?.value.trim() || savedStoryText || generatedSportsText;
                 if (modalTitle) modalTitle.textContent = "Sports Hook Creator";
                 storyTextInput.placeholder = "Enter the sports hook text or use the generated clickbait.";
-                storyUpdateMessage("Use the sports hook text from the generated article or enter your own high-impact caption.");
+                storyUpdateMessage("");
 
                 activeStorySuffix = getStorySuffixText();
                 storyTextInput.value = applyStorySuffix(activeStoryBaseText);
@@ -3161,6 +3162,10 @@
             }
 
             async function storyDownload() {
+                if (imageOverlayState.open) {
+                    await imageOverlaySaveToDir();
+                    return;
+                }
                 setStoryButtonsLoading(true);
                 storyUpdateMessage("Preparing quick download...");
                 try {
