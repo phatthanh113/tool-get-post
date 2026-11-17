@@ -94,6 +94,22 @@ const imageOverlayState = {
     drag: null,
 };
 
+const imageOverlayCache = new Map();
+
+function imageOverlaySaveCache() {
+    if (!Number.isFinite(imageOverlayState.index)) return;
+    imageOverlayCache.set(imageOverlayState.index, {
+        overlayImage: imageOverlayState.overlayImage,
+        overlayLabel: imageOverlayState.overlayLabel,
+        baseImage: imageOverlayState.baseImage,
+        baseLabel: imageOverlayState.baseLabel,
+        basePosition: { ...imageOverlayState.basePosition },
+        thirdImage: imageOverlayState.thirdImage,
+        thirdLabel: imageOverlayState.thirdLabel,
+        thirdPosition: { ...imageOverlayState.thirdPosition },
+    });
+}
+
 function imageOverlayGetLayout() {
     return IMAGE_OVERLAY_LAYOUTS[imageOverlayState.layoutId] || IMAGE_OVERLAY_LAYOUTS["1:3"];
 }
@@ -151,6 +167,7 @@ async function imageOverlayLoadTopImage(article) {
         imageOverlayState.overlayLabel = "";
         imageOverlaySetMessage("Không tải được thumbnail của bài.", true);
     }
+    imageOverlaySaveCache();
     imageOverlayDraw();
 }
 
@@ -176,6 +193,7 @@ async function imageOverlayLoadImageToSlot(imageUrl, type) {
         imageOverlayState.thirdPosition = { x: 0, y: 0, initialized: false };
     }
     imageOverlaySetMessage("");
+    imageOverlaySaveCache();
     imageOverlayDraw();
 }
 
@@ -447,6 +465,7 @@ function imageOverlayBindCanvasEvents() {
 
     const endDrag = () => {
         imageOverlayState.drag = null;
+        imageOverlaySaveCache();
     };
     canvas.addEventListener("pointerup", endDrag);
     canvas.addEventListener("pointercancel", endDrag);
@@ -497,14 +516,6 @@ async function imageOverlayActivate() {
 
     imageOverlayState.index = index;
     imageOverlayState.layoutId = "1:3";
-    imageOverlayState.overlayImage = null;
-    imageOverlayState.overlayLabel = "";
-    imageOverlayState.baseImage = null;
-    imageOverlayState.baseLabel = "";
-    imageOverlayState.basePosition = { x: 0, y: 0, initialized: false };
-    imageOverlayState.thirdImage = null;
-    imageOverlayState.thirdLabel = "";
-    imageOverlayState.thirdPosition = { x: 0, y: 0, initialized: false };
     imageOverlayState.allowVerticalMove = false;
     imageOverlayState.currentBingQuery = "";
     imageOverlayState.currentBingFirstIndex = 1;
@@ -527,13 +538,37 @@ async function imageOverlayActivate() {
     imageOverlayUpdateSlotStatus();
 
     imageOverlayBindCanvasEvents();
+
+    const cached = imageOverlayCache.get(index);
+    if (cached) {
+        imageOverlayState.overlayImage = cached.overlayImage;
+        imageOverlayState.overlayLabel = cached.overlayLabel;
+        imageOverlayState.baseImage = cached.baseImage;
+        imageOverlayState.baseLabel = cached.baseLabel;
+        imageOverlayState.basePosition = { ...cached.basePosition };
+        imageOverlayState.thirdImage = cached.thirdImage;
+        imageOverlayState.thirdLabel = cached.thirdLabel;
+        imageOverlayState.thirdPosition = { ...cached.thirdPosition };
+        imageOverlayDraw();
+        return;
+    }
+
+    imageOverlayState.overlayImage = null;
+    imageOverlayState.overlayLabel = "";
+    imageOverlayState.baseImage = null;
+    imageOverlayState.baseLabel = "";
+    imageOverlayState.basePosition = { x: 0, y: 0, initialized: false };
+    imageOverlayState.thirdImage = null;
+    imageOverlayState.thirdLabel = "";
+    imageOverlayState.thirdPosition = { x: 0, y: 0, initialized: false };
+
     imageOverlayDraw();
     await imageOverlayLoadTopImage(article);
 
     // Tự gắn base/third: mỗi tên contributor đầu tìm riêng 1 ảnh để tránh
     // trùng ảnh giữa các bài khi trùng tên.
     if (imageOverlayState.contributors.length > 0) {
-        imageOverlayAutoFillSlots(imageOverlayState.contributors);
+        await imageOverlayAutoFillSlots(imageOverlayState.contributors);
     }
 }
 
