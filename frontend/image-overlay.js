@@ -230,7 +230,6 @@ function imageOverlayRenderContributors(article) {
     imageOverlayState.contributors = imageOverlayExtractContributors(article);
     list.innerHTML = "";
     quickSelects.innerHTML = "";
-    container.style.display = imageOverlayState.contributors.length ? "block" : "none";
 
     const titleText = String(article?.title || "").toLowerCase();
     imageOverlayState.contributors.forEach(contributor => {
