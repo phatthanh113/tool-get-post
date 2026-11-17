@@ -276,6 +276,15 @@ function imageOverlaySetResultsHint() {
     results.innerHTML = `<p class="image-overlay-results-hint">Click để chọn (đang là <b>${type}</b>), Double Click để ép làm <b>Base</b></p>`;
 }
 
+function imageOverlayUpdateResultsHint() {
+    const results = document.getElementById("imageOverlaySearchResults");
+    if (!results) return;
+    const hint = results.querySelector(".image-overlay-results-hint");
+    if (!hint) return;
+    const type = imageOverlayState.baseImage ? "third" : "base";
+    hint.innerHTML = `Click để chọn (đang là <b>${type}</b>), Double Click để ép làm <b>Base</b>`;
+}
+
 function imageOverlayDisplayResults(urls) {
     const results = document.getElementById("imageOverlaySearchResults");
     if (!results) return;
@@ -298,14 +307,14 @@ function imageOverlayDisplayResults(urls) {
             clickTimer = setTimeout(() => {
                 const type = imageOverlayState.baseImage ? "third" : "base";
                 imageOverlayLoadImageToSlot(imageUrl, type);
-                imageOverlaySetResultsHint();
+                imageOverlayUpdateResultsHint();
             }, 250);
         };
         container.ondblclick = event => {
             event.preventDefault();
             if (clickTimer) clearTimeout(clickTimer);
             imageOverlayLoadImageToSlot(imageUrl, "base");
-            imageOverlaySetResultsHint();
+            imageOverlayUpdateResultsHint();
         };
 
         results.appendChild(container);
