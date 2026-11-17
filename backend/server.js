@@ -367,6 +367,7 @@ Transform this YouTube video into a highly dramatic sports article with a strong
   - The article MUST be written entirely in ${targetLanguage}. Do not use another language, even if the video title uses another language.`;
 
   taskInstruction += `${getSportsThumbnailTextRequirement(targetLanguage)}\n- Write the headline and body in ${targetLanguage}.`;
+  taskInstruction += `\n- At the very end of the response, after the [[THUMBNAIL_TEXT]] marker block, append one final marker line in this exact format:\n  [[CONTRIBUTORS: <comma-separated names of the key people, players, or teams central to this story>]]\n- Only use real names mentioned in or clearly related to the video title or description. Never invent names.`;
 
   if (thumbnailText) {
     topicInstruction = `
@@ -589,6 +590,13 @@ function extractSportsThumbnailText(articleText = "") {
   }
 
   return "";
+}
+
+function extractContributors(articleText = "") {
+  if (!articleText) return "";
+
+  const match = articleText.match(/\[\[CONTRIBUTORS:\s*([\s\S]*?)\s*\]\]/i);
+  return match && match[1] ? match[1].trim() : "";
 }
 
 function validateSportsThumbnailText(text = "") {
@@ -900,6 +908,115 @@ app.post("/convert-download", async (req, res) => {
   } catch (error) {
     console.error("Server error:", error);
     res.status(500).json({ error: "Server error" });
+  }
+});
+
+const BING_IMAGE_USER_AGENT =
+  "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36";
+
+function decodeHtmlEntities(value) {
+  return value
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&amp;/g, "&");
+}
+
+function extractBingImageUrls(html, limit = 12) {
+  const images = [];
+  const attrRegex = /m="(.*?)"/g;
+  let match;
+  while ((match = attrRegex.exec(html)) && images.length < limit) {
+    try {
+      const meta = JSON.parse(decodeHtmlEntities(match[1]));
+      const url = typeof meta.murl === "string" ? meta.murl : "";
+      if (url.startsWith("http") && !images.includes(url)) {
+        images.push(url);
+      }
+    } catch (parseError) {}
+  }
+  if (images.length === 0) {
+    const rawRegex = /"murl":"(.*?)"/g;
+    while ((match = rawRegex.exec(html)) && images.length < limit) {
+      const url = match[1].replace(/\\u0026/g, "&").replace(/\\\//g, "/");
+      if (url.startsWith("http") && !images.includes(url)) {
+        images.push(url);
+      }
+    }
+  }
+  return images;
+}
+
+app.get("/bing-image-search", async (req, res) => {
+  const query = String(req.query.q || "").trim();
+  const first = Number.parseInt(req.query.first, 10) || 1;
+  if (!query) {
+    return res.status(400).json({ error: "Thiếu từ khóa tìm kiếm." });
+  }
+
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 20000);
+  try {
+    const response = await fetch(
+      `https://www.bing.com/images/search?q=${encodeURIComponent(query)}&first=${first}`,
+      {
+        headers: {
+          "User-Agent": BING_IMAGE_USER_AGENT,
+          "Accept-Language": "en-US,en;q=0.9",
+          Accept: "text/html,application/xhtml+xml",
+        },
+        signal: controller.signal,
+      },
+    );
+    if (!response.ok) {
+      throw new Error(`Bing trả về HTTP ${response.status}.`);
+    }
+    const html = await response.text();
+    const images = extractBingImageUrls(html);
+    res.json({ images, count: images.length });
+  } catch (error) {
+    console.error("Bing image search error:", error);
+    res
+      .status(500)
+      .json({ error: error.message || "Lỗi khi tìm kiếm Bing." });
+  } finally {
+    clearTimeout(timeoutId);
+  }
+});
+
+app.get("/bing-image-proxy", async (req, res) => {
+  const imageUrl = String(req.query.url || "").trim();
+  if (!/^https?:\/\//i.test(imageUrl)) {
+    return res.status(400).json({ error: "URL ảnh không hợp lệ." });
+  }
+
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 20000);
+  try {
+    const response = await fetch(imageUrl, {
+      headers: {
+        "User-Agent": BING_IMAGE_USER_AGENT,
+        Accept: "image/*,*/*;q=0.8",
+      },
+      signal: controller.signal,
+    });
+    if (!response.ok) {
+      throw new Error(`Không tải được ảnh (HTTP ${response.status}).`);
+    }
+    const contentType = response.headers.get("content-type") || "image/jpeg";
+    if (!contentType.startsWith("image/")) {
+      throw new Error("URL không trả về ảnh hợp lệ.");
+    }
+    const buffer = Buffer.from(await response.arrayBuffer());
+    res.set("Content-Type", contentType);
+    res.set("Cache-Control", "public, max-age=3600");
+    res.send(buffer);
+  } catch (error) {
+    console.error("Bing image proxy error:", error);
+    res.status(500).json({ error: error.message || "Không tải được ảnh." });
+  } finally {
+    clearTimeout(timeoutId);
   }
 });
 
@@ -1263,6 +1380,7 @@ app.post("/generate-article", async (req, res) => {
           article: "",
           players,
           title,
+          contributors: extractContributors(article),
         });
       }
 
@@ -1311,6 +1429,7 @@ app.post("/generate-article", async (req, res) => {
         .replace(/\[\[THUMBNAIL_TEXT:\s*([\s\S]*?)\s*\]\]/gi, "")
         .replace(/\[\[PLAYERS:\s*(.*?)\s*\]\]/gi, "")
         .replace(/\[\[TEAM:\s*(.*?)\s*\]\]/gi, "")
+        .replace(/\[\[CONTRIBUTORS:\s*([\s\S]*?)\s*\]\]/gi, "")
         .trim();
 
       res.json({
@@ -1318,6 +1437,7 @@ app.post("/generate-article", async (req, res) => {
         article: finalArticle,
         players,
         title,
+        contributors: extractContributors(article),
       });
     } catch (apiError) {
       console.error("❌ Final Generation Failure:", apiError.message);

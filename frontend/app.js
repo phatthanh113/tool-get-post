@@ -656,6 +656,7 @@
                 return `
                                 <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-top:12px;">
                                     <button type="button" onclick="handleStoryActionButtonClick(${index})" class="btn-secondary" style="padding: 10px 16px; font-size: 0.92rem;">🎬 Create Story</button>
+                                    <button type="button" onclick="openImageOverlayModal(${index})" class="btn-secondary" style="padding: 10px 16px; font-size: 0.92rem;">🖼 Create Image</button>
                                     <button type="button" onclick="retrySingle('${url}', ${index})" class="btn-secondary story-retry-btn" style="display:none; padding: 10px 16px; font-size: 0.92rem; background-color: #3b82f6; border-color: #3b82f6; color: white;">🔄</button>
                                 </div>
                             `;
@@ -734,6 +735,7 @@
                     thumbnailVariant: options.thumbnailVariant ?? existing?.thumbnailVariant ?? "maxresdefault",
                     customThumbnailUrl: options.customThumbnailUrl ?? existing?.customThumbnailUrl ?? "",
                     storyFontSize: options.storyFontSize ?? existing?.storyFontSize ?? null,
+                    contributors: options.contributors ?? existing?.contributors ?? "",
                     timestamp: Date.now(),
                 };
                 if (existingIndex > -1) {
@@ -1698,7 +1700,7 @@
                                             `;
                             } else {
                                 const finalArticle = injectImage("", data.videoId);
-                                saveArticleToLocalStorage(index, url, data.title, data.players, data.videoId, finalArticle);
+                                saveArticleToLocalStorage(index, url, data.title, data.players, data.videoId, finalArticle, { contributors: data.contributors });
                                 const articleCard = document.createElement("div");
                                 articleCard.className = "result-card";
                                 articleCard.id = `card-${index}`;
@@ -2227,7 +2229,7 @@
                                 );
                             } else {
                                 const finalArticle = generationMode === "buzz-thumbnail" ? injectImage("", data.videoId) : injectImage(data.article, data.videoId);
-                                saveArticleToLocalStorage(currentIndex, url, data.title, data.players, data.videoId, finalArticle);
+                                saveArticleToLocalStorage(currentIndex, url, data.title, data.players, data.videoId, finalArticle, { contributors: data.contributors });
                                 const articleCard = document.createElement("div");
                                 articleCard.className = "result-card";
                                 articleCard.id = `card-${currentIndex}`;
@@ -2336,7 +2338,7 @@
                         card.style.borderColor = "#ef4444";
                     } else {
                         const finalArticle = generationMode === "buzz-thumbnail" ? injectImage("", data.videoId) : injectImage(data.article, data.videoId);
-                        saveArticleToLocalStorage(index, url, data.title, data.players, data.videoId, finalArticle);
+                        saveArticleToLocalStorage(index, url, data.title, data.players, data.videoId, finalArticle, { contributors: data.contributors });
                         card.innerHTML = `
                                         <div class="card-controls">
                                             <button id="select-btn-${index}" class="icon-btn select" onclick="toggleSelectArticle(${index})" title="Select">✅</button>
