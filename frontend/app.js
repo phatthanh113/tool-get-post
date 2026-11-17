@@ -997,6 +997,7 @@
                             article: savedArticle.article || "",
                             language,
                             provider,
+                            longerHint: true,
                         }),
                     });
                     const data = await res.json().catch(() => ({}));
@@ -1878,19 +1879,14 @@
                 });
             }
 
-            function markAutoFlowWarningCard(index, fontSize) {
+            function flagAutoFlowAttentionCard(index, fontSize) {
                 const card = document.getElementById(`card-${index}`);
-                if (!card) return;
-                const controls = card.querySelector(".card-controls");
-                if (controls && !controls.querySelector(".auto-flow-warning")) {
-                    const badge = document.createElement("span");
-                    badge.className = "auto-flow-warning";
-                    badge.textContent = "⚠️";
-                    badge.title = `Auto: thumbnail text sau regen chưa đủ dài (font auto = ${fontSize} ≥ 32) — bài này CHƯA được tải video. Sửa Thumbnail Text rồi bấm 🔄 hoặc download lại tay.`;
-                    badge.style.fontSize = "1.1rem";
-                    badge.style.marginLeft = "4px";
-                    controls.appendChild(badge);
-                }
+                if (!card || card.classList.contains("auto-flow-flagged")) return;
+                card.classList.add("auto-flow-flagged");
+                const banner = document.createElement("div");
+                banner.className = "auto-flow-flag-banner";
+                banner.innerHTML = `⚠️ <strong>Chưa tải tự động</strong> — text sau regen chưa đủ dài (font ${fontSize} ≥ 32). Sửa Thumbnail Text → bấm 🔄 → tick lại bài → bấm Download Selected.`;
+                card.prepend(banner);
             }
 
             function setAutoFlowButton(state, text) {
@@ -2028,7 +2024,8 @@
                                 const article = getSavedArticleByIndex(articleIndex);
                                 if (!article) continue;
                                 const text = (article.players || "").trim() || buildSportsThumbnailText(article.article || "");
-                                if (storyGetRawAutoFontSize(text) <= 35) continue;
+                                let currentFont = storyGetRawAutoFontSize(text);
+                                if (currentFont <= 35) continue;
 
                                 setAutoFlowButton("running", stepLabel(5, `Gen lại text bài ${articleIndex + 1} (font > 35)...`));
                                 let regenText = "";
@@ -2043,6 +2040,7 @@
                                             article: article.article || "",
                                             language,
                                             provider,
+                                            longerHint: false,
                                         }),
                                     });
                                     const data = await res.json().catch(() => ({}));
@@ -2052,25 +2050,53 @@
                                         const card = document.getElementById(`card-${articleIndex}`);
                                         const textarea = card?.querySelector("textarea.player-input");
                                         if (textarea) textarea.value = data.players;
+                                        currentFont = storyGetRawAutoFontSize(data.players);
                                     }
                                 } catch (error) {
                                     console.warn(`⚠️ Auto regen text bài ${articleIndex + 1} thất bại: ${error.message}`);
                                 }
 
-                                // Font thô sau regen phải < 32 (text đủ dài) mới chấp nhận tải;
-                                // từ 32 trở lên → để lại bài cho user
-                                if (regenText) {
-                                    const afterFont = storyGetRawAutoFontSize(regenText);
-                                    if (afterFont >= 32) {
-                                        markAutoFlowWarningCard(articleIndex, afterFont);
-                                        leftOutArticles.push(`#${articleIndex + 1} (font ${afterFont})`);
-                                        selectedArticleIndexes.delete(articleIndex);
-                                        const selectBtn = document.getElementById(`select-btn-${articleIndex}`);
-                                        if (selectBtn) selectBtn.textContent = "⬜";
-                                        continue;
+                                // Vẫn font ≥ 32 (text chưa đủ dài) → regen lần 2 với hint ≥ 140 từ
+                                if (currentFont >= 32) {
+                                    setAutoFlowButton("running", stepLabel(5, `Gen lại text bài ${articleIndex + 1} (lần 2, ≥ 140 từ)...`));
+                                    try {
+                                        const language = document.getElementById("language-select")?.value || "English";
+                                        const provider = document.getElementById("ai-provider")?.value || "groq";
+                                        const res = await fetch("/generate-thumbnail-text", {
+                                            method: "POST",
+                                            headers: { "Content-Type": "application/json" },
+                                            body: JSON.stringify({
+                                                title: article.title || "",
+                                                article: article.article || "",
+                                                language,
+                                                provider,
+                                                longerHint: true,
+                                            }),
+                                        });
+                                        const data = await res.json().catch(() => ({}));
+                                        if (res.ok && data.players) {
+                                            regenText = data.players;
+                                            updateThumbnailText(articleIndex, data.players);
+                                            const card = document.getElementById(`card-${articleIndex}`);
+                                            const textarea = card?.querySelector("textarea.player-input");
+                                            if (textarea) textarea.value = data.players;
+                                            currentFont = storyGetRawAutoFontSize(data.players);
+                                        }
+                                    } catch (error) {
+                                        console.warn(`⚠️ Auto regen lần 2 bài ${articleIndex + 1} thất bại: ${error.message}`);
                                     }
                                 }
-                                // Dù regen thành công hay sai vẫn tiếp tục để tải video
+
+                                // Vẫn ≥ 32 dù regen 2 lần → KHÔNG tải, làm nổi bật để user tự xử lý tay
+                                if (currentFont >= 32) {
+                                    flagAutoFlowAttentionCard(articleIndex, currentFont);
+                                    leftOutArticles.push(`#${articleIndex + 1} (font ${currentFont})`);
+                                    selectedArticleIndexes.delete(articleIndex);
+                                    const selectBtn = document.getElementById(`select-btn-${articleIndex}`);
+                                    if (selectBtn) selectBtn.textContent = "⬜";
+                                    continue;
+                                }
+                                // Font < 32 sau regen đạt chuẩn → tải bình thường
                             }
 
                             const downloadCount = validArticles.length - leftOutArticles.length;
@@ -2081,7 +2107,7 @@
                             if (leftOutArticles.length > 0) {
                                 setAutoFlowButton("done", "✅ Đã hoàn thành");
                                 setLinastoryCopyStatus(
-                                    `🤖 Auto: đã tải video. Đã để lại ${leftOutArticles.length} bài chưa tải (text sau regen chưa đủ dài, font ≥ 32, xem ⚠️ trên card): ${leftOutArticles.join(", ")}.`,
+                                    `🤖 Auto: đã tải video. ${leftOutArticles.length} bài CHƯA tải (text sau regen chưa đủ dài, font ≥ 32 — card được tô cam, hãy sửa text rồi tải tay): ${leftOutArticles.join(", ")}.`,
                                     true,
                                 );
                             }

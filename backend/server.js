@@ -666,13 +666,16 @@ async function generateValidatedSportsThumbnailText(
   language = "English",
   options = {},
 ) {
-  const { allowInvalid = false } = options;
+  const { allowInvalid = false, longerHint = false } = options;
   // Strip HTML tags so the model reads clean text instead of markup noise.
   const cleanSource = stripHtmlToText(sourceText);
+  const longerHintText = longerHint
+    ? "\n\nIMPORTANT: The body must contain at least 140 words — the previous draft was too short. Expand with more evidence, stakes, consequences."
+    : "";
   let previousDraft = "";
 
   for (let attempt = 0; attempt < 1; attempt++) {
-    const prompt = buildSportsClickbaitPrompt(cleanSource, title, language);
+    const prompt = buildSportsClickbaitPrompt(cleanSource, title, language) + longerHintText;
     const targetLanguage = normalizePromptLanguage(language);
     const retryPrompt =
       attempt === 0
@@ -1031,6 +1034,7 @@ app.post("/generate-thumbnail-text", async (req, res) => {
     article = "",
     language = "English",
     provider = "groq",
+    longerHint = false,
   } = req.body || {};
 
   if (!String(article).trim()) {
@@ -1046,7 +1050,7 @@ app.post("/generate-thumbnail-text", async (req, res) => {
       String(title),
       provider,
       normalizePromptLanguage(language),
-      { allowInvalid: true },
+      { allowInvalid: true, longerHint: Boolean(longerHint) },
     );
     const validated = Boolean(validateSportsThumbnailText(players));
     res.json({ players, validated });
