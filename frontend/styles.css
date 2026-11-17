@@ -774,6 +774,13 @@
                 min-width: 0;
             }
 
+            .image-overlay-search-row .btn-primary {
+                flex: none;
+                width: auto;
+                min-width: 44px;
+                padding: 8px 14px;
+            }
+
             .image-overlay-quick-selects {
                 display: flex;
                 flex-wrap: wrap;
@@ -896,7 +903,7 @@
             }
 
             .image-overlay-canvas-wrap canvas {
-                max-width: 100%;
+                max-width: 70%;
                 height: auto;
                 border: 1px solid #e2e8f0;
                 border-radius: 8px;
