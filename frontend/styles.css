@@ -1027,6 +1027,8 @@
             }
 
             .story-icon-btn {
+                flex: none;
+                width: auto;
                 display: inline-flex;
                 align-items: center;
                 justify-content: center;
