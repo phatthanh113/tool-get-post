@@ -843,6 +843,12 @@
                 background-color: #e5e7eb;
             }
 
+            .image-overlay-quick-btn.is-active {
+                background-color: #2563eb;
+                color: #ffffff;
+                border-color: #2563eb;
+            }
+
             .image-overlay-results {
                 display: flex;
                 flex-wrap: wrap;
@@ -909,16 +915,37 @@
             }
 
             .image-overlay-toolbar select {
+                flex: 1;
+                min-width: 0;
                 padding: 8px 10px;
                 border-radius: 10px;
                 border: 1px solid #cbd5e1;
                 font-size: 0.9rem;
             }
 
+            .image-overlay-toolbar .btn-secondary {
+                flex: none;
+                width: auto;
+                padding: 8px 14px;
+                border-radius: 12px;
+                font-weight: 600;
+                font-size: 0.9rem;
+            }
+
             .image-overlay-actions {
                 display: flex;
                 gap: 8px;
-                flex-wrap: wrap;
+            }
+
+            .image-overlay-actions .btn-primary,
+            .image-overlay-actions .btn-secondary {
+                flex: 1;
+                min-width: 0;
+                padding: 10px 12px;
+                border-radius: 12px;
+                font-weight: 600;
+                font-size: 0.9rem;
+                white-space: nowrap;
             }
 
             .image-overlay-message {

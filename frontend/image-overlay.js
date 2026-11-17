@@ -254,11 +254,12 @@ function imageOverlayRenderContributors(article) {
         list.appendChild(tag);
     });
 
-    imageOverlayState.contributors.forEach(contributor => {
+    imageOverlayState.contributors.forEach((contributor, idx) => {
         const btn = document.createElement("button");
         btn.type = "button";
         btn.className = "image-overlay-quick-btn";
         btn.textContent = contributor;
+        if (idx < 2) btn.classList.add("is-active");
         btn.addEventListener("click", () => {
             const input = document.getElementById("imageOverlaySearchInput");
             if (!input) return;
@@ -510,6 +511,14 @@ async function imageOverlayActivate() {
     imageOverlayBindCanvasEvents();
     imageOverlayDraw();
     await imageOverlayLoadTopImage(article);
+
+    // Tự tìm 2 ảnh gắn mặc định vào base/third theo tên contributor đầu tiên
+    if (imageOverlayState.contributors.length > 0) {
+        const first = imageOverlayState.contributors[0];
+        const input = document.getElementById("imageOverlaySearchInput");
+        if (input) input.value = first;
+        imageOverlayRunSearch();
+    }
 }
 
 function imageOverlayToBlob() {
