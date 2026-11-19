@@ -681,15 +681,17 @@ async function generateValidatedSportsThumbnailText(
   language = "English",
   options = {},
 ) {
-  const { allowInvalid = false, longerHint = false } = options;
+  const { allowInvalid = false, longerHint = false, standardHint = false } = options;
   // Strip the [[CONTRIBUTORS]] marker so contributor names never leak into
   // the generated thumbnail text (and therefore never into the story text).
   const cleanSource = stripHtmlToText(
     stripContributorMarker(sourceText),
   );
   const longerHintText = longerHint
-    ? "\n\nIMPORTANT: The body must contain between 80 and 100 words — the previous draft was too short. Expand with more evidence, stakes, consequences."
-    : "";
+    ? "\n\nIMPORTANT: The body must contain at least 140 words — the previous draft was too short. Expand with more evidence, stakes, consequences."
+    : standardHint
+      ? "\n\nIMPORTANT: The body must contain between 80 and 100 words."
+      : "";
   let previousDraft = "";
 
   for (let attempt = 0; attempt < 1; attempt++) {
@@ -1199,6 +1201,7 @@ app.post("/generate-thumbnail-text", async (req, res) => {
     language = "English",
     provider = "groq",
     longerHint = false,
+    standardHint = false,
   } = req.body || {};
 
   if (!String(article).trim()) {
@@ -1214,7 +1217,7 @@ app.post("/generate-thumbnail-text", async (req, res) => {
       String(title),
       provider,
       normalizePromptLanguage(language),
-      { allowInvalid: true, longerHint: Boolean(longerHint) },
+      { allowInvalid: true, longerHint: Boolean(longerHint), standardHint: Boolean(standardHint) },
     );
     const validated = Boolean(validateSportsThumbnailText(players));
     res.json({ players, validated });
