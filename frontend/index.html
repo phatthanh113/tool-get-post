@@ -258,8 +258,12 @@
                             <option value="#F245E4" selected>Purple</option>
                         </select>
                         <label style="font-weight: 600; color: #475569">Font size</label>
-                        <input id="storyFontSize" type="range" min="14" max="90" value="40" step="1" aria-label="Story font size" />
-                        <span id="storyFontOut">60</span>
+                        <div class="story-fontsize-control">
+                            <button id="storyFontSizeMinus" type="button" class="story-fontsize-step" onclick="storyFontSizeStep(-1)" aria-label="Decrease font size">−</button>
+                            <input id="storyFontSize" type="range" min="14" max="90" value="40" step="1" aria-label="Story font size" />
+                            <button id="storyFontSizePlus" type="button" class="story-fontsize-step" onclick="storyFontSizeStep(1)" aria-label="Increase font size">+</button>
+                            <span id="storyFontOut">60</span>
+                        </div>
                     </div>
                     <div class="story-text-input-container">
                         <button type="button" class="story-text-paste-button" onclick="storyPasteFromClipboard()">📋 Paste</button>
@@ -416,6 +420,7 @@
                     <button type="button" class="btn-secondary" onclick="insertLinastoryCopyToken('{stt}')">{stt}</button>
                     <button type="button" class="btn-secondary" onclick="insertLinastoryCopyToken('{ngay}')">{ngay}</button>
                     <button type="button" class="btn-secondary" onclick="insertLinastoryCopyToken('{title}')">{title}</button>
+                    <button type="button" class="btn-secondary" onclick="insertLinastoryCopyToken('{summary}')">{summary}</button>
                     <button type="button" class="btn-secondary" onclick="insertLinastoryCopyToken('{link}')">{link}</button>
                     <button type="button" class="btn-secondary" onclick="insertLinastoryCopyToken('{shortlink}')">{shortlink}</button>
                     <button type="button" class="btn-secondary" onclick="insertLinastoryCopyToken('{tab}')">⇥ Tab</button>

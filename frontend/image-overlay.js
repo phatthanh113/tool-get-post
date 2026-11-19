@@ -94,9 +94,11 @@ const imageOverlayState = {
     overlayLabel: "",
     baseImage: null,
     baseLabel: "",
+    baseUrl: null,
     basePosition: { x: 0, y: 0, initialized: false },
     thirdImage: null,
     thirdLabel: "",
+    thirdUrl: null,
     thirdPosition: { x: 0, y: 0, initialized: false },
     allowVerticalMove: false,
     contributors: [],
@@ -116,11 +118,54 @@ function imageOverlaySaveCache() {
         overlayLabel: imageOverlayState.overlayLabel,
         baseImage: imageOverlayState.baseImage,
         baseLabel: imageOverlayState.baseLabel,
+        baseUrl: imageOverlayState.baseUrl,
         basePosition: { ...imageOverlayState.basePosition },
         thirdImage: imageOverlayState.thirdImage,
         thirdLabel: imageOverlayState.thirdLabel,
+        thirdUrl: imageOverlayState.thirdUrl,
         thirdPosition: { ...imageOverlayState.thirdPosition },
     });
+}
+
+// Lưu lựa chọn ảnh (URL + vị trí) vào bài viết trong localStorage để khôi phục
+// lại đúng ảnh cũ sau khi reload trang, thay vì tự tìm lại trên Bing.
+function imageOverlayPersistSelection() {
+    if (!Number.isFinite(imageOverlayState.index)) return;
+    updateSavedArticle(imageOverlayState.index, "imageOverlaySelection", {
+        base: imageOverlayState.baseUrl || "",
+        baseLabel: imageOverlayState.baseLabel || "",
+        baseX: Math.round(imageOverlayState.basePosition.x),
+        baseY: Math.round(imageOverlayState.basePosition.y),
+        third: imageOverlayState.thirdUrl || "",
+        thirdLabel: imageOverlayState.thirdLabel || "",
+        thirdX: Math.round(imageOverlayState.thirdPosition.x),
+        thirdY: Math.round(imageOverlayState.thirdPosition.y),
+    });
+}
+
+function imageOverlaySelectionHasStoredImage(article) {
+    const selection = article?.imageOverlaySelection;
+    if (!selection) return false;
+    const hasBase = typeof selection.base === "string" && selection.base.startsWith("http");
+    const hasThird = typeof selection.third === "string" && selection.third.startsWith("http");
+    return hasBase || hasThird;
+}
+
+// Bài bị xóa: bỏ cache ảnh của bài đó, dồn cache các bài phía sau lên đúng index mới.
+function imageOverlayCacheAfterDelete(deletedIndex) {
+    if (!Number.isInteger(deletedIndex)) return;
+    const shiftedEntries = [];
+    imageOverlayCache.forEach((entry, cachedIndex) => {
+        if (cachedIndex === deletedIndex) return;
+        shiftedEntries.push([cachedIndex > deletedIndex ? cachedIndex - 1 : cachedIndex, entry]);
+    });
+    imageOverlayCache.clear();
+    shiftedEntries.forEach(([cachedIndex, entry]) => imageOverlayCache.set(cachedIndex, entry));
+}
+
+// Xóa sạch cache ảnh (dùng khi remove toàn bộ saved_articles).
+function imageOverlayCacheClearAll() {
+    imageOverlayCache.clear();
 }
 
 function imageOverlayGetLayout() {
@@ -208,14 +253,17 @@ async function imageOverlayLoadImageToSlot(imageUrl, type) {
     if (type === "base") {
         imageOverlayState.baseImage = img;
         imageOverlayState.baseLabel = label;
+        imageOverlayState.baseUrl = imageUrl.startsWith("data:") ? null : imageUrl;
         imageOverlayState.basePosition = { x: 0, y: 0, initialized: false };
     } else {
         imageOverlayState.thirdImage = img;
         imageOverlayState.thirdLabel = label;
+        imageOverlayState.thirdUrl = imageUrl.startsWith("data:") ? null : imageUrl;
         imageOverlayState.thirdPosition = { x: 0, y: 0, initialized: false };
     }
     imageOverlaySetMessage("");
     imageOverlaySaveCache();
+    imageOverlayPersistSelection();
     imageOverlayDraw();
 }
 
@@ -496,6 +544,7 @@ function imageOverlayBindCanvasEvents() {
     const endDrag = () => {
         imageOverlayState.drag = null;
         imageOverlaySaveCache();
+        imageOverlayPersistSelection();
     };
     canvas.addEventListener("pointerup", endDrag);
     canvas.addEventListener("pointercancel", endDrag);
@@ -707,9 +756,11 @@ async function imageOverlayActivate() {
         imageOverlayState.overlayLabel = cached.overlayLabel;
         imageOverlayState.baseImage = cached.baseImage;
         imageOverlayState.baseLabel = cached.baseLabel;
+        imageOverlayState.baseUrl = cached.baseUrl;
         imageOverlayState.basePosition = { ...cached.basePosition };
         imageOverlayState.thirdImage = cached.thirdImage;
         imageOverlayState.thirdLabel = cached.thirdLabel;
+        imageOverlayState.thirdUrl = cached.thirdUrl;
         imageOverlayState.thirdPosition = { ...cached.thirdPosition };
         imageOverlayDraw();
         return;
@@ -719,13 +770,40 @@ async function imageOverlayActivate() {
     imageOverlayState.overlayLabel = "";
     imageOverlayState.baseImage = null;
     imageOverlayState.baseLabel = "";
+    imageOverlayState.baseUrl = null;
     imageOverlayState.basePosition = { x: 0, y: 0, initialized: false };
     imageOverlayState.thirdImage = null;
     imageOverlayState.thirdLabel = "";
+    imageOverlayState.thirdUrl = null;
     imageOverlayState.thirdPosition = { x: 0, y: 0, initialized: false };
 
     imageOverlayDraw();
     await imageOverlayLoadTopImage(article);
+
+    // Bài đã chọn ảnh trước đó: lấy lại đúng ảnh cũ đã lưu, không tự tìm lại trên Bing.
+    const selection = article.imageOverlaySelection;
+    if (imageOverlaySelectionHasStoredImage(article)) {
+        if (typeof selection.base === "string" && selection.base.startsWith("http")) {
+            await imageOverlayLoadImageToSlot(selection.base, "base");
+            imageOverlayState.basePosition = {
+                x: Number(selection.baseX) || 0,
+                y: Number(selection.baseY) || 0,
+                initialized: true,
+            };
+        }
+        if (typeof selection.third === "string" && selection.third.startsWith("http")) {
+            await imageOverlayLoadImageToSlot(selection.third, "third");
+            imageOverlayState.thirdPosition = {
+                x: Number(selection.thirdX) || 0,
+                y: Number(selection.thirdY) || 0,
+                initialized: true,
+            };
+        }
+        imageOverlaySaveCache();
+        imageOverlayPersistSelection();
+        imageOverlayDraw();
+        return;
+    }
 
     // Tự gắn base/third: mỗi tên contributor đầu tìm riêng 1 ảnh để tránh
     // trùng ảnh giữa các bài khi trùng tên.

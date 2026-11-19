@@ -135,6 +135,7 @@
                     .split("{title}").join(row.title || "")
                     .split("{link}").join(row.link || "")
                     .split("{shortlink}").join(row.shortlink || "")
+                    .split("{summary}").join(row.summary || "")
                     .split("{tab}").join("\t");
             }
 
@@ -201,6 +202,7 @@
                     title: "Sample title",
                     link: "https://example.com/post",
                     shortlink: "https://example.com/?p=1",
+                    summary: "Sample thumbnail text",
                 }, 0);
                 document.getElementById("linastoryCopyPreview").textContent =
                     buildLinastoryExcelRow(sample).replace(/~/g, "").split("\t").join(" ⇥ ");
@@ -412,6 +414,7 @@
                         title: article.title || "",
                         link: match?.link || "",
                         shortlink: match?.shortlink || "",
+                        summary: article.players || "",
                     };
                 });
                 updateLinastoryCopyButtonStatus();
@@ -871,6 +874,7 @@
                 saved = saved.filter((item) => item.url !== url);
                 saved = normalizeSavedArticleIndexes(saved);
                 localStorage.setItem("saved_articles", JSON.stringify(saved));
+                imageOverlayCacheAfterDelete(index);
                 scheduleLinastoryAutoMatch();
                 const nextSelectedIndexes = new Set();
                 const nextDownloadedIndexes = new Set();
@@ -963,7 +967,7 @@
             }
 
             function buildThumbnailTextRegenButton(index) {
-                return `<button id="regenThumbBtn-${index}" type="button" class="icon-btn" title="Ép load lại Thumbnail Text (chỉ text, không đụng bài viết)" style="background: #eef2ff; border: 1px solid #e2e8f0;" onclick="regenerateThumbnailText(${index})">🔄</button>`;
+                return `<button id="regenThumbBtn-${index}" type="button" class="icon-btn" title="Ép load lại Thumbnail Text (chỉ text, không đụng bài viết)" onclick="regenerateThumbnailText(${index})">🔄</button>`;
             }
 
             function regenerateThumbnailTextFromStoryModal() {
@@ -1623,6 +1627,7 @@
             function clearLocalStorageArticles() {
                 if (confirm("Bạn có chắc chắn muốn xóa toàn bộ bài viết đã lưu trong localStorage không?")) {
                     localStorage.removeItem("saved_articles");
+                    imageOverlayCacheClearAll();
                     alert("Đã xóa xong!");
                 }
             }
@@ -1670,6 +1675,7 @@
                 // Clear previous saved articles so new Thumbnail run doesn't append
                 try {
                     localStorage.removeItem("saved_articles");
+                    imageOverlayCacheClearAll();
                 } catch (e) {
                     console.warn("Failed to clear saved_articles:", e);
                 }
@@ -2173,6 +2179,7 @@
                 // Clear previous saved articles so new Buzz run doesn't append
                 try {
                     localStorage.removeItem("saved_articles");
+                    imageOverlayCacheClearAll();
                 } catch (e) {
                     console.warn("Failed to clear saved_articles:", e);
                 }
@@ -3538,17 +3545,33 @@
                 storyApplyAccentColor(event.target.value || STORY_ALT_COLOR_DEFAULT);
             });
 
-            document.getElementById("storyFontSize")?.addEventListener("input", (event) => {
+            function storyApplyFontSize(value) {
                 storyFontSizeOverride = true;
-                const value = Number.parseInt(event.target.value, 10);
-                if (Number.isFinite(value)) {
-                    updateSavedArticle(activeStoryCardIndex, "storyFontSize", value);
+                const parsed = Number.parseInt(value, 10);
+                if (Number.isFinite(parsed)) {
+                    updateSavedArticle(activeStoryCardIndex, "storyFontSize", parsed);
                     const fontSizeOut = document.getElementById("storyFontOut");
                     if (fontSizeOut) {
-                        fontSizeOut.textContent = String(value);
+                        fontSizeOut.textContent = String(parsed);
                     }
                 }
                 renderStoryPreview();
+            }
+
+            function storyFontSizeStep(step) {
+                const fontSizeInput = document.getElementById("storyFontSize");
+                if (!fontSizeInput) return;
+                const min = Number.parseInt(fontSizeInput.min, 10) || 14;
+                const max = Number.parseInt(fontSizeInput.max, 10) || 90;
+                const current = Number.parseInt(fontSizeInput.value, 10) || min;
+                const next = Math.min(max, Math.max(min, current + step));
+                if (next === current) return;
+                fontSizeInput.value = String(next);
+                storyApplyFontSize(next);
+            }
+
+            document.getElementById("storyFontSize")?.addEventListener("input", (event) => {
+                storyApplyFontSize(event.target.value);
             });
             document.getElementById("storyTextInput").addEventListener("input", () => {
                 storyFontSizeOverride = false;

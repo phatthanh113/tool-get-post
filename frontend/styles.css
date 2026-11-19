@@ -706,6 +706,7 @@
 
             .story-modal-tabs {
                 display: flex;
+                flex: none;
                 gap: 8px;
                 margin-bottom: 16px;
             }
@@ -997,9 +998,11 @@
             }
 
             .story-modal-card {
+                display: flex;
+                flex-direction: column;
                 width: min(100%, 1000px);
                 max-height: 90vh;
-                overflow: auto;
+                overflow: hidden;
                 background: #ffffff;
                 border-radius: 24px;
                 padding: 24px;
@@ -1007,9 +1010,7 @@
             }
 
             .story-modal-header {
-                position: sticky;
-                top: 0;
-                z-index: 10;
+                flex: none;
                 display: flex;
                 justify-content: space-between;
                 align-items: center;
@@ -1035,7 +1036,11 @@
             }
 
             .story-modal-body {
+                flex: 1 1 auto;
                 min-width: 0;
+                min-height: 0;
+                overflow-y: auto;
+                overscroll-behavior: contain;
             }
 
             #storyPane.active {
@@ -1075,6 +1080,46 @@
                 flex: none;
             }
 
+            .story-fontsize-control {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+            }
+
+            .story-fontsize-control input[type="range"] {
+                width: 170px;
+            }
+
+            .story-fontsize-control #storyFontOut {
+                min-width: 32px;
+                text-align: center;
+                font-weight: 600;
+                color: #334155;
+            }
+
+            .story-fontsize-step {
+                flex: none;
+                width: 30px;
+                height: 30px;
+                padding: 0;
+                border: none;
+                border-radius: 50%;
+                background: transparent;
+                color: #94a3b8;
+                font-size: 1.15rem;
+                font-weight: 700;
+                line-height: 1;
+                cursor: pointer;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                transition: color 0.15s ease;
+            }
+
+            .story-fontsize-step:hover {
+                color: var(--primary);
+            }
+
             .story-modal-navigation {
                 display: flex;
                 align-items: center;
@@ -1107,30 +1152,35 @@
                 z-index: 5;
             }
 
+            .icon-btn {
+                background: transparent;
+                border: none;
+                padding: 0;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                cursor: pointer;
+            }
+
             .card-controls .icon-btn {
                 width: 36px;
                 height: 36px;
                 border-radius: 8px;
-                display: inline-flex;
-                align-items: center;
-                justify-content: center;
-                background: rgba(255, 255, 255, 0.9);
-                border: 1px solid rgba(15, 23, 42, 0.06);
-                cursor: pointer;
                 font-size: 16px;
                 color: #475569;
+                transition: background 0.15s ease;
+            }
+
+            .card-controls .icon-btn:hover {
+                background: rgba(15, 23, 42, 0.08);
             }
 
             .card-controls .icon-btn.delete {
-                background: #fee2e2;
                 color: #b91c1c;
-                border-color: rgba(239, 68, 68, 0.12);
             }
 
             .card-controls .icon-btn.copy {
-                background: #eff6ff;
                 color: #1e40af;
-                border-color: rgba(59, 130, 246, 0.08);
             }
 
             #storyArticleCounter {
@@ -1262,7 +1312,6 @@
                 max-width: 100%;
                 aspect-ratio: 942 / 1672;
                 min-height: 620px;
-                /*  background: linear-gradient(135deg, #e8d9b8, #d8c39a); */
                 background: url("bg.png") center/cover no-repeat;
                 border-radius: 36px;
                 padding: 20px;
