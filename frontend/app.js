@@ -1,3 +1,9 @@
+            const TITLE_HASHTAG =
+                (window.APP_CONFIG && window.APP_CONFIG.titleHashtag) || "#TP";
+            const TITLE_HASHTAG_PATTERN = new RegExp(
+                `\\s*${String(TITLE_HASHTAG).replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\s*$`,
+                "i"
+            );
             const DEFAULT_LINASTORY_COPY_TEMPLATE = "{title}\t{link}";
             const LINASTORY_STORY_PHRASES = {
                 English: "Full Story",
@@ -223,7 +229,7 @@
             function normalizeLinastoryTitle(title) {
                 return String(title || "")
                     .normalize("NFKC")
-                    .replace(/\s*#TP\s*$/i, "")
+                    .replace(TITLE_HASHTAG_PATTERN, "")
                     .replace(/\s+/g, " ")
                     .trim()
                     .toLocaleLowerCase();
@@ -2870,10 +2876,9 @@
                     summaryLineHeight: 1.58,
                     summaryLineGap: 3,
                     summaryBoxEnabled: true,
-                    summaryBoxPaddingX: 16,
-                    summaryBoxPaddingY: 32,
+                    summaryBoxPaddingX: 25,
                     summaryBoxPaddingTop: 30,
-                    summaryBoxPaddingBottom: 28,
+                    summaryBoxPaddingBottom: 10,
                     summaryBoxRadius: 19,
                     summaryBoxOffsetY: 24,
                     frameTop: 50,

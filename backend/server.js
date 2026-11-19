@@ -19,6 +19,16 @@ console.log(
   process.env.YOUTUBE_API_KEY ? process.env.YOUTUBE_API_KEY.length : 0,
 );
 
+// Hashtag appended to / stripped from post titles.
+// Accepts "XM" or "#XM"; defaults to "#TP" when TITLE_HASHTAG is not set.
+function resolveTitleHashtag(rawValue) {
+  const value = String(rawValue || "").trim();
+  if (!value) return "#TP";
+  return value.startsWith("#") ? value : `#${value}`;
+}
+
+const TITLE_HASHTAG = resolveTitleHashtag(process.env.TITLE_HASHTAG);
+
 const app = express();
 const port = process.env.PORT || 3000;
 app.use("/font", express.static(path.join(__dirname, "..", "font")));
@@ -165,6 +175,18 @@ async function runWithTimeout(promiseFactory, ms) {
     }, ms);
   });
 }
+
+// Shared runtime configuration for the web app and browser extensions
+app.get("/config", (req, res) => {
+  res.json({ title_hashtag: TITLE_HASHTAG });
+});
+
+app.get("/config.js", (req, res) => {
+  res.type("application/javascript");
+  res.send(
+    `window.APP_CONFIG = ${JSON.stringify({ titleHashtag: TITLE_HASHTAG })};`,
+  );
+});
 
 // Serve static files from the frontend directory
 app.use(express.static(path.join(__dirname, "../frontend")));

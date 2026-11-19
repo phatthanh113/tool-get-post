@@ -1,13 +1,38 @@
 (() => {
-  const normalizeTitle = (title) =>
-    String(title || "")
+  const DEFAULT_TITLE_HASHTAG = "#TP";
+  let titleHashtag = DEFAULT_TITLE_HASHTAG;
+
+  function loadTitleHashtag() {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 1500);
+    return fetch("http://localhost:3000/config", { signal: controller.signal })
+      .then((response) => (response.ok ? response.json() : null))
+      .then((config) => {
+        if (config && config.title_hashtag) {
+          titleHashtag = config.title_hashtag;
+        }
+      })
+      .catch(() => {})
+      .finally(() => clearTimeout(timeoutId));
+  }
+
+  function escapeRegExp(value) {
+    return String(value).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  }
+
+  const titleHashtagReady = loadTitleHashtag();
+
+  const normalizeTitle = (title) => {
+    const pattern = new RegExp(`\\s*${escapeRegExp(titleHashtag)}\\s*$`, "i");
+    return String(title || "")
       .normalize("NFKC")
-      .replace(/\s*#TP\s*$/i, "")
+      .replace(pattern, "")
       .replace(/\s+/g, " ")
       .trim()
       .toLocaleLowerCase();
+  };
 
-  window.addEventListener("message", (event) => {
+  window.addEventListener("message", async (event) => {
     if (event.source !== window || event.origin !== window.location.origin) return;
     if (event.data?.channel !== "tool-get-post:linastory-bridge") return;
 
@@ -32,6 +57,7 @@
     const requestedTitles = event.data.titles;
     if (typeof requestId !== "string" || !Array.isArray(requestedTitles)) return;
 
+    await titleHashtagReady;
     const titleSet = new Set(requestedTitles.map(normalizeTitle).filter(Boolean));
     const respond = (response) => {
       window.postMessage({

@@ -1,3 +1,31 @@
+const DEFAULT_TITLE_HASHTAG = "#TP";
+let titleHashtag = DEFAULT_TITLE_HASHTAG;
+
+function loadTitleHashtag() {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 1500);
+  return fetch("http://localhost:3000/config", { signal: controller.signal })
+    .then((response) => (response.ok ? response.json() : null))
+    .then((config) => {
+      if (config && config.title_hashtag) {
+        titleHashtag = config.title_hashtag;
+      }
+    })
+    .catch(() => {})
+    .finally(() => clearTimeout(timeoutId));
+}
+
+function escapeRegExp(value) {
+  return String(value).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function stripTitleHashtag(title) {
+  const pattern = new RegExp(`\\s*${escapeRegExp(titleHashtag)}\\s*$`);
+  return String(title || "").replace(pattern, "");
+}
+
+const titleHashtagReady = loadTitleHashtag();
+
 const titleInput = document.querySelector(
   '#titlewrap input[name="post_title"]'
 );
@@ -121,7 +149,7 @@ if (titleInput && permalink && contentTextarea) {
   console.log("Last paragraph:", paragraphs[paragraphs.length - 1]);
 
   // Đọc cài đặt summaryFromLast từ storage và xử lý
-  chrome.storage.local.get("summaryFromLast", (storageResult) => {
+  chrome.storage.local.get("summaryFromLast", async (storageResult) => {
     // Mặc định là true (lấy từ đoạn cuối)
     const summaryFromLast =
       storageResult.summaryFromLast !== undefined
@@ -161,8 +189,10 @@ if (titleInput && permalink && contentTextarea) {
       team = teamMatch[1].trim();
     }
 
+    await titleHashtagReady;
+
     const data = {
-      title: titleInput.value.trim().replace(/\s*#TP\s*$/, ""),
+      title: stripTitleHashtag(titleInput.value.trim()),
       link: permalink.trim(),
       shortlink: shortlink || null,
       thumbnail: thumbnail,

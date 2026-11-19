@@ -1,4 +1,24 @@
-function fillLinastoryPayload(message) {
+const DEFAULT_TITLE_HASHTAG = "#TP";
+let titleHashtag = DEFAULT_TITLE_HASHTAG;
+
+function loadTitleHashtag() {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 1500);
+  return fetch("http://localhost:3000/config", { signal: controller.signal })
+    .then((response) => (response.ok ? response.json() : null))
+    .then((config) => {
+      if (config && config.title_hashtag) {
+        titleHashtag = config.title_hashtag;
+      }
+    })
+    .catch(() => {})
+    .finally(() => clearTimeout(timeoutId));
+}
+
+const titleHashtagReady = loadTitleHashtag();
+
+async function fillLinastoryPayload(message) {
+  await titleHashtagReady;
   console.log("Received message in content-fill.js:", message);
   const { title, description, videoUrl, autoPublish = true } = message;
 
@@ -109,7 +129,7 @@ function fillLinastoryPayload(message) {
     const endIcons = getRandomIcons(2);
     const rawTitle = title || "";
     const hasLeadingIcon = startsWithAttentionIcon(rawTitle);
-    const titleText = rawTitle + " #TP";
+    const titleText = rawTitle + " " + titleHashtag;
     const descriptionText = description || "";
 
     // Use direct assignments on real WordPress form fields to avoid Illegal invocation.
@@ -189,7 +209,8 @@ function fillLinastoryPayload(message) {
 }
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  const filled = fillLinastoryPayload(message);
-  sendResponse({ success: Boolean(filled) });
-  return false;
+  fillLinastoryPayload(message)
+    .then((filled) => sendResponse({ success: Boolean(filled) }))
+    .catch(() => sendResponse({ success: false }));
+  return true;
 });
