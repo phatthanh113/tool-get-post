@@ -1,5 +1,5 @@
 const path = require("path");
-require("dotenv").config();
+require("dotenv").config({ path: path.join(__dirname, "..", ".env") });
 const express = require("express");
 const cors = require("cors");
 const fetch = require("node-fetch");
@@ -32,6 +32,12 @@ const TITLE_HASHTAG = resolveTitleHashtag(process.env.TITLE_HASHTAG);
 const app = express();
 const port = process.env.PORT || 3000;
 app.use("/font", express.static(path.join(__dirname, "..", "font")));
+// Cho phép extension (chạy trên trang https) gọi /config từ localhost:
+// Chrome Private Network Access yêu cầu header này ở cả preflight lẫn response.
+app.use((req, res, next) => {
+  res.setHeader("Access-Control-Allow-Private-Network", "true");
+  next();
+});
 app.use(cors());
 app.use(express.json());
 app.use(
