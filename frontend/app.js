@@ -2065,9 +2065,9 @@
                                     console.warn(`⚠️ Auto regen text bài ${articleIndex + 1} thất bại: ${error.message}`);
                                 }
 
-                                // Vẫn font ≥ 32 (text chưa đủ dài) → regen lần 2 với hint ≥ 140 từ
+                                // Vẫn font ≥ 32 (text chưa đủ dài) → regen lần 2 với hint 80-100 từ
                                 if (currentFont >= 32) {
-                                    setAutoFlowButton("running", stepLabel(5, `Gen lại text bài ${articleIndex + 1} (lần 2, ≥ 140 từ)...`));
+                                    setAutoFlowButton("running", stepLabel(5, `Gen lại text bài ${articleIndex + 1} (lần 2, 80-100 từ)...`));
                                     try {
                                         const language = document.getElementById("language-select")?.value || "English";
                                         const provider = document.getElementById("ai-provider")?.value || "groq";

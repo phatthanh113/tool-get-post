@@ -688,7 +688,7 @@ async function generateValidatedSportsThumbnailText(
     stripContributorMarker(sourceText),
   );
   const longerHintText = longerHint
-    ? "\n\nIMPORTANT: The body must contain at least 140 words — the previous draft was too short. Expand with more evidence, stakes, consequences."
+    ? "\n\nIMPORTANT: The body must contain between 80 and 100 words — the previous draft was too short. Expand with more evidence, stakes, consequences."
     : "";
   let previousDraft = "";
 
