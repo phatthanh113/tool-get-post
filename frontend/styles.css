@@ -72,6 +72,43 @@
                 font-size: 0.98rem;
             }
 
+            .source-card {
+                margin-bottom: 16px;
+                padding: 18px 20px 20px;
+                border: 1px solid var(--border);
+                border-radius: var(--radius-lg);
+                background: var(--card-bg);
+                box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+            }
+
+            .source-card-header {
+                display: flex;
+                align-items: baseline;
+                justify-content: space-between;
+                gap: 12px;
+                margin-bottom: 14px;
+            }
+
+            .source-card-header h2 {
+                font-size: 1rem;
+                font-weight: 700;
+            }
+
+            .source-card-header span {
+                color: var(--text-muted);
+                font-size: 0.82rem;
+            }
+
+            .source-card .form-section {
+                grid-template-columns: repeat(3, minmax(0, 1fr));
+                gap: 12px 20px;
+                margin-bottom: 0;
+            }
+
+            .source-card .full-width {
+                grid-column: 1 / -1;
+            }
+
             .form-section {
                 display: grid;
                 grid-template-columns: 1fr 1fr;
@@ -229,14 +266,28 @@
             }
 
             #autoFlowBtn {
-                background: #0f766e;
-                border-color: #0f766e;
+                background: #b45309;
+                border-color: #b45309;
                 color: #ffffff;
             }
 
             #autoFlowBtn:hover:not(:disabled) {
-                background: #115e59;
-                border-color: #115e59;
+                background: #92400e;
+                border-color: #92400e;
+            }
+
+            .btn-primary:disabled {
+                background: #c7d2fe;
+                border-color: #c7d2fe;
+                color: #3730a3;
+                opacity: 1;
+            }
+
+            #autoFlowBtn:disabled {
+                background: #fed7aa;
+                border-color: #fed7aa;
+                color: #9a3412;
+                opacity: 1;
             }
 
             .action-menu {

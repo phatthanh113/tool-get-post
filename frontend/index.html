@@ -16,76 +16,80 @@
                 <p class="subtitle">Dán link YouTube để tạo bài viết, story và ảnh.</p>
             </header>
 
-            <div class="form-section">
-                <div class="input-group full-width">
-                    <label for="youtubeUrl" id="youtubeUrlLabel" title="Bấm để thêm một bài mẫu">Link YouTube (mỗi dòng một link)</label>
-                    <textarea
-                        id="youtubeUrl"
-                        class="w-full"
-                        rows="3"
-                        placeholder="Dán link YouTube, mỗi dòng một link&#10;https://youtube.com/watch?v=..."
-                        required
-                    ></textarea>
+            <section class="source-card" aria-labelledby="sourceCardTitle">
+                <div class="source-card-header">
+                    <h2 id="sourceCardTitle">Nguồn video</h2>
+                    <span>Mỗi dòng một link YouTube</span>
                 </div>
+                <div class="form-section">
+                    <div class="input-group full-width">
+                        <label for="youtubeUrl" id="youtubeUrlLabel" title="Bấm để thêm một bài mẫu">Link YouTube</label>
+                        <textarea
+                            id="youtubeUrl"
+                            class="w-full"
+                            rows="3"
+                            placeholder="https://youtube.com/watch?v=..."
+                            required
+                        ></textarea>
+                    </div>
 
-                <div class="input-group">
-                    <label for="videoPrefixInput">Tiền tố tên file</label>
-                    <input id="videoPrefixInput" type="text" class="w-full" placeholder="VD: t" value="" />
-                    <p class="field-hint">Tiền tố <strong>t</strong> → <strong>t1</strong>, <strong>t2</strong>…</p>
-                </div>
-                <div class="input-group">
-                    <label for="videoStartNumberInput">Số thứ tự bắt đầu</label>
-                    <input id="videoStartNumberInput" type="number" class="w-full" min="1" placeholder="1" value="1" />
-                    <p class="field-hint">Nhập 11 → bắt đầu từ <strong>t11</strong></p>
-                </div>
+                    <div class="input-group">
+                        <label for="videoPrefixInput">Tiền tố tên file</label>
+                        <input id="videoPrefixInput" type="text" class="w-full" placeholder="VD: t" value="" />
+                    </div>
+                    <div class="input-group">
+                        <label for="videoStartNumberInput">Số thứ tự bắt đầu</label>
+                        <input id="videoStartNumberInput" type="number" class="w-full" min="1" placeholder="1" value="1" />
+                    </div>
 
-                <div class="input-group" style="display: none">
-                    <label for="language-select">Ngôn ngữ bài viết</label>
-                    <select id="language-select">
-                        <option value="English" selected>English</option>
-                        <option value="German">Deutsch (German)</option>
-                    </select>
-                </div>
+                    <div class="input-group">
+                        <label for="language-select">Ngôn ngữ bài viết</label>
+                        <select id="language-select">
+                            <option value="English" selected>English</option>
+                            <option value="German">Deutsch (German)</option>
+                        </select>
+                    </div>
 
-                <div class="input-group" style="display: none">
-                    <label for="token-select">Max Tokens</label>
-                    <select id="token-select">
-                        <option value="1000">1000 Tokens</option>
-                        <option value="2000">2000 Tokens</option>
-                        <option value="5000" selected>5000 Tokens</option>
-                    </select>
-                </div>
+                    <div class="input-group" style="display: none">
+                        <label for="token-select">Max Tokens</label>
+                        <select id="token-select">
+                            <option value="1000">1000 Tokens</option>
+                            <option value="2000">2000 Tokens</option>
+                            <option value="5000" selected>5000 Tokens</option>
+                        </select>
+                    </div>
 
-                <div id="youtubeLanguageStatus" class="full-width youtube-language-status" role="status" aria-live="polite" hidden>
-                    <span id="youtubeLanguageStatusText"></span>
-                    <button id="applyDetectedVideoLanguage" type="button" hidden></button>
-                </div>
+                    <div id="youtubeLanguageStatus" class="full-width youtube-language-status" role="status" aria-live="polite" hidden>
+                        <span id="youtubeLanguageStatusText"></span>
+                        <button id="applyDetectedVideoLanguage" type="button" hidden></button>
+                    </div>
 
-                <div class="input-group" style="display: none">
-                    <label for="writing-style">Writing Style</label>
-                    <select id="writing-style">
-                        <option value="standard">Standard</option>
-                        <option value="tabloidStyle">Tabloid Style</option>
-                        <option value="academic">Academic</option>
-                    </select>
-                </div>
+                    <div class="input-group" style="display: none">
+                        <label for="writing-style">Writing Style</label>
+                        <select id="writing-style">
+                            <option value="standard">Standard</option>
+                            <option value="tabloidStyle">Tabloid Style</option>
+                            <option value="academic">Academic</option>
+                        </select>
+                    </div>
 
-                <div class="input-group" style="display: none">
-                    <label for="ai-provider">AI Engine</label>
-                    <select id="ai-provider">
-                        <option value="groq" selected>Groq (Smart Fallback to OpenRouter)</option>
-                        <option value="openrouter">OpenRouter (Gemini 2.0 Flash)</option>
-                    </select>
-                </div>
+                    <div class="input-group" style="display: none">
+                        <label for="ai-provider">AI Engine</label>
+                        <select id="ai-provider">
+                            <option value="groq" selected>Groq (Smart Fallback to OpenRouter)</option>
+                            <option value="openrouter">OpenRouter (Gemini 2.0 Flash)</option>
+                        </select>
+                    </div>
 
-                <div class="input-group" style="display: none">
-                    <label for="generation-mode">Generation Mode</label>
-                    <select id="generation-mode">
-                        <option value="sports" selected>Thể thao</option>
-                        <option value="buzz-thumbnail">Buzz thumbnail only</option>
-                    </select>
+                    <div class="input-group" style="display: none">
+                        <label for="generation-mode">Generation Mode</label>
+                        <select id="generation-mode">
+                            <option value="sports" selected>Thể thao</option>
+                            <option value="buzz-thumbnail">Buzz thumbnail only</option>
+                        </select>
+                    </div>
                 </div>
-            </div>
+            </section>
 
             <div class="action-bar" role="toolbar" aria-label="Hành động chính">
                 <div class="action-bar-main">
