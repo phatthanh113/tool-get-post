@@ -19,7 +19,8 @@
                 const status = document.getElementById("linastoryCopyStatus");
                 if (!status) return;
                 status.textContent = message;
-                status.style.color = isError ? "#dc2626" : "var(--text-muted)";
+                status.classList.toggle("is-visible", Boolean(message));
+                status.classList.toggle("is-error", Boolean(isError));
             }
 
             function openLinastoryCopySettings(event) {
@@ -282,17 +283,17 @@
                 if (sheetMode) {
                     if (linastoryPasteState.state === "loading") {
                         button.disabled = true;
-                        button.textContent = "⏳ Đang dán vào Google Sheet...";
+                        button.textContent = "Đang dán vào Sheet...";
                         return;
                     }
                     if (linastoryPasteState.state === "done") {
                         button.disabled = true;
-                        button.textContent = "✅ Đã dán vào Google Sheet";
+                        button.textContent = "Đã dán vào Sheet";
                         return;
                     }
                 }
                 button.disabled = false;
-                button.textContent = `${sheetMode ? "🧩" : "📋"} Copy Linastory${allMatched ? " ✅" : ""}`;
+                button.textContent = `Copy bài${allMatched ? " (đủ link)" : ""}`;
                 button.dataset.linastoryMatched = allMatched ? "true" : "false";
             }
 
@@ -352,22 +353,7 @@
                         const cell = document.createElement("td");
                         cell.textContent = value;
                         cell.className = index === 0 ? "linastory-number" : "linastory-title";
-                        row.appendChild(cell);
-                    });
-
-                    [article.link, article.shortlink].forEach((url) => {
-                        const cell = document.createElement("td");
-                        if (url) {
-                            const link = document.createElement("a");
-                            link.href = url;
-                            link.textContent = url;
-                            link.target = "_blank";
-                            link.rel = "noopener noreferrer";
-                            link.style.overflowWrap = "anywhere";
-                            cell.appendChild(link);
-                        } else {
-                            cell.textContent = "—";
-                        }
+                        if (index === 1) cell.title = value;
                         row.appendChild(cell);
                     });
 
@@ -501,7 +487,7 @@
                     const unmatchedCount = matchedRows.filter((article) => !article.link).length;
                     const rowsToCopy = matchedRows.filter((article) => article.link);
                     if (rowsToCopy.length === 0) {
-                        throw new Error("Các bài được chọn đều chưa có permalink Linastory.");
+                        throw new Error("Chưa có permalink Linastory cho bài đã chọn. Hãy mở lại tab Linastory để lấy link, rồi thử lại.");
                     }
                     const template = getLinastoryCopyTemplate().trim();
                     if (!template) throw new Error("Mẫu copy đang trống. Nhấn chuột phải để chỉnh mẫu.");
@@ -537,9 +523,9 @@
                     if (state === "loading") {
                         button.innerHTML = '<span class="button-spinner" aria-hidden="true"></span><span>Đang dán...</span>';
                     } else if (state === "done") {
-                        button.innerHTML = "✅ Đã dán vào Google Sheet";
+                        button.innerHTML = "Đã dán vào Sheet";
                     } else {
-                        button.innerHTML = "🧩 Dán vào Google Sheet";
+                        button.innerHTML = "Dán vào Sheet";
                     }
                     button.disabled = state === "loading" || state === "done";
                 }
@@ -571,7 +557,7 @@
                     }
                     const rowsToPaste = matchedRows.filter((article) => article.link);
                     if (rowsToPaste.length === 0) {
-                        throw new Error("Các bài được chọn đều chưa có permalink Linastory.");
+                        throw new Error("Chưa có permalink Linastory cho bài đã chọn. Hãy mở lại tab Linastory để lấy link, rồi thử lại.");
                     }
                     button = document.getElementById("pasteLinastorySheetButton");
                     setLinastoryPasteButtonState("loading");

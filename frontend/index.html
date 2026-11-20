@@ -127,7 +127,7 @@
                     <option value="all">Tất cả bài viết</option>
                     <option value="selected">Bài đã chọn</option>
                 </select>
-                <button id="copyLinastoryButton" type="button" class="linastory-copy-button" onclick="handleCopyLinastoryClick(event)" oncontextmenu="quickCopyLinastory(event)" title="Chuột trái: xử lý · Chuột phải: copy nhanh">Copy Linastory</button>
+                <button id="copyLinastoryButton" type="button" class="linastory-copy-button" onclick="handleCopyLinastoryClick(event)" oncontextmenu="quickCopyLinastory(event)" title="Chuột trái: dán kết quả vào Google Sheet (hoặc mở danh sách bài nếu bỏ tick) · Chuột phải: copy nhanh">Copy bài</button>
                 <label class="toolbar-check" title="Bật: dán vào tab Google Sheet khớp prefix. Tắt: mở danh sách bài để chọn.">
                     <input id="linastorySheetModeCheck" type="checkbox" checked />
                     Copy vào Google Sheet
@@ -374,18 +374,14 @@
                 <div class="linastory-table-wrap" style="max-height: 55vh">
                     <table class="linastory-table">
                         <colgroup>
-                            <col style="width: 6%">
-                            <col style="width: 38%">
-                            <col style="width: 23%">
-                            <col style="width: 21%">
-                            <col style="width: 12%">
+                            <col style="width: 8%">
+                            <col>
+                            <col style="width: 24%">
                         </colgroup>
                         <thead>
                             <tr>
                                 <th>STT</th>
                                 <th>Title</th>
-                                <th>Permalink</th>
-                                <th>Shortlink</th>
                                 <th>Trạng thái</th>
                             </tr>
                         </thead>
@@ -394,7 +390,7 @@
                 </div>
                 <div class="linastory-dialog-actions">
                     <button id="copyLinastoryMatchedButton" type="button" class="btn-primary linastory-copy-action" onclick="copyMatchedLinastoryCustom()" oncontextmenu="openLinastoryCopySettings(event)">📋 Sao chép custom</button>
-                    <button id="pasteLinastorySheetButton" type="button" class="btn-primary linastory-copy-action" onclick="pasteLinastoryToSheet()" title="Dán theo mẫu copy vào tab Google Sheet khớp Video filename prefix (vd: B → tab bear)">🧩 Dán vào Google Sheet</button>
+                    <button id="pasteLinastorySheetButton" type="button" class="btn-primary linastory-copy-action" onclick="pasteLinastoryToSheet()" title="Dán theo mẫu copy vào tab Google Sheet khớp Video filename prefix (vd: B → tab bear)">Dán vào Sheet</button>
                     <button id="openLinastoryCopySettingsButton" type="button" class="btn-secondary" onclick="openLinastoryCopySettingsFromList()">⚙️ Mẫu copy</button>
                     <button id="closeLinastoryArticlesButton" type="button" class="btn-secondary" onclick="closeLinastoryArticlesModal()">Đóng</button>
                 </div>
