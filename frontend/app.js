@@ -1089,7 +1089,7 @@
                                         </div>
 
                                         <label style="display:block; margin-bottom:8px; color:var(--text-muted); cursor:pointer;" ondblclick="showStoryRetryButton(${item.index})">Article ${item.index + 1} Content (HTML)</label>
-                                        <textarea class="w-full min-h-52" style="min-height: 100px; font-family: 'Inter', monospace; font-size: 0.9rem;" oninput="updateSavedArticle('${item.url}', 'article', this.value)">${item.article}</textarea>
+                                        <textarea class="w-full min-h-52" style="min-height: 100px; font-family: ui-monospace, Consolas, monospace; font-size: 0.9rem;" oninput="updateSavedArticle('${item.url}', 'article', this.value)">${item.article}</textarea>
                                     </div>
                                 `;
                     output.appendChild(articleCard);
@@ -1616,7 +1616,7 @@
                                         </div>
 
                                         <label style="display:block; margin-bottom:8px; color:var(--text-muted); cursor:pointer;" ondblclick="showStoryRetryButton(${item.index})">Article ${item.index + 1} Content (HTML)</label>
-                                        <textarea class="w-full min-h-52" style="min-height: 100px; font-family: 'Inter', monospace; font-size: 0.9rem;" oninput="updateSavedArticle('${item.url}', 'article', this.value)">${item.article}</textarea>
+                                        <textarea class="w-full min-h-52" style="min-height: 100px; font-family: ui-monospace, Consolas, monospace; font-size: 0.9rem;" oninput="updateSavedArticle('${item.url}', 'article', this.value)">${item.article}</textarea>
                                     </div>
                                 `;
                     output.appendChild(articleCard);
@@ -1744,7 +1744,7 @@
                                                         </div>
                                                     </div>
                                                     <label style="display:block; margin-bottom:8px; color:var(--text-muted); cursor:pointer;" ondblclick="showStoryRetryButton(${index})">Article ${index + 1} Content (HTML)</label>
-                                                    <textarea class="w-full min-h-52" style="min-height: 100px; font-family: 'Inter', monospace; font-size: 0.9rem;">${finalArticle}</textarea>
+                                                    <textarea class="w-full min-h-52" style="min-height: 100px; font-family: ui-monospace, Consolas, monospace; font-size: 0.9rem;">${finalArticle}</textarea>
                                                 </div>
                                             `;
                                 output.appendChild(articleCard);
@@ -1788,13 +1788,24 @@
 
             function updateBuzzButtonVisibility() {
                 const buzzBtn = document.getElementById("buzzBtn");
+                const autoFlowBtn = document.getElementById("autoFlowBtn");
                 const urlInput = document.getElementById("youtubeUrl");
                 const restoreBtn = document.getElementById("restoreBuzzUrlsBtn");
                 if (!buzzBtn || !urlInput) return;
                 const hasUrls = urlInput.value
                     .split("\n")
                     .some((line) => line.trim() !== "");
-                buzzBtn.style.display = hasUrls && !activeBuzzGeneration ? "inline-flex" : "none";
+                buzzBtn.style.display = "inline-flex";
+                buzzBtn.disabled = !hasUrls || activeBuzzGeneration;
+                buzzBtn.title = hasUrls
+                    ? "Tạo bài viết từ các link đã dán"
+                    : "Dán ít nhất một link YouTube để bắt đầu";
+                if (autoFlowBtn) {
+                    autoFlowBtn.disabled = !hasUrls || activeBuzzGeneration;
+                    autoFlowBtn.title = hasUrls
+                        ? "Chạy trọn bộ: tạo bài → tự chọn ảnh → chờ permalink Linastory → dán Google Sheet"
+                        : "Dán ít nhất một link YouTube để bắt đầu";
+                }
                 if (restoreBtn) {
                     restoreBtn.style.display = !hasUrls && lastBuzzUrls && !activeBuzzGeneration ? "inline-flex" : "none";
                 }
@@ -1818,6 +1829,7 @@
             function finishBuzzGeneration(run) {
                 if (run.finished) return;
                 run.finished = true;
+                if (activeBuzzGeneration === run) activeBuzzGeneration = null;
                 if (run.cooldownTimeout) clearTimeout(run.cooldownTimeout);
 
                 document.getElementById("loading").style.display = "none";
@@ -1827,7 +1839,6 @@
                 sortCardsInDom();
                 updateBuzzButtonVisibility();
 
-                if (activeBuzzGeneration === run) activeBuzzGeneration = null;
                 run.resolve();
             }
 
@@ -2037,7 +2048,7 @@
                                 let currentFont = storyGetRawAutoFontSize(text);
                                 if (currentFont <= 35) continue;
 
-                                setAutoFlowButton("running", stepLabel(5, `Gen lại text bài ${articleIndex + 1} (font > 35)...`));
+                                setAutoFlowButton("running", stepLabel(5, `Gen lại text bài ${articleIndex + 1} (≥ 120 từ)...`));
                                 let regenText = "";
                                 try {
                                     const language = document.getElementById("language-select")?.value || "English";
@@ -2051,6 +2062,7 @@
                                             language,
                                             provider,
                                             longerHint: false,
+                                            extendedHint: true,
                                         }),
                                     });
                                     const data = await res.json().catch(() => ({}));
@@ -2271,7 +2283,7 @@
                                                     </div>
 
                                                     <label style="display:block; margin-bottom:8px; color:var(--text-muted); cursor:pointer;" ondblclick="showStoryRetryButton(${currentIndex})">Article ${currentIndex + 1} Content (HTML)</label>
-                                                    <textarea class="w-full min-h-52" style="min-height: 100px; font-family: 'Inter', monospace; font-size: 0.9rem;" oninput="updateSavedArticle(${currentIndex}, 'article', this.value)">${finalArticle}</textarea>
+                                                    <textarea class="w-full min-h-52" style="min-height: 100px; font-family: ui-monospace, Consolas, monospace; font-size: 0.9rem;" oninput="updateSavedArticle(${currentIndex}, 'article', this.value)">${finalArticle}</textarea>
                                                 </div>
                                             `;
                                 output.appendChild(articleCard);
@@ -2376,7 +2388,7 @@
                                             </div>
 
                                             <label style="display:block; margin-bottom:8px; color:var(--text-muted); cursor:pointer;" ondblclick="showStoryRetryButton(${index})">Article ${index + 1} Content (HTML)</label>
-                                            <textarea class="w-full min-h-52" style="min-height: 100px; font-family: 'Inter', monospace; font-size: 0.9rem;" oninput="updateSavedArticle(${index}, 'article', this.value)">${finalArticle}</textarea>
+                                            <textarea class="w-full min-h-52" style="min-height: 100px; font-family: ui-monospace, Consolas, monospace; font-size: 0.9rem;" oninput="updateSavedArticle(${index}, 'article', this.value)">${finalArticle}</textarea>
                                         </div>
                                     `;
                         selectArticleIndexByDefault(index);
@@ -3521,7 +3533,7 @@
                                         </div>
                                     </div>
                                     <label style="display:block; margin-bottom:8px; color:var(--text-muted);">Sample Article Content (HTML)</label>
-                                    <textarea class="w-full min-h-52" style="min-height: 200px; font-family: 'Inter', monospace; font-size: 0.9rem;">${sample.body}</textarea>
+                                    <textarea class="w-full min-h-52" style="min-height: 200px; font-family: ui-monospace, Consolas, monospace; font-size: 0.9rem;">${sample.body}</textarea>
                                 </div>
                             `;
                 output.appendChild(articleCard);

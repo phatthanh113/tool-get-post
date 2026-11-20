@@ -3,68 +3,48 @@
     <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>YouTube Article Generator | Premium AI Tool</title>
+        <title>AI Article Studio</title>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;600;700&display=swap" rel="stylesheet" />
+        <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=Outfit:wght@400;600;700&display=swap" rel="stylesheet" />
         <link rel="stylesheet" href="/styles.css">
     </head>
     <body>
         <div class="container">
             <header>
                 <h1>AI Article Studio</h1>
-                <p class="subtitle">Convert any YouTube video into a high-quality article instantly</p>
+                <p class="subtitle">Dán link YouTube để tạo bài viết, story và ảnh.</p>
             </header>
 
             <div class="form-section">
                 <div class="input-group full-width">
-                    <label for="youtubeUrl" id="youtubeUrlLabel" title="Click to add a sample article card">YouTube Video URLs (One per line)</label>
+                    <label for="youtubeUrl" id="youtubeUrlLabel" title="Bấm để thêm một bài mẫu">Link YouTube (mỗi dòng một link)</label>
                     <textarea
                         id="youtubeUrl"
                         class="w-full"
                         rows="3"
-                        placeholder="Paste multiple YouTube links here (Nhập URL video TikTok)&#10;https://youtube.com/watch?v=...&#10;https://youtube.com/watch?v=..."
+                        placeholder="Dán link YouTube, mỗi dòng một link&#10;https://youtube.com/watch?v=..."
                         required
                     ></textarea>
                 </div>
 
-                <div style="grid-column: span 2; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px">
-                    <div class="input-group">
-                        <label for="videoPrefixInput">Video filename prefix</label>
-                        <input
-                            id="videoPrefixInput"
-                            type="text"
-                            class="w-full"
-                            placeholder="Enter prefix, e.g. t"
-                            value=""
-                            style="padding: 12px; border-radius: 12px; border: 1px solid #cbd5e1; width: 100%"
-                        />
-                        <p style="margin-top: 0; color: var(--text-muted); font-size: 0.85rem">
-                            Prefix <strong>t</strong> → <strong>t1</strong>, <strong>t2</strong>...
-                        </p>
-                    </div>
-                    <div class="input-group">
-                        <label for="videoStartNumberInput">Starting video number</label>
-                        <input
-                            id="videoStartNumberInput"
-                            type="number"
-                            class="w-full"
-                            min="1"
-                            placeholder="1"
-                            value="1"
-                            style="padding: 12px; border-radius: 12px; border: 1px solid #cbd5e1; width: 100%"
-                        />
-                        <p style="margin-top: 0; color: var(--text-muted); font-size: 0.85rem">
-                            Nhập 11 → bắt đầu <strong>t11</strong>
-                        </p>
-                    </div>
-                    <div class="input-group" style="display: none">
-                        <label for="language-select">Ngôn ngữ bài viết</label>
-                        <select id="language-select" style="padding: 12px; border-radius: 12px; border: 1px solid #cbd5e1; width: 100%">
-                            <option value="English" selected>English</option>
-                            <option value="German">Deutsch (German)</option>
-                        </select>
-                    </div>
+                <div class="input-group">
+                    <label for="videoPrefixInput">Tiền tố tên file</label>
+                    <input id="videoPrefixInput" type="text" class="w-full" placeholder="VD: t" value="" />
+                    <p class="field-hint">Tiền tố <strong>t</strong> → <strong>t1</strong>, <strong>t2</strong>…</p>
+                </div>
+                <div class="input-group">
+                    <label for="videoStartNumberInput">Số thứ tự bắt đầu</label>
+                    <input id="videoStartNumberInput" type="number" class="w-full" min="1" placeholder="1" value="1" />
+                    <p class="field-hint">Nhập 11 → bắt đầu từ <strong>t11</strong></p>
+                </div>
+
+                <div class="input-group" style="display: none">
+                    <label for="language-select">Ngôn ngữ bài viết</label>
+                    <select id="language-select">
+                        <option value="English" selected>English</option>
+                        <option value="German">Deutsch (German)</option>
+                    </select>
                 </div>
 
                 <div class="input-group" style="display: none">
@@ -98,111 +78,118 @@
                     </select>
                 </div>
 
-                <div class="checkbox-group" style="display: none">
-                    <input type="checkbox" id="_r_0_" checked />
-                    <label for="_r_0_">Enable advanced processing & SEO optimization</label>
-                </div>
-
                 <div class="input-group" style="display: none">
                     <label for="generation-mode">Generation Mode</label>
-                    <select id="generation-mode" style="padding: 12px; border-radius: 12px; border: 1px solid #cbd5e1; width: 100%">
+                    <select id="generation-mode">
                         <option value="sports" selected>Thể thao</option>
                         <option value="buzz-thumbnail">Buzz thumbnail only</option>
                     </select>
                 </div>
             </div>
 
-            <div class="button-group">
-                <button id="textModeBtn" onclick="toggleView()" class="btn-secondary bg-green-600">Chế độ text</button>
-                <button onclick="restoreArticlesFromLocalStorage()" class="btn-secondary" style="background-color: #6366f1; border-color: #6366f1; color: white">💾 Khôi phục bài viết</button>
-                <button onclick="sortResultCards()" class="btn-secondary" style="display: none" title="Sắp xếp các bài theo thứ tự ban đầu">🔃 Sắp xếp bài</button>
-                <button onclick="clearLocalStorageArticles()" class="btn-secondary" style="display: none; background-color: #ef4444; border-color: #ef4444; color: white">🗑️ Xóa localStorage</button>
-                <button onclick="generateThumbnailOnly()" class="btn-secondary" style="display: none; background-color: #f59e0b; border-color: #f59e0b; color: white">🖼️ Thumbnail</button>
-                <button id="autoSelectImagesBtn" type="button" onclick="startAutoSelectImages()" class="btn-secondary" style="background-color: #ff9800; border-color: #ff9800; color: white">⚡ Auto Select Img</button>
-                <button onclick="generate()" id="buzzBtn" class="btn-primary button-primary-custom">Buzz</button>
-                <button onclick="runFullAutoFlow()" id="autoFlowBtn" type="button" class="btn-secondary" style="background: #8b5cf6; border-color: #8b5cf6; color: white" title="Chạy trọn bộ: Buzz → Auto Select Img → đợi permalink Lina → dán Google Sheet">🤖 Auto</button>
-                <button onclick="restoreBuzzUrls()" id="restoreBuzzUrlsBtn" type="button" class="btn-secondary" style="display: none; background: #10b981; border-color: #10b981; color: white" title="Điền lại các YouTube URL của lần Buzz trước (đã bị xóa sau khi bấm Buzz)">↩ URL cũ</button>
-                <button onclick="stopBuzzGeneration()" id="stopBuzzBtn" type="button" class="btn-secondary" style="display: none; background: #ef4444; color: white">⏹ Stop</button>
+            <div class="action-bar" role="toolbar" aria-label="Hành động chính">
+                <div class="action-bar-main">
+                    <button onclick="generate()" id="buzzBtn" class="btn-primary" title="Tạo bài viết từ các link đã dán">Buzz</button>
+                    <button
+                        onclick="runFullAutoFlow()"
+                        id="autoFlowBtn"
+                        type="button"
+                        class="btn-secondary"
+                        title="Chạy trọn bộ: tạo bài → tự chọn ảnh → chờ permalink Linastory → dán Google Sheet"
+                    >
+                        Auto Flow
+                    </button>
+                </div>
+                <div class="action-bar-secondary">
+                    <button id="textModeBtn" onclick="toggleView()" class="btn-secondary" title="Chuyển giữa trình soạn HTML và bản xem trước văn bản">Chế độ văn bản</button>
+                    <button id="autoSelectImagesBtn" type="button" onclick="startAutoSelectImages()" class="btn-secondary" title="Tự tìm và gán ảnh cho từng bài">Tự chọn ảnh</button>
+                    <button onclick="restoreArticlesFromLocalStorage()" class="btn-secondary" title="Nạp lại các bài đã lưu trên máy này">Khôi phục bài</button>
+                    <button onclick="restoreBuzzUrls()" id="restoreBuzzUrlsBtn" type="button" class="btn-secondary" style="display: none" title="Điền lại các link YouTube của lần Buzz trước">Link lần trước</button>
+                    <details class="action-menu">
+                        <summary class="btn-secondary" role="button" aria-label="Thêm hành động">Thêm</summary>
+                        <div class="action-menu-list">
+                            <button onclick="sortResultCards()" class="menu-item">Sắp xếp bài theo thứ tự gốc</button>
+                            <button onclick="generateThumbnailOnly()" class="menu-item">Chỉ tạo thumbnail</button>
+                            <button onclick="stopBuzzGeneration()" id="stopBuzzBtn" type="button" class="menu-item menu-item-danger" style="display: none">Dừng tạo bài</button>
+                            <button onclick="clearLocalStorageArticles()" class="menu-item menu-item-danger">Xóa dữ liệu đã lưu</button>
+                        </div>
+                    </details>
+                </div>
             </div>
 
             <div class="linastory-copy-toolbar">
+                <span class="toolbar-label">Xuất bản</span>
                 <select id="linastoryCopyMode" aria-label="Phạm vi copy Linastory" title="Phạm vi copy">
                     <option value="all">Tất cả bài viết</option>
                     <option value="selected">Bài đã chọn</option>
                 </select>
-                <button id="copyLinastoryButton" type="button" class="linastory-copy-button" onclick="handleCopyLinastoryClick(event)" oncontextmenu="quickCopyLinastory(event)" title="Chuột trái: xử lý · Chuột phải: copy nhanh">📋 Copy Linastory</button>
-                <label style="display: flex; align-items: center; gap: 6px; color: var(--text-muted); font-size: 0.9rem; cursor: pointer; white-space: nowrap" title="Tick: nút Copy Linastory sẽ dán vào tab Google Sheet khớp prefix. Bỏ tick: mở modal danh sách bài">
-                    <input id="linastorySheetModeCheck" type="checkbox" checked style="cursor: pointer" />
+                <button id="copyLinastoryButton" type="button" class="linastory-copy-button" onclick="handleCopyLinastoryClick(event)" oncontextmenu="quickCopyLinastory(event)" title="Chuột trái: xử lý · Chuột phải: copy nhanh">Copy Linastory</button>
+                <label class="toolbar-check" title="Bật: dán vào tab Google Sheet khớp prefix. Tắt: mở danh sách bài để chọn.">
+                    <input id="linastorySheetModeCheck" type="checkbox" checked />
                     Copy vào Google Sheet
                 </label>
-                <label style="display: inline-flex; align-items: center; gap: 8px; font-weight: 600; color: var(--text-muted); cursor: pointer; white-space: nowrap; margin-left: auto">
-                    <input id="autoPublishCheckbox" type="checkbox" checked style="cursor: pointer" />
-                    Tự động Publish Linastory
+                <label class="toolbar-check" title="Tự bấm Publish trên Linastory sau khi dán xong">
+                    <input id="autoPublishCheckbox" type="checkbox" checked />
+                    Tự động Publish
                 </label>
-                <label style="display: inline-flex; align-items: center; gap: 8px; font-weight: 600; color: var(--text-muted); cursor: pointer; white-space: nowrap" title="Bật: Auto Flow chạy thêm bước 5 — tự gen lại thumbnail text nếu font auto > 35 (text quá ngắn) rồi download toàn bộ bài đã chọn về thư mục đã nhập">
-                    <input id="autoFlowDownloadCheck" type="checkbox" style="cursor: pointer" />
-                    ⬇ Tải video sau Auto (tự sửa text font &gt; 35)
+                <label class="toolbar-check" title="Auto Flow chạy thêm bước 5: tự tạo lại thumbnail text nếu font tự động &gt; 35 (text quá ngắn) rồi tải toàn bộ bài đã chọn về thư mục bên dưới">
+                    <input id="autoFlowDownloadCheck" type="checkbox" />
+                    Tải video sau Auto
                 </label>
             </div>
-            <p id="linastoryCopyStatus" role="status" aria-live="polite" style="min-height: 20px; margin-top: 8px; color: var(--text-muted)"></p>
+            <p id="linastoryCopyStatus" role="status" aria-live="polite" class="toolbar-status"></p>
 
             <div id="loading" class="loading-overlay">
                 <div class="spinner"></div>
-                <div class="loading-text">⏳ Crafting your masterpiece...</div>
-                <p style="margin-top: 15px; color: var(--text-muted); font-size: 0.9rem">This may take a minute for deep analysis</p>
+                <div class="loading-text">Đang tạo bài viết…</div>
+                <p class="loading-hint">Phân tích sâu có thể mất khoảng một phút.</p>
             </div>
 
             <div id="retryNotice" class="retry-notification">
-                ⚠️ Generation Failed. Retrying in
+                Tạo bài thất bại. Thử lại sau
                 <span id="retryTimer">3</span>
-                s...
+                giây…
             </div>
 
             <div id="resultSection" class="result-section">
-                <h3 id="resultTitle" style="margin-bottom: 16px">✅ HTML Editor Mode</h3>
-                <div class="checkbox-group" style="grid-column: auto; margin: 0 0 16px; flex-wrap: wrap">
+                <h2 id="resultTitle">Bài viết</h2>
+                <div class="checkbox-group result-options">
                     <input type="checkbox" id="storySuffixEnabled" />
-                    <label for="storySuffixEnabled" style="cursor: pointer">Thêm dòng cuối vào story (preview và video tải về)</label>
-                    <select
-                        id="storySuffixPreset"
-                        aria-label="Chọn câu kết có sẵn"
-                        onchange="applyStorySuffixPreset(this.value)"
-                        style="padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 8px"
-                    >
-                        <option value="">Chọn câu có sẵn...</option>
+                    <label for="storySuffixEnabled">Thêm dòng kết vào story (preview và video tải về)</label>
+                    <select id="storySuffixPreset" aria-label="Chọn câu kết có sẵn" onchange="applyStorySuffixPreset(this.value)">
+                        <option value="">Chọn câu có sẵn…</option>
                         <option value="Lesen Sie die vollständige Geschichte unter dem folgenden Link 👇" data-language="German">Deutsch</option>
                         <option value="Read the full story in the link below👇" data-language="English">English</option>
                     </select>
                     <input
                         type="text"
                         id="storySuffixInput"
-                        placeholder="Nhập nội dung dòng cuối"
-                        aria-label="Nội dung dòng cuối của story"
-                        style="flex: 1 1 280px; min-width: 220px; padding: 8px 12px"
+                        placeholder="Nhập nội dung dòng kết"
+                        aria-label="Nội dung dòng kết của story"
                     />
                 </div>
                 <div id="editorContainer" class="result-card">
-                    <div style="display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 20px">
-                        <span style="color: #475569; font-size: 0.95rem">Result cards appear here after generation.</span>
-                        <div style="display: flex; gap: 8px; align-items: center">
+                    <div class="result-toolbar">
+                        <span class="result-hint">Bài viết sẽ xuất hiện ở đây sau khi tạo.</span>
+                        <div class="result-toolbar-actions">
                             <input
                                 id="downloadBasePath"
                                 type="text"
                                 placeholder="D:\video-story (thư mục gốc)"
                                 aria-label="Thư mục gốc lưu video"
-                                style="padding: 8px 12px; border-radius: 10px; border: 1px solid #cbd5e1; font-size: 0.9rem; width: 220px"
+                                class="path-input"
                             />
                             <input
                                 id="downloadPrefixPath"
                                 type="text"
                                 placeholder="1110 (prefix thư mục)"
                                 aria-label="Prefix thư mục lưu video"
-                                style="padding: 8px 12px; border-radius: 10px; border: 1px solid #cbd5e1; font-size: 0.9rem; width: 130px"
+                                class="path-input path-input-short"
                             />
-                            <button id="downloadSelectedBtn" type="button" class="btn-primary" style="padding: 8px 10px; font-size: 0.9rem" onclick="downloadSelectedArticles()">
-                                Download Selected
+                            <button id="downloadSelectedBtn" type="button" class="btn-primary btn-compact" onclick="downloadSelectedArticles()">
+                                Tải bài đã chọn
                             </button>
-                            <button id="selectAllBtn" type="button" class="btn-secondary" style="padding: 8px 10px; font-size: 0.9rem" onclick="toggleSelectAll()">Select All</button>
+                            <button id="selectAllBtn" type="button" class="btn-secondary btn-compact" onclick="toggleSelectAll()">Chọn tất cả</button>
                         </div>
                     </div>
                     <div id="output"></div>
@@ -237,8 +224,8 @@
                     </div>
                 </div>
                 <div class="story-modal-tabs">
-                    <button id="storyTabButton" type="button" class="story-tab active" onclick="switchStoryTab('story')">🎬 Story</button>
-                    <button id="imageTabButton" type="button" class="story-tab" onclick="switchStoryTab('image')">🖼 Image</button>
+                    <button id="storyTabButton" type="button" class="story-tab active" onclick="switchStoryTab('story')">Story</button>
+                    <button id="imageTabButton" type="button" class="story-tab" onclick="switchStoryTab('image')">Image</button>
                 </div>
                 <div class="story-modal-body">
                     <div id="storyPane" class="story-pane active">
@@ -266,17 +253,17 @@
                         </div>
                     </div>
                     <div class="story-text-input-container">
-                        <button type="button" class="story-text-paste-button" onclick="storyPasteFromClipboard()">📋 Paste</button>
+                        <button type="button" class="story-text-paste-button" onclick="storyPasteFromClipboard()">Dán</button>
                         <textarea
                             id="storyTextInput"
                             rows="5"
                             style="width: 100%; min-height: 120px; padding: 12px; border-radius: 12px; border: 1px solid #cbd5e1; font-size: 0.95rem"
-                            placeholder="Enter the sports hook text or use the generated clickbait."
+                            placeholder="Nhập hook thể thao hoặc dùng clickbait đã tạo."
                         ></textarea>
                     </div>
                     <div id="storyPreview" class="story-modal-preview"></div>
-                    <div id="storyThumbnailSelector" style="margin-top: 0; padding: 16px; border: 1px solid #e2e8f0; border-radius: 16px; background: #f8fafc">
-                        <label style="display: block; margin-bottom: 8px; color: #475569; font-weight: 600">Thumbnail source</label>
+                    <div id="storyThumbnailSelector" class="story-thumbnail-source">
+                        <label class="story-section-title">Nguồn thumbnail</label>
                         <div style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 12px">
                             <select
                                 id="storyThumbnailVariantSelect"
@@ -297,14 +284,14 @@
                         <div id="storyThumbnailPreview" style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 10px">
                             <img
                                 id="storyThumbnailPreviewImg"
-                                src=""
-                                alt="Thumbnail preview"
+                                src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
+                                alt="Xem trước thumbnail"
                                 style="max-width: 200px; width: 100%; max-height: 120px; object-fit: contain; border-radius: 12px; border: 1px solid #cbd5e1"
                             />
                             <span id="storyThumbnailPreviewLabel" style="color: #64748b; font-size: 0.95rem; min-width: 140px"></span>
                         </div>
                         <p style="margin-top: 10px; color: var(--text-muted); font-size: 0.95rem">
-                            <a id="storyThumbnailPreviewLink" href="#" target="_blank" style="color: var(--primary); text-decoration: none">Thumbnail image</a>
+                            <a id="storyThumbnailPreviewLink" href="#" target="_blank" style="color: var(--primary); text-decoration: none">Mở ảnh thumbnail</a>
                         </p>
                     </div>
                     <div class="story-modal-actions" style="display: none">
@@ -317,7 +304,7 @@
                     </div>
                     <div id="imagePane" class="story-pane">
                         <div class="image-overlay-pane-title">
-                            <span>🖼 Create Image</span>
+                            <span>Tạo ảnh</span>
                             <span id="imageOverlayFileName" class="image-overlay-file-name"></span>
                         </div>
                         <div class="image-overlay-layout">
@@ -330,17 +317,19 @@
                                     <label>Tìm ảnh Bing</label>
                                     <div class="image-overlay-search-row">
                                         <input id="imageOverlaySearchInput" type="text" placeholder="Nhập từ khóa ảnh..." />
-                                        <button id="imageOverlaySearchBtn" type="button" class="btn-primary" onclick="imageOverlayRunSearch()">🔍</button>
+                                        <button id="imageOverlaySearchBtn" type="button" class="btn-primary" aria-label="Tìm ảnh" title="Tìm ảnh trên Bing" onclick="imageOverlayRunSearch()">
+                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+                                        </button>
                                     </div>
                                     <div id="imageOverlayBingQuickSelects" class="image-overlay-quick-selects"></div>
                                 </div>
                                 <div class="image-overlay-block">
                                     <div id="imageOverlaySearchResults" class="image-overlay-results">
-                                        <p class="image-overlay-results-hint">Click để chọn, Double Click để ép làm <b>Base</b></p>
+                                        <p class="image-overlay-results-hint">Bấm để chọn · Nhấp đúp để đặt làm <b>Base</b></p>
                                     </div>
                                 </div>
                                 <div class="image-overlay-block">
-                                    <label>Top thumbnail (maxres1 / maxres2)</label>
+                                    <label>Thumbnail trên</label>
                                     <select id="imageOverlayTopVariantSelect" onchange="imageOverlayChangeTopVariant(this.value)" style="width: 100%; padding: 8px 10px; border-radius: 10px; border: 1px solid #cbd5e1; font-size: 0.9rem; margin-bottom: 8px">
                                         <option value="maxresdefault">maxresdefault.jpg</option>
                                         <option value="maxres1">maxres1.jpg</option>
@@ -352,11 +341,11 @@
                                 <div class="image-overlay-block">
                                     <div class="image-overlay-toolbar">
                                         <select id="imageOverlayLayoutSelect" title="Layout">
-                                            <option value="1:3" selected>Layout 1:3 (Two Bottom)</option>
+                                            <option value="1:3" selected>Bố cục 1:3 (2 ảnh dưới)</option>
                                         </select>
                                     </div>
                                     <div class="image-overlay-actions">
-                                        <button id="imageOverlaySaveBtn" type="button" class="btn-primary" title="Lưu PNG vào thư mục video (prefix+stt.png)" onclick="imageOverlaySaveToDir()">💾 Save</button>
+                                        <button id="imageOverlaySaveBtn" type="button" class="btn-primary" title="Lưu PNG vào thư mục video (prefix+stt.png)" onclick="imageOverlaySaveToDir()">Lưu PNG</button>
                                         <button id="imageOverlayMoveBtn" type="button" class="btn-secondary" onclick="imageOverlayToggleMove()" title="Chế độ kéo ảnh: Lock Y = chỉ kéo dọc, Move X = chỉ kéo ngang">🔒 Lock Y</button>
                                         <button id="imageOverlayDownloadBtn" type="button" class="btn-secondary" style="display: none" title="Tải PNG về máy" onclick="imageOverlayDownload()">⬇ Download</button>
                                     </div>

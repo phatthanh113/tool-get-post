@@ -681,7 +681,7 @@ async function generateValidatedSportsThumbnailText(
   language = "English",
   options = {},
 ) {
-  const { allowInvalid = false, longerHint = false, standardHint = false } = options;
+  const { allowInvalid = false, longerHint = false, standardHint = false, extendedHint = false } = options;
   // Strip the [[CONTRIBUTORS]] marker so contributor names never leak into
   // the generated thumbnail text (and therefore never into the story text).
   const cleanSource = stripHtmlToText(
@@ -689,9 +689,11 @@ async function generateValidatedSportsThumbnailText(
   );
   const longerHintText = longerHint
     ? "\n\nIMPORTANT: The body must contain at least 140 words — the previous draft was too short. Expand with more evidence, stakes, consequences."
-    : standardHint
-      ? "\n\nIMPORTANT: The body must contain between 80 and 100 words."
-      : "";
+    : extendedHint
+      ? "\n\nIMPORTANT: The body must contain at least 120 words — the previous draft was too short. Expand with more evidence, stakes, consequences."
+      : standardHint
+        ? "\n\nIMPORTANT: The body must contain between 80 and 100 words."
+        : "";
   let previousDraft = "";
 
   for (let attempt = 0; attempt < 1; attempt++) {
@@ -1202,6 +1204,7 @@ app.post("/generate-thumbnail-text", async (req, res) => {
     provider = "groq",
     longerHint = false,
     standardHint = false,
+    extendedHint = false,
   } = req.body || {};
 
   if (!String(article).trim()) {
@@ -1217,7 +1220,7 @@ app.post("/generate-thumbnail-text", async (req, res) => {
       String(title),
       provider,
       normalizePromptLanguage(language),
-      { allowInvalid: true, longerHint: Boolean(longerHint), standardHint: Boolean(standardHint) },
+      { allowInvalid: true, longerHint: Boolean(longerHint), standardHint: Boolean(standardHint), extendedHint: Boolean(extendedHint) },
     );
     const validated = Boolean(validateSportsThumbnailText(players));
     res.json({ players, validated });
@@ -1493,6 +1496,7 @@ app.post("/generate-article", async (req, res) => {
               title,
               provider,
               promptLanguage,
+              { extendedHint: true, allowInvalid: true },
             );
           } catch (thumbnailError) {
             console.warn(
