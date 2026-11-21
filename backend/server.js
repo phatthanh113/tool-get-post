@@ -1004,33 +1004,84 @@ function decodeHtmlEntities(value) {
 }
 
 function extractBingImageUrls(html, limit = 12) {
-  const images = [];
+  const details = [];
+  const seen = new Set();
   const attrRegex = /m="(.*?)"/g;
   let match;
-  while ((match = attrRegex.exec(html)) && images.length < limit) {
+  while ((match = attrRegex.exec(html)) && details.length < limit) {
     try {
       const meta = JSON.parse(decodeHtmlEntities(match[1]));
       const url = typeof meta.murl === "string" ? meta.murl : "";
-      if (url.startsWith("http") && !images.includes(url)) {
-        images.push(url);
+      if (url.startsWith("http") && !seen.has(url)) {
+        seen.add(url);
+        details.push({
+          url,
+          title: typeof meta.t === "string" ? meta.t : "",
+          width: Number(meta.mw) || 0,
+          height: Number(meta.mh) || 0,
+        });
       }
     } catch (parseError) {}
   }
-  if (images.length === 0) {
+  if (details.length === 0) {
     const rawRegex = /"murl":"(.*?)"/g;
-    while ((match = rawRegex.exec(html)) && images.length < limit) {
+    while ((match = rawRegex.exec(html)) && details.length < limit) {
       const url = match[1].replace(/\\u0026/g, "&").replace(/\\\//g, "/");
-      if (url.startsWith("http") && !images.includes(url)) {
-        images.push(url);
+      if (url.startsWith("http") && !seen.has(url)) {
+        seen.add(url);
+        details.push({ url, title: "", width: 0, height: 0 });
       }
     }
   }
-  return images;
+  return details;
+}
+
+function normalizeBingText(value) {
+  return String(value || "")
+    .normalize("NFD")
+    .replace(/\p{Diacritic}/gu, "")
+    .toLowerCase();
+}
+
+function rankBingImageDetails(details, query, name = "") {
+  const genericTokens = (normalizeBingText(query).match(/[\p{L}\p{N}]+/gu) || [])
+    .filter((word) => word.length > 2 && !["portrait", "headshot", "photo"].includes(word));
+  const nameTokens = (normalizeBingText(name).match(/[\p{L}\p{N}]+/gu) || [])
+    .filter((word) => word.length > 2);
+  return details
+    .map((item) => {
+      const title = normalizeBingText(item.title);
+      let score = 0;
+      nameTokens.forEach((token) => {
+        if (title.includes(token)) score += 5;
+      });
+      genericTokens.forEach((token) => {
+        if (title.includes(token)) score += 1;
+      });
+      if (item.width && item.width < 400) score -= 2;
+      if (item.height && item.height < 300) score -= 2;
+      return { ...item, score };
+    })
+    .sort((a, b) => b.score - a.score);
+}
+
+function bingPeopleQft(mode) {
+  if (mode === "1") {
+    return "+filterui:photo-photo+filterui:face-portrait+filterui:imagesize-large";
+  }
+  if (mode === "2") {
+    return "+filterui:photo-photo+filterui:face-face+filterui:imagesize-large";
+  }
+  return "";
 }
 
 app.get("/bing-image-search", async (req, res) => {
   const query = String(req.query.q || "").trim();
+  const name = String(req.query.name || "").trim();
   const first = Number.parseInt(req.query.first, 10) || 1;
+  const peopleMode = ["0", "1", "2"].includes(String(req.query.people))
+    ? String(req.query.people)
+    : "1";
   if (!query) {
     return res.status(400).json({ error: "Thiếu từ khóa tìm kiếm." });
   }
@@ -1038,8 +1089,9 @@ app.get("/bing-image-search", async (req, res) => {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 20000);
   try {
+    const qft = bingPeopleQft(peopleMode);
     const response = await fetch(
-      `https://www.bing.com/images/search?q=${encodeURIComponent(query)}&first=${first}`,
+      `https://www.bing.com/images/search?q=${encodeURIComponent(query)}&first=${first}${qft ? `&qft=${qft}` : ""}`,
       {
         headers: {
           "User-Agent": BING_IMAGE_USER_AGENT,
@@ -1053,8 +1105,9 @@ app.get("/bing-image-search", async (req, res) => {
       throw new Error(`Bing trả về HTTP ${response.status}.`);
     }
     const html = await response.text();
-    const images = extractBingImageUrls(html);
-    res.json({ images, count: images.length });
+    const details = rankBingImageDetails(extractBingImageUrls(html), query, name);
+    const images = details.map((item) => item.url);
+    res.json({ images, details, count: images.length, peopleMode });
   } catch (error) {
     console.error("Bing image search error:", error);
     res

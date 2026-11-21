@@ -3620,19 +3620,18 @@
 
                 if (editor.style.display !== "none") {
                     editor.style.display = "none";
-                    preview.style.display = "block";
+                    preview.style.display = "grid";
 
                     let fullPreview = "";
                     for (let i = 0; i < titleInputs.length; i++) {
                         const title = titleInputs[i].value;
                         const content = contentAreas[i].value;
+                        fullPreview += `<article class="preview-card" data-index="${i + 1}">`;
                         fullPreview += `<h2>${title}</h2>` + content;
-                        if (i < titleInputs.length - 1) {
-                            fullPreview += "<hr>";
-                        }
+                        fullPreview += "</article>";
                     }
 
-                    preview.innerHTML = fullPreview || "<p style='text-align:center; color:var(--text-muted);'>Chưa có nội dung để xem trước.</p>";
+                    preview.innerHTML = fullPreview || '<p class="preview-empty">Chưa có nội dung để xem trước.</p>';
                     btn.classList.add("view-toggle-active");
                     btn.textContent = "Code";
                     btn.title = "Quay lại trình soạn code HTML";

@@ -101,10 +101,12 @@ const imageOverlayState = {
     thirdUrl: null,
     thirdPosition: { x: 0, y: 0, initialized: false },
     allowVerticalMove: false,
+    moveMode: "smart",
     contributors: [],
     activeContributors: [],
     currentBingQuery: "",
     currentBingFirstIndex: 1,
+    peopleOnly: true,
     drag: null,
     dropSlot: null,
 };
@@ -455,26 +457,29 @@ async function imageOverlayRunSearch() {
     results.innerHTML = `<p class="image-overlay-results-hint">Đang tìm kiếm cho <b>${type}</b> (Trang ${Math.floor(imageOverlayState.currentBingFirstIndex / 10) + 1})...</p>`;
 
     try {
-        const response = await fetch(`/bing-image-search?q=${encodeURIComponent(query)}&first=${imageOverlayState.currentBingFirstIndex}`);
-        const data = await response.json();
-        if (data.error) throw new Error(data.error);
-        if (!data.images || data.images.length === 0) {
+        const builtQuery = imageOverlayBuildQuery(query);
+        const data = await imageOverlayFetchBingImages(builtQuery, {
+            first: imageOverlayState.currentBingFirstIndex,
+            name: query,
+        });
+        const images = data.images;
+        if (images.length === 0) {
             results.innerHTML = "<p class=\"image-overlay-results-hint\">Không tìm thấy ảnh. Thử lại nhé!</p>";
             return;
         }
-        imageOverlayDisplayResults(data.images);
+        imageOverlayDisplayResults(images);
 
         if (imageOverlayState.baseImage && imageOverlayState.thirdImage) {
             return;
         }
         if (imageOverlayState.baseImage && !imageOverlayState.thirdImage) {
-            imageOverlayLoadImageToSlot(data.images[0], "third");
+            imageOverlayLoadImageToSlot(images[0], "third");
         } else if (!imageOverlayState.baseImage && imageOverlayState.thirdImage) {
-            imageOverlayLoadImageToSlot(data.images[0], "base");
+            imageOverlayLoadImageToSlot(images[0], "base");
         } else {
-            imageOverlayLoadImageToSlot(data.images[0], "base");
-            if (data.images.length >= 2) {
-                imageOverlayLoadImageToSlot(data.images[1], "third");
+            imageOverlayLoadImageToSlot(images[0], "base");
+            if (images.length >= 2) {
+                imageOverlayLoadImageToSlot(images[1], "third");
             }
         }
     } catch (error) {
@@ -482,16 +487,29 @@ async function imageOverlayRunSearch() {
     }
 }
 
-function imageOverlayToggleMove() {
-    imageOverlayState.allowVerticalMove = !imageOverlayState.allowVerticalMove;
+const IMAGE_OVERLAY_MOVE_MODES = [
+    { id: "smart", label: "🧠 Smart", title: "Tự chọn hướng kéo theo cử động thực tế" },
+    { id: "y", label: "↕ Move Y", title: "Chỉ kéo dọc, bỏ qua chuyển động ngang" },
+    { id: "x", label: "↔ Move X", title: "Chỉ kéo ngang, bỏ qua chuyển động dọc" },
+];
+
+function imageOverlayApplyMoveMode(mode) {
+    imageOverlayState.moveMode = mode;
+    imageOverlayState.allowVerticalMove = mode === "x";
+    const meta = IMAGE_OVERLAY_MOVE_MODES.find((item) => item.id === mode) || IMAGE_OVERLAY_MOVE_MODES[0];
     const btn = document.getElementById("imageOverlayMoveBtn");
     if (btn) {
-        btn.textContent = imageOverlayState.allowVerticalMove ? "↔ Move X" : "🔒 Lock Y";
+        btn.textContent = meta.label;
+        btn.title = meta.title;
     }
     const canvas = document.getElementById("imageOverlayCanvas");
-    if (canvas) {
-        canvas.style.cursor = "move";
-    }
+    if (canvas) canvas.style.cursor = "move";
+}
+
+function imageOverlayToggleMove() {
+    const index = IMAGE_OVERLAY_MOVE_MODES.findIndex((item) => item.id === imageOverlayState.moveMode);
+    const next = IMAGE_OVERLAY_MOVE_MODES[(index + 1) % IMAGE_OVERLAY_MOVE_MODES.length];
+    imageOverlayApplyMoveMode(next.id);
 }
 
 function imageOverlayBindCanvasEvents() {
@@ -524,6 +542,7 @@ function imageOverlayBindCanvasEvents() {
             startY: point.y,
             originX: position.x,
             originY: position.y,
+            axis: null,
         };
         canvas.setPointerCapture(event.pointerId);
     });
@@ -532,11 +551,26 @@ function imageOverlayBindCanvasEvents() {
         if (!imageOverlayState.drag) return;
         const layout = imageOverlayGetLayout();
         const point = getCanvasPoint(event);
-        const position = imageOverlayState.drag.slot === "base" ? imageOverlayState.basePosition : imageOverlayState.thirdPosition;
-        if (imageOverlayState.allowVerticalMove) {
-            position.x = imageOverlayState.drag.originX + (point.x - imageOverlayState.drag.startX);
+        const drag = imageOverlayState.drag;
+        const position = drag.slot === "base" ? imageOverlayState.basePosition : imageOverlayState.thirdPosition;
+        const dx = point.x - drag.startX;
+        const dy = point.y - drag.startY;
+
+        if (imageOverlayState.moveMode === "smart") {
+            if (!drag.axis && Math.max(Math.abs(dx), Math.abs(dy)) >= 4) {
+                drag.axis = Math.abs(dx) >= Math.abs(dy) ? "x" : "y";
+            }
+            if (drag.axis === "x") {
+                position.x = drag.originX + dx;
+                position.y = drag.originY;
+            } else if (drag.axis === "y") {
+                position.x = drag.originX;
+                position.y = drag.originY + dy;
+            }
+        } else if (imageOverlayState.allowVerticalMove) {
+            position.x = drag.originX + dx;
         } else {
-            position.y = imageOverlayState.drag.originY + (point.y - imageOverlayState.drag.startY);
+            position.y = drag.originY + dy;
         }
         layout.draw(canvas.getContext("2d"), imageOverlayState, imageOverlayState.dropSlot);
     });
@@ -721,7 +755,7 @@ async function imageOverlayActivate() {
 
     imageOverlayState.index = index;
     imageOverlayState.layoutId = "1:3";
-    imageOverlayState.allowVerticalMove = false;
+    imageOverlayApplyMoveMode("smart");
     imageOverlayState.currentBingQuery = "";
     imageOverlayState.currentBingFirstIndex = 1;
     imageOverlayState.drag = null;
@@ -730,8 +764,6 @@ async function imageOverlayActivate() {
     const fileName = getImageFileName(index);
     const fileNameElement = document.getElementById("imageOverlayFileName");
     if (fileNameElement) fileNameElement.textContent = `— ${fileName}`;
-    const moveBtn = document.getElementById("imageOverlayMoveBtn");
-    if (moveBtn) moveBtn.textContent = "🔒 Lock Y";
     const layoutSelect = document.getElementById("imageOverlayLayoutSelect");
     if (layoutSelect) layoutSelect.value = "1:3";
     const searchInput = document.getElementById("imageOverlaySearchInput");
@@ -812,13 +844,60 @@ async function imageOverlayActivate() {
     }
 }
 
-async function imageOverlayFetchBingImages(query) {
-    const response = await fetch(
-        `/bing-image-search?q=${encodeURIComponent(query)}&first=1`,
-    );
-    const data = await response.json();
-    if (data.error) throw new Error(data.error);
-    return data.images || [];
+const IMAGE_OVERLAY_STOP_WORDS = new Set([
+    "the", "and", "for", "with", "from", "that", "this", "into", "after", "over", "about",
+    "von", "der", "die", "das", "und", "mit", "fur", "für", "auf", "ein", "eine", "dem", "den",
+    "des", "im", "in", "zu", "zum", "zur", "bei", "nach", "als", "sich", "wie", "nicht",
+]);
+
+function imageOverlayBuildQuery(raw) {
+    const query = String(raw || "").trim();
+    if (!query) return query;
+    let article = null;
+    if (Number.isFinite(imageOverlayState.index) && typeof getSavedArticleByIndex === "function") {
+        article = getSavedArticleByIndex(imageOverlayState.index);
+    }
+    const queryWords = new Set(query.toLowerCase().match(/[\p{L}\p{N}]+/gu) || []);
+    const keywords = (String(article?.title || "").toLowerCase().match(/[\p{L}\p{N}]+/gu) || [])
+        .filter((word) => word.length > 3 && !IMAGE_OVERLAY_STOP_WORDS.has(word) && !queryWords.has(word))
+        .filter((word, index, arr) => arr.indexOf(word) === index)
+        .slice(0, 2);
+    const hasPortrait = ["portrait", "headshot", "photo"].some((token) => query.toLowerCase().includes(token));
+    return [`"${query.replace(/"/g, "")}"`, hasPortrait ? "" : "portrait", ...keywords]
+        .filter(Boolean)
+        .join(" ");
+}
+
+async function imageOverlayFetchBingImages(query, options = {}) {
+    const first = options.first || 1;
+    const enabled = options.people === undefined ? imageOverlayState.peopleOnly : options.people;
+    const requestOnce = async (mode) => {
+        const name = options.name === undefined ? "" : options.name;
+        const response = await fetch(
+            `/bing-image-search?q=${encodeURIComponent(query)}&first=${first}&people=${mode}&name=${encodeURIComponent(name)}`,
+        );
+        const data = await response.json();
+        if (data.error) throw new Error(data.error);
+        return {
+            images: data.images || [],
+            details: data.details || [],
+            peopleMode: data.peopleMode || mode,
+        };
+    };
+
+    if (!enabled) return requestOnce("0");
+
+    let result = await requestOnce("1");
+    if (result.images.length >= 4) return result;
+    const faceResult = await requestOnce("2").catch(() => null);
+    if (faceResult && faceResult.images.length > result.images.length) result = faceResult;
+    if (result.images.length >= 4) return result;
+    const plainResult = await requestOnce("0").catch(() => null);
+    if (plainResult && plainResult.images.length > result.images.length) result = plainResult;
+    if (result.peopleMode !== "1" && result.images.length > 0) {
+        imageOverlaySetMessage("Ít ảnh chân dung — đã mở rộng kết quả tìm kiếm.");
+    }
+    return result;
 }
 
 async function imageOverlayAutoFillSlots(names) {
@@ -826,7 +905,8 @@ async function imageOverlayAutoFillSlots(names) {
     imageOverlayState.currentBingFirstIndex = 1;
 
     try {
-        const baseImages = await imageOverlayFetchBingImages(names[0]);
+        const baseResult = await imageOverlayFetchBingImages(imageOverlayBuildQuery(names[0]), { name: names[0] });
+        const baseImages = baseResult.images;
         if (baseImages.length === 0) {
             const results = document.getElementById("imageOverlaySearchResults");
             if (results) {
@@ -835,9 +915,10 @@ async function imageOverlayAutoFillSlots(names) {
             return;
         }
 
-        const thirdImages = names.length > 1
-            ? await imageOverlayFetchBingImages(names[1]).catch(() => [])
-            : [];
+        const thirdResult = names.length > 1
+            ? await imageOverlayFetchBingImages(imageOverlayBuildQuery(names[1]), { name: names[1] }).catch(() => ({ images: [] }))
+            : { images: [] };
+        const thirdImages = thirdResult.images;
 
         if (thirdImages.length > 0) {
             await imageOverlayLoadImageToSlot(baseImages[0], "base");
