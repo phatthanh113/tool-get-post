@@ -649,9 +649,12 @@
 
             function buildStoryActionMarkup(index, url) {
                 return `
-                                <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-top:12px;">
-                                    <button type="button" onclick="openStoryTool(${index})" class="btn-secondary" style="padding: 8px 14px; font-size: 0.86rem;" onclick="openStoryTool(${index})">Create</button>
-                                    <button type="button" onclick="retrySingle('${url}', ${index})" class="btn-secondary story-retry-btn" style="display:none; padding: 10px 16px; font-size: 0.92rem; background-color: #3b82f6; border-color: #3b82f6; color: white;">🔄</button>
+                                <div class="card-actions">
+                                    <button type="button" onclick="openStoryTool(${index})" class="btn-primary card-create-btn">
+                                        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9L12 3z"/></svg>
+                                        Create
+                                    </button>
+                                    <button type="button" onclick="retrySingle('${url}', ${index})" class="btn-secondary story-retry-btn card-retry-btn" style="display:none">${cardIcon("replay")}<span>Thử lại</span></button>
                                 </div>
                             `;
             }
@@ -784,7 +787,7 @@
                 }
 
                 const articleCard = document.getElementById(`card-${index}`);
-                const articleTextArea = articleCard?.querySelector("textarea.w-full.min-h-52");
+                const articleTextArea = articleCard?.querySelector("textarea.card-content-input, textarea.w-full.min-h-52");
                 if (articleTextArea && saved[idx].article) {
                     const updatedArticle = syncArticleThumbnailVariant(saved[idx].article, saved[idx].videoId, variant);
                     saved[idx].article = updatedArticle;
@@ -944,8 +947,47 @@
                 scheduleLinastoryAutoMatch();
             }
 
+            const CARD_ICONS = {
+                check: '<path d="M20 6L9 17l-5-5"/>',
+                square: '<rect x="4" y="4" width="16" height="16" rx="3"/>',
+                copy: '<rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>',
+                trash: '<path d="M4 7h16M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2m3 0v12a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V7"/>',
+                refresh: '<path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M3 22v-6h6"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/>',
+                sparkle: '<path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9L12 3z"/>',
+                replay: '<path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/>',
+                alert: '<path d="M12 9v4m0 4h.01"/><path d="M10.3 3.9L1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/>'
+            };
+
+            function cardIcon(name, size = 16) {
+                return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${CARD_ICONS[name] || ""}</svg>`;
+            }
+
+            function selectIconMarkup(selected) {
+                return cardIcon(selected ? "check" : "square");
+            }
+
+            function setSelectButtonState(button, selected) {
+                if (!button) return;
+                button.innerHTML = selectIconMarkup(selected);
+                button.classList.toggle("is-selected", !!selected);
+                button.setAttribute("aria-pressed", String(!!selected));
+                button.title = selected ? "Bỏ chọn bài viết" : "Chọn bài viết";
+            }
+
+            function cardControlsMarkup(index, url, options = {}) {
+                const { selected = false, copyFn = "copyArticle", copyIndex = index, showDelete = true, sample = false } = options;
+                const selectId = sample ? `select-sample-${index}` : `select-btn-${index}`;
+                return `
+                                <div class="card-controls">
+                                    <button id="${selectId}" class="icon-btn select${selected ? " is-selected" : ""}" onclick="toggleSelectArticle(${index})" title="${selected ? "Bỏ chọn bài viết" : "Chọn bài viết"}" aria-label="Chọn bài viết ${index + 1}" aria-pressed="${selected}">${selectIconMarkup(selected)}</button>
+                                    <button class="icon-btn copy" onclick="${copyFn}(${copyIndex})" title="Sao chép bài viết" aria-label="Sao chép bài viết">${cardIcon("copy")}</button>
+                                    ${showDelete ? `<button class="icon-btn delete" onclick="deleteArticle(${index}, '${url}')" title="Xóa bài viết" aria-label="Xóa bài viết ${index + 1}">${cardIcon("trash")}</button>` : ""}
+                                </div>
+                            `;
+            }
+
             function buildThumbnailTextRegenButton(index) {
-                return `<button id="regenThumbBtn-${index}" type="button" class="icon-btn" title="Ép load lại Thumbnail Text (chỉ text, không đụng bài viết)" onclick="regenerateThumbnailText(${index})">🔄</button>`;
+                return `<button id="regenThumbBtn-${index}" type="button" class="icon-btn" title="Ép load lại Thumbnail Text (chỉ text, không đụng bài viết)" onclick="regenerateThumbnailText(${index})">${cardIcon("refresh")}</button>`;
             }
 
             function regenerateThumbnailTextFromStoryModal() {
@@ -993,7 +1035,7 @@
                     updateThumbnailText(index, players);
 
                     const card = document.getElementById(`card-${index}`);
-                    const textarea = card?.querySelector("textarea.player-input");
+                    const textarea = card?.querySelector("textarea.card-thumb-input, textarea.player-input");
                     if (textarea) textarea.value = players;
 
                     const refreshed = getSavedArticleByIndex(index);
@@ -1043,31 +1085,28 @@
                     const articleCard = document.createElement("div");
                     articleCard.className = "result-card";
                     articleCard.id = `card-${item.index}`;
-                    articleCard.style.marginBottom = "20px";
+                    articleCard.dataset.index = String(Number(item.index) + 1);
+                    articleCard.style.marginBottom = "0";
                     articleCard.innerHTML = `
-                                    <div class="card-controls">
-                                        <button id="select-btn-${item.index}" class="icon-btn select" onclick="toggleSelectArticle(${item.index})" title="Select">${selectedArticleIndexes.has(Number(item.index)) ? "✅" : "⬜"}</button>
-                                        <button class="icon-btn copy" onclick="copyArticle(${item.index})" title="Copy article">📋</button>
-                                        <button class="icon-btn delete" onclick="deleteArticle(${item.index}, '${item.url}')" title="Delete article">🗑</button>
-                                    </div>
-                                    <div style="margin-bottom: 20px;">
+                                    ${cardControlsMarkup(item.index, item.url, { selected: selectedArticleIndexes.has(Number(item.index)) })}
+                                    <div class="card-body">
                                         <label class="field-label">Article ${item.index + 1} Title</label>
-                                        <input type="text" class="flex-1 border" value="${item.title || ""}" style="margin-bottom:15px; width: 100%;" oninput="updateSavedArticle('${item.url}', 'title', this.value)">
+                                        <input type="text" aria-label="Article title" class="card-title-input" value="${item.title || ""}"  oninput="updateSavedArticle('${item.url}', 'title', this.value)">
 
-                                        <div style="display: grid; grid-template-columns: 1fr; gap: 10px; margin-bottom: 15px;">
+                                        <div class="card-field-grid">
                                             <div>
-                                                <div style="display:flex; align-items:center; gap:6px; margin-bottom:8px;">
+                                                <div class="card-inline-label">
                                                     <label class="field-label-inline">Thumbnail Text</label>
                                                     ${buildThumbnailTextRegenButton(item.index)}
                                                 </div>
-                                                <textarea class="player-input border" style="width: 100%; min-height: 80px; font-family: monospace; font-size: 0.85rem;" placeholder="Thumbnail text..." oninput="updateThumbnailText('${item.url}', this.value)">${item.players || ""}</textarea>
+                                                <textarea class="card-thumb-input" placeholder="Thumbnail text..." oninput="updateThumbnailText('${item.url}', this.value)">${item.players || ""}</textarea>
                                                 ${buildThumbnailControls(item)}
                                                 ${buildStoryActionMarkup(item.index, item.url)}
                                             </div>
                                         </div>
 
                                         <label class="field-label" ondblclick="showStoryRetryButton(${item.index})">Article ${item.index + 1} Content (HTML)</label>
-                                        <textarea class="w-full min-h-52" style="min-height: 100px; font-family: ui-monospace, Consolas, monospace; font-size: 0.9rem;" oninput="updateSavedArticle('${item.url}', 'article', this.value)">${item.article}</textarea>
+                                        <textarea class="card-content-input" oninput="updateSavedArticle('${item.url}', 'article', this.value)">${item.article}</textarea>
                                     </div>
                                 `;
                     output.appendChild(articleCard);
@@ -1114,8 +1153,7 @@
                 const normalizedIndex = Number(index);
                 if (!Number.isFinite(normalizedIndex)) return;
                 selectedArticleIndexes.add(normalizedIndex);
-                const button = document.getElementById(`select-btn-${normalizedIndex}`);
-                if (button) button.textContent = "✅";
+                setSelectButtonState(document.getElementById(`select-btn-${normalizedIndex}`), true);
             }
 
             function resetDownloadSelectedStatus() {
@@ -1275,7 +1313,7 @@
                         article.article = injectAutoSelectedImages(article.article || "", videoId);
                         saved[articleIndex] = article;
                         const card = document.getElementById(`card-${index}`);
-                        const textarea = card?.querySelector("textarea.w-full.min-h-52");
+                        const textarea = card?.querySelector("textarea.card-content-input, textarea.w-full.min-h-52");
                         if (textarea) textarea.value = article.article || "";
                         updateCardThumbnailPreview(index, article);
                         const publishImage = existingVariant
@@ -1310,12 +1348,10 @@
             function toggleSelectArticle(index) {
                 if (selectedArticleIndexes.has(index)) {
                     selectedArticleIndexes.delete(index);
-                    const btn = document.getElementById(`select-btn-${index}`) || document.getElementById(`select-sample-${index}`);
-                    if (btn) btn.textContent = "⬜";
+                    setSelectButtonState(document.getElementById(`select-btn-${index}`) || document.getElementById(`select-sample-${index}`), false);
                 } else {
                     selectedArticleIndexes.add(index);
-                    const btn = document.getElementById(`select-btn-${index}`) || document.getElementById(`select-sample-${index}`);
-                    if (btn) btn.textContent = "✅";
+                    setSelectButtonState(document.getElementById(`select-btn-${index}`) || document.getElementById(`select-sample-${index}`), true);
                 }
                 resetDownloadSelectedStatus();
                 const selectAllBtn = document.getElementById("selectAllBtn");
@@ -1331,8 +1367,7 @@
                     selectedArticleIndexes.clear();
                     cards.forEach((c) => {
                         const id = Number(c.id.replace("card-", ""));
-                        const btn = document.getElementById(`select-btn-${id}`);
-                        if (btn) btn.textContent = "⬜";
+                        setSelectButtonState(document.getElementById(`select-btn-${id}`), false);
                     });
                     const selectAllBtn = document.getElementById("selectAllBtn");
                     if (selectAllBtn) selectAllBtn.textContent = "Select All";
@@ -1344,8 +1379,7 @@
                 cards.forEach((c) => {
                     const id = Number(c.id.replace("card-", ""));
                     selectedArticleIndexes.add(id);
-                    const btn = document.getElementById(`select-btn-${id}`);
-                    if (btn) btn.textContent = "✅";
+                    setSelectButtonState(document.getElementById(`select-btn-${id}`), true);
                 });
                 const selectAllBtn = document.getElementById("selectAllBtn");
                 if (selectAllBtn) selectAllBtn.textContent = "Clear";
@@ -1515,32 +1549,28 @@
                 if (!output) return;
 
                 const card = document.createElement("div");
-                card.className = "result-card";
+                card.className = "result-card card-error";
                 card.id = `card-${currentIndex}`;
-                card.style.borderColor = "#ef4444";
-                card.style.marginBottom = "20px";
+                card.dataset.index = String(Number(currentIndex) + 1);
 
-                const titleP = document.createElement("p");
-                titleP.style.color = "#ef4444";
-                titleP.style.fontWeight = "bold";
-                titleP.textContent = heading;
-                card.appendChild(titleP);
+                const head = document.createElement("div");
+                head.className = "card-error-head";
+                head.innerHTML = cardIcon("alert", 18);
+                const title = document.createElement("strong");
+                title.textContent = heading.replace(/^❌\s*/, "");
+                head.appendChild(title);
+                card.appendChild(head);
 
                 if (detail) {
                     const detailP = document.createElement("p");
-                    detailP.style.fontSize = "0.8rem";
-                    detailP.style.color = "var(--text-muted)";
-                    detailP.style.marginBottom = "15px";
+                    detailP.className = "card-error-detail";
                     detailP.textContent = detail;
                     card.appendChild(detailP);
                 }
 
                 const retryButton = document.createElement("button");
-                retryButton.textContent = buttonLabel;
-                retryButton.className = "btn-primary";
-                retryButton.style.padding = "8px 16px";
-                retryButton.style.fontSize = "0.8rem";
-                retryButton.style.width = "auto";
+                retryButton.className = "btn-primary btn-compact card-error-retry";
+                retryButton.innerHTML = `${cardIcon("replay")}<span>${buttonLabel.replace(/^🔄\s*/, "")}</span>`;
                 retryButton.setAttribute("onclick", `retrySingle('${url}', ${currentIndex})`);
                 card.appendChild(retryButton);
 
@@ -1570,31 +1600,28 @@
                     const articleCard = document.createElement("div");
                     articleCard.className = "result-card";
                     articleCard.id = `card-${item.index}`;
-                    articleCard.style.marginBottom = "20px";
+                    articleCard.dataset.index = String(Number(item.index) + 1);
+                    articleCard.style.marginBottom = "0";
                     articleCard.innerHTML = `
-                                    <div class="card-controls">
-                                        <button id="select-btn-${item.index}" class="icon-btn select" onclick="toggleSelectArticle(${item.index})" title="Select">${selectedArticleIndexes.has(Number(item.index)) ? "✅" : "⬜"}</button>
-                                        <button class="icon-btn copy" onclick="copyArticle(${item.index})" title="Copy article">📋</button>
-                                        <button class="icon-btn delete" onclick="deleteArticle(${item.index}, '${item.url}')" title="Delete article">🗑</button>
-                                    </div>
-                                    <div style="margin-bottom: 20px;">
+                                    ${cardControlsMarkup(item.index, item.url, { selected: selectedArticleIndexes.has(Number(item.index)) })}
+                                    <div class="card-body">
                                         <label class="field-label">Article ${item.index + 1} Title</label>
-                                        <input type="text" class="flex-1 border" value="${item.title || ""}" style="margin-bottom:15px; width: 100%;" oninput="updateSavedArticle('${item.url}', 'title', this.value)">
+                                        <input type="text" aria-label="Article title" class="card-title-input" value="${item.title || ""}"  oninput="updateSavedArticle('${item.url}', 'title', this.value)">
 
-                                        <div style="display: grid; grid-template-columns: 1fr; gap: 10px; margin-bottom: 15px;">
+                                        <div class="card-field-grid">
                                             <div>
-                                                <div style="display:flex; align-items:center; gap:6px; margin-bottom:8px;">
+                                                <div class="card-inline-label">
                                                     <label class="field-label-inline">Thumbnail Text</label>
                                                     ${buildThumbnailTextRegenButton(item.index)}
                                                 </div>
-                                                <textarea class="player-input border" style="width: 100%; min-height: 80px; font-family: monospace; font-size: 0.85rem;" placeholder="Thumbnail text..." oninput="updateThumbnailText('${item.url}', this.value)">${item.players || ""}</textarea>
+                                                <textarea class="card-thumb-input" placeholder="Thumbnail text..." oninput="updateThumbnailText('${item.url}', this.value)">${item.players || ""}</textarea>
                                                 ${buildThumbnailControls(item)}
                                                 ${buildStoryActionMarkup(item.index, item.url)}
                                             </div>
                                         </div>
 
                                         <label class="field-label" ondblclick="showStoryRetryButton(${item.index})">Article ${item.index + 1} Content (HTML)</label>
-                                        <textarea class="w-full min-h-52" style="min-height: 100px; font-family: ui-monospace, Consolas, monospace; font-size: 0.9rem;" oninput="updateSavedArticle('${item.url}', 'article', this.value)">${item.article}</textarea>
+                                        <textarea class="card-content-input" oninput="updateSavedArticle('${item.url}', 'article', this.value)">${item.article}</textarea>
                                     </div>
                                 `;
                     output.appendChild(articleCard);
@@ -1684,9 +1711,10 @@
 
                             if (data.error) {
                                 output.innerHTML += `
-                                                <div class="result-card" id="card-${index}" style="border-color: #ef4444; margin-bottom: 20px;">
-                                                    <p style="color: #ef4444; font-weight: bold;">❌ Thumbnail failed [${index + 1}]: ${url}</p>
-                                                    <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 15px;">${data.error}</p>
+                                                <div class="result-card card-error" id="card-${index}" data-index="${index + 1}">
+                                                    <div class="card-error-head">${cardIcon("alert", 18)}<strong>Thumbnail failed [${index + 1}]</strong></div>
+                                                    <p class="card-error-url">${url}</p>
+                                                    <p class="card-error-detail">${data.error}</p>
                                                 </div>
                                             `;
                             } else {
@@ -1695,20 +1723,17 @@
                                 const articleCard = document.createElement("div");
                                 articleCard.className = "result-card";
                                 articleCard.id = `card-${index}`;
-                                articleCard.style.marginBottom = "20px";
+                                articleCard.dataset.index = String(Number(index) + 1);
+                                articleCard.style.marginBottom = "0";
                                 articleCard.innerHTML = `
-                                                <div class="card-controls">
-                                                    <button id="select-btn-${index}" class="icon-btn select" onclick="toggleSelectArticle(${index})" title="Select">✅</button>
-                                                    <button class="icon-btn copy" onclick="copyArticle(${index})" title="Copy article">📋</button>
-                                                    <button class="icon-btn delete" onclick="deleteArticle(${index}, '${url}')" title="Delete article">🗑</button>
-                                                </div>
-                                                <div style="margin-bottom: 20px;">
+                                                ${cardControlsMarkup(index, url, { selected: true })}
+                                                <div class="card-body">
                                                     <label class="field-label">Article ${index + 1} Title</label>
-                                                    <input type="text" class="flex-1 border" value="${(data.title || "").replace(/"/g, "&quot;")}" style="margin-bottom:15px; width: 100%;" />
-                                                    <div style="display: grid; grid-template-columns: 1fr; gap: 10px; margin-bottom: 15px;">
+                                                    <input type="text" aria-label="Article title" class="card-title-input" value="${(data.title || "").replace(/"/g, "&quot;")}"  />
+                                                    <div class="card-field-grid">
                                                         <div>
                                                             <label class="field-label">Thumbnail Text</label>
-                                                            <textarea class="player-input border" style="width: 100%; min-height: 80px; font-family: monospace; font-size: 0.85rem;" placeholder="Thumbnail text..." oninput="updateThumbnailText(${index}, this.value)">${(data.players || "").replace(/</g, "&lt;").replace(/>/g, "&gt;")}</textarea>
+                                                            <textarea class="card-thumb-input" placeholder="Thumbnail text..." oninput="updateThumbnailText(${index}, this.value)">${(data.players || "").replace(/</g, "&lt;").replace(/>/g, "&gt;")}</textarea>
                                                             ${buildThumbnailControls({
                                                                 index,
                                                                 url,
@@ -1722,7 +1747,7 @@
                                                         </div>
                                                     </div>
                                                     <label class="field-label" ondblclick="showStoryRetryButton(${index})">Article ${index + 1} Content (HTML)</label>
-                                                    <textarea class="w-full min-h-52" style="min-height: 100px; font-family: ui-monospace, Consolas, monospace; font-size: 0.9rem;">${finalArticle}</textarea>
+                                                    <textarea class="card-content-input">${finalArticle}</textarea>
                                                 </div>
                                             `;
                                 output.appendChild(articleCard);
@@ -1731,9 +1756,9 @@
                             }
                         } catch (err) {
                             output.innerHTML += `
-                                            <div class="result-card" id="card-${index}" style="border-color: #ef4444; margin-bottom: 20px;">
-                                                <p style="color: #ef4444; font-weight: bold;">❌ Network error [${index + 1}]</p>
-                                                <button onclick="retrySingle('${url}', ${index})" class="btn-primary" style="padding: 8px 16px; font-size: 0.8rem; width: auto;">🔄 Thử lại ngay</button>
+                                            <div class="result-card card-error" id="card-${index}" data-index="${index + 1}">
+                                                <div class="card-error-head">${cardIcon("alert", 18)}<strong>Network error [${index + 1}]</strong></div>
+                                                <button onclick="retrySingle('${url}', ${index})" class="btn-primary btn-compact card-error-retry">${cardIcon("replay")}<span>Thử lại ngay</span></button>
                                             </div>
                                         `;
                         } finally {
@@ -2048,7 +2073,7 @@
                                         regenText = data.players;
                                         updateThumbnailText(articleIndex, data.players);
                                         const card = document.getElementById(`card-${articleIndex}`);
-                                        const textarea = card?.querySelector("textarea.player-input");
+                                        const textarea = card?.querySelector("textarea.card-thumb-input, textarea.player-input");
                                         if (textarea) textarea.value = data.players;
                                         currentFont = storyGetRawAutoFontSize(data.players);
                                     }
@@ -2078,7 +2103,7 @@
                                             regenText = data.players;
                                             updateThumbnailText(articleIndex, data.players);
                                             const card = document.getElementById(`card-${articleIndex}`);
-                                            const textarea = card?.querySelector("textarea.player-input");
+                                            const textarea = card?.querySelector("textarea.card-thumb-input, textarea.player-input");
                                             if (textarea) textarea.value = data.players;
                                             currentFont = storyGetRawAutoFontSize(data.players);
                                         }
@@ -2092,8 +2117,7 @@
                                     flagAutoFlowAttentionCard(articleIndex, currentFont);
                                     leftOutArticles.push(`#${articleIndex + 1} (font ${currentFont})`);
                                     selectedArticleIndexes.delete(articleIndex);
-                                    const selectBtn = document.getElementById(`select-btn-${articleIndex}`);
-                                    if (selectBtn) selectBtn.textContent = "⬜";
+                                    setSelectButtonState(document.getElementById(`select-btn-${articleIndex}`), false);
                                     continue;
                                 }
                                 // Font < 32 sau regen đạt chuẩn → tải bình thường
@@ -2237,31 +2261,28 @@
                                 const articleCard = document.createElement("div");
                                 articleCard.className = "result-card";
                                 articleCard.id = `card-${currentIndex}`;
-                                articleCard.style.marginBottom = "20px";
+                                articleCard.dataset.index = String(Number(currentIndex) + 1);
+                                articleCard.style.marginBottom = "0";
                                 articleCard.innerHTML = `
-                                                <div class="card-controls">
-                                                    <button id="select-btn-${currentIndex}" class="icon-btn select" onclick="toggleSelectArticle(${currentIndex})" title="Select">✅</button>
-                                                    <button class="icon-btn copy" onclick="copyArticle(${currentIndex})" title="Copy article">📋</button>
-                                                    <button class="icon-btn delete" onclick="deleteArticle(${currentIndex}, '${url}')" title="Delete article">🗑</button>
-                                                </div>
-                                                <div style="margin-bottom: 20px;">
+                                                ${cardControlsMarkup(currentIndex, url, { selected: true })}
+                                                <div class="card-body">
                                                     <label class="field-label">Article ${currentIndex + 1} Title</label>
-                                                    <input type="text" class="flex-1 border" value="${data.title || ""}" style="margin-bottom:15px; width: 100%;" oninput="updateSavedArticle(${currentIndex}, 'title', this.value)">
+                                                    <input type="text" aria-label="Article title" class="card-title-input" value="${data.title || ""}"  oninput="updateSavedArticle(${currentIndex}, 'title', this.value)">
 
-                                                    <div style="display: grid; grid-template-columns: 1fr; gap: 10px; margin-bottom: 15px;">
+                                                    <div class="card-field-grid">
                                                         <div>
-                                                            <div style="display:flex; align-items:center; gap:6px; margin-bottom:8px;">
+                                                            <div class="card-inline-label">
                                                                 <label class="field-label-inline">Thumbnail Text</label>
                                                                 ${buildThumbnailTextRegenButton(currentIndex)}
                                                             </div>
-                                                            <textarea class="player-input border" style="width: 100%; min-height: 80px; font-family: monospace; font-size: 0.85rem;" placeholder="Thumbnail text..." oninput="updateThumbnailText(${currentIndex}, this.value)">${data.players || ""}</textarea>
+                                                            <textarea class="card-thumb-input" placeholder="Thumbnail text..." oninput="updateThumbnailText(${currentIndex}, this.value)">${data.players || ""}</textarea>
                                                             ${buildThumbnailControls({ index: currentIndex, url, videoId: data.videoId })}
                                                             ${buildStoryActionMarkup(currentIndex, url)}
                                                         </div>
                                                     </div>
 
                                                     <label class="field-label" ondblclick="showStoryRetryButton(${currentIndex})">Article ${currentIndex + 1} Content (HTML)</label>
-                                                    <textarea class="w-full min-h-52" style="min-height: 100px; font-family: ui-monospace, Consolas, monospace; font-size: 0.9rem;" oninput="updateSavedArticle(${currentIndex}, 'article', this.value)">${finalArticle}</textarea>
+                                                    <textarea class="card-content-input" oninput="updateSavedArticle(${currentIndex}, 'article', this.value)">${finalArticle}</textarea>
                                                 </div>
                                             `;
                                 output.appendChild(articleCard);
@@ -2313,8 +2334,9 @@
                 const originalHTML = card.innerHTML;
 
                 // Show local loading
-                card.innerHTML = `<div style="text-align:center; padding: 20px;">⏳ Đang thử lại bài ${index + 1}...</div>`;
-                card.style.borderColor = "var(--primary)";
+                card.innerHTML = `<div class="card-loading"><span class="card-loading-spinner"></span><span>Đang thử lại bài ${index + 1}…</span></div>`;
+                card.classList.remove("card-error");
+                card.style.borderColor = "";
 
                 try {
                     const provider = document.getElementById("ai-provider").value;
@@ -2335,38 +2357,38 @@
 
                     if (data.error) {
                         card.innerHTML = `
-                                        <p style="color: #ef4444; font-weight: bold;">❌ Vẫn lỗi [${index + 1}]: ${url}</p>
-                                        <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 15px;">${data.error}</p>
-                                        <button onclick="retrySingle('${url}', ${index})" class="btn-primary" style="padding: 8px 16px; font-size: 0.8rem; width: auto;">🔄 Thử lại lần nữa</button>
+                                        <div class="card-error-head">${cardIcon("alert", 18)}<strong>Vẫn lỗi [${index + 1}]</strong></div>
+                                        <p class="card-error-url">${url}</p>
+                                        <p class="card-error-detail">${data.error}</p>
+                                        <button onclick="retrySingle('${url}', ${index})" class="btn-primary btn-compact card-error-retry">${cardIcon("replay")}<span>Thử lại lần nữa</span></button>
                                     `;
-                        card.style.borderColor = "#ef4444";
+                        card.classList.add("card-error");
+                        card.style.borderColor = "";
                     } else {
                         const finalArticle = generationMode === "buzz-thumbnail" ? injectImage("", data.videoId) : injectImage(data.article, data.videoId);
+                        card.classList.remove("card-error");
+                        card.style.borderColor = "";
                         saveArticleToLocalStorage(index, url, data.title, data.players, data.videoId, finalArticle, { contributors: data.contributors });
                         card.innerHTML = `
-                                        <div class="card-controls">
-                                            <button id="select-btn-${index}" class="icon-btn select" onclick="toggleSelectArticle(${index})" title="Select">✅</button>
-                                            <button class="icon-btn copy" onclick="copyArticle(${index})" title="Copy article">📋</button>
-                                            <button class="icon-btn delete" onclick="deleteArticle(${index}, '${url}')" title="Delete article">🗑</button>
-                                        </div>
-                                        <div style="margin-bottom: 20px;">
+                                        ${cardControlsMarkup(index, url, { selected: true })}
+                                        <div class="card-body">
                                             <label class="field-label">Article ${index + 1} Title</label>
-                                            <input type="text" class="flex-1 border" value="${data.title || ""}" style="margin-bottom:15px; width: 100%;" oninput="updateSavedArticle(${index}, 'title', this.value)">
+                                            <input type="text" aria-label="Article title" class="card-title-input" value="${data.title || ""}"  oninput="updateSavedArticle(${index}, 'title', this.value)">
 
-                                            <div style="display: grid; grid-template-columns: 1fr; gap: 10px; margin-bottom: 15px;">
+                                            <div class="card-field-grid">
                                                 <div>
-                                                    <div style="display:flex; align-items:center; gap:6px; margin-bottom:8px;">
+                                                    <div class="card-inline-label">
                                                         <label class="field-label-inline">Thumbnail Text</label>
                                                         ${buildThumbnailTextRegenButton(index)}
                                                     </div>
-                                                    <textarea class="player-input border" style="width: 100%; min-height: 80px; font-family: monospace; font-size: 0.85rem;" placeholder="Thumbnail text..." oninput="updateThumbnailText(${index}, this.value)">${data.players || ""}</textarea>
+                                                    <textarea class="card-thumb-input" placeholder="Thumbnail text..." oninput="updateThumbnailText(${index}, this.value)">${data.players || ""}</textarea>
                                                     ${buildThumbnailControls({ index, url, videoId: data.videoId })}
                                                     ${buildStoryActionMarkup(index, url)}
                                                 </div>
                                             </div>
 
                                             <label class="field-label" ondblclick="showStoryRetryButton(${index})">Article ${index + 1} Content (HTML)</label>
-                                            <textarea class="w-full min-h-52" style="min-height: 100px; font-family: ui-monospace, Consolas, monospace; font-size: 0.9rem;" oninput="updateSavedArticle(${index}, 'article', this.value)">${finalArticle}</textarea>
+                                            <textarea class="card-content-input" oninput="updateSavedArticle(${index}, 'article', this.value)">${finalArticle}</textarea>
                                         </div>
                                     `;
                         selectArticleIndexByDefault(index);
@@ -2625,8 +2647,8 @@
                 const savedFontSize = Number(savedArticle?.storyFontSize);
                 storyFontSizeOverride = Number.isFinite(savedFontSize) && savedFontSize >= 14 && savedFontSize <= 90;
                 const card = document.getElementById(`card-${cardIndex}`);
-                const textArea = card?.querySelector("textarea.player-input");
-                const articleTextArea = card?.querySelector("textarea.w-full.min-h-52");
+                const textArea = card?.querySelector("textarea.card-thumb-input, textarea.player-input");
+                const articleTextArea = card?.querySelector("textarea.card-content-input, textarea.w-full.min-h-52");
                 const storyTextInput = document.getElementById("storyTextInput");
                 const modalTitle = document.querySelector("#storyModal .story-modal-header h3");
 
@@ -2710,7 +2732,7 @@
                 }
 
                 const card = document.getElementById(`card-${activeStoryCardIndex}`);
-                const playerTextArea = card?.querySelector("textarea.player-input");
+                const playerTextArea = card?.querySelector("textarea.card-thumb-input, textarea.player-input");
                 if (playerTextArea && playerTextArea.value !== activeStoryBaseText) {
                     playerTextArea.value = activeStoryBaseText;
                 }
@@ -3186,7 +3208,7 @@
                 let content = saved?.article || "";
                 if (!content) {
                     const card = document.getElementById(`card-${activeStoryCardIndex}`);
-                    const ta = card?.querySelector("textarea.w-full.min-h-52");
+                    const ta = card?.querySelector("textarea.card-content-input, textarea.w-full.min-h-52");
                     content = ta?.value || "";
                 }
                 if (!content) {
@@ -3249,8 +3271,8 @@
 
             const syncStoryModeSelection = () => {
                 const card = document.getElementById(`card-${activeStoryCardIndex}`);
-                const textArea = card?.querySelector("textarea.player-input");
-                const articleTextArea = card?.querySelector("textarea.w-full.min-h-52");
+                const textArea = card?.querySelector("textarea.card-thumb-input, textarea.player-input");
+                const articleTextArea = card?.querySelector("textarea.card-content-input, textarea.w-full.min-h-52");
                 const storyTextInput = document.getElementById("storyTextInput");
                 const modalTitle = document.querySelector("#storyModal .story-modal-header h3");
 
@@ -3492,26 +3514,24 @@
                 resultSection.style.display = "block";
                 const sample = sampleArticles[sampleArticleIndex % sampleArticles.length];
                 const articleCard = document.createElement("div");
+                articleCard.dataset.index = String(sampleArticleIndex + 1);
                 articleCard.className = "result-card";
-                articleCard.style.marginBottom = "20px";
+                articleCard.style.marginBottom = "0";
                 articleCard.innerHTML = `
-                                <div class="card-controls">
-                                    <button id="select-sample-${sampleArticleIndex}" class="icon-btn select" onclick="toggleSelectArticle(${sampleArticleIndex})" title="Select">⬜</button>
-                                    <button class="icon-btn copy" onclick="copySampleArticle(${sampleArticleIndex})" title="Copy sample">📋</button>
-                                </div>
-                                <div style="margin-bottom: 20px;">
+                                ${cardControlsMarkup(sampleArticleIndex, "", { selected: false, copyFn: "copySampleArticle", showDelete: false, sample: true })}
+                                <div class="card-body">
                                     <label class="field-label">Sample Article Title</label>
-                                    <input type="text" class="flex-1 border" value="${sample.title}" style="margin-bottom:15px; width: 100%;">
-                                    <div style="display: grid; grid-template-columns: 1fr; gap: 10px; margin-bottom: 15px;">
+                                    <input type="text" aria-label="Article title" class="card-title-input" value="${sample.title}" >
+                                    <div class="card-field-grid">
                                         <div>
                                             <label class="field-label">Sample Thumbnail Text</label>
-                                            <textarea class="player-input border sample-player-text" style="width: 100%; min-height: 80px; font-family: monospace; font-size: 0.85rem;">${sample.players}</textarea>
-                                            <p style="margin-top: 10px; color: var(--text-muted); font-size: 0.95rem;">Sample thumbnail information.</p>
-                                            <button type="button" class="btn-secondary sample-story-btn" style="margin-top:12px; padding: 10px 16px; font-size: 0.92rem;">🎬 Create Story</button>
+                                            <textarea class="card-thumb-input sample-player-text">${sample.players}</textarea>
+                                            <p style="margin-top: 6px; color: var(--text-muted); font-size: 0.8rem;">Sample thumbnail information.</p>
+                                            <button type="button" class="btn-secondary sample-story-btn card-sample-btn">${cardIcon("sparkle")}<span>Create Story</span></button>
                                         </div>
                                     </div>
                                     <label class="field-label">Sample Article Content (HTML)</label>
-                                    <textarea class="w-full min-h-52" style="min-height: 200px; font-family: ui-monospace, Consolas, monospace; font-size: 0.9rem;">${sample.body}</textarea>
+                                    <textarea class="card-content-input">${sample.body}</textarea>
                                 </div>
                             `;
                 output.appendChild(articleCard);
@@ -3595,8 +3615,8 @@
                 const btn = document.getElementById("textModeBtn");
                 const resTitle = document.getElementById("resultTitle");
 
-                const titleInputs = document.querySelectorAll("input.flex-1.border");
-                const contentAreas = document.querySelectorAll("textarea.w-full.min-h-52");
+                const titleInputs = document.querySelectorAll(".card-title-input, input.flex-1.border");
+                const contentAreas = document.querySelectorAll(".card-content-input, textarea.card-content-input, textarea.w-full.min-h-52");
 
                 if (editor.style.display !== "none") {
                     editor.style.display = "none";

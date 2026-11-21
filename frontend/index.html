@@ -27,7 +27,7 @@
                         <textarea
                             id="youtubeUrl"
                             class="w-full"
-                            rows="3"
+                            rows="2"
                             placeholder="https://youtube.com/watch?v=..."
                             required
                         ></textarea>
@@ -209,7 +209,7 @@
             <div class="story-modal-card">
                 <div class="story-modal-header">
                     <h3>Sports Hook Creator</h3>
-                    <div style="display: flex; gap: 10px; align-items: center">
+                    <div class="story-header-actions">
                         <div class="story-nav-buttons">
                             <button id="storyPrevButton" type="button" class="btn-secondary" onclick="goToStoryCard(-1)" aria-label="Previous">
                                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>
@@ -237,7 +237,7 @@
                 </div>
                 <div class="story-modal-body">
                     <div id="storyPane" class="story-pane active">
-                    <div class="story-modal-navigation story-modal-full" style="margin-bottom: 12px">
+                    <div class="story-modal-navigation story-modal-full">
                         <button id="storyRegenThumbButton" type="button" class="btn-secondary story-icon-btn" title="Ép load lại Thumbnail Text của bài đang mở (chỉ text, không đụng bài viết)" onclick="regenerateThumbnailTextFromStoryModal()">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M3 22v-6h6"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/></svg>
                         </button>
@@ -246,7 +246,7 @@
                             <span>Copy All</span>
                         </button>
                     </div>
-                    <div class="story-modal-full controls" style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap">
+                    <div class="story-modal-full controls story-toolbar">
                         <label style="font-weight: 600; color: #475569; display: none">Accent</label>
                         <select id="storyAccentColorSelect" style="padding: 8px 10px; border-radius: 10px; border: 1px solid #cbd5e1; min-width: 120px; display: none">
                             <option value="#efca19">Yellow</option>
@@ -264,19 +264,18 @@
                         <button type="button" class="story-text-paste-button" onclick="storyPasteFromClipboard()">Dán</button>
                         <textarea
                             id="storyTextInput"
-                            rows="5"
-                            style="width: 100%; min-height: 120px; padding: 12px; border-radius: 12px; border: 1px solid #cbd5e1; font-size: 0.95rem"
+                            rows="3"
                             placeholder="Nhập hook thể thao hoặc dùng clickbait đã tạo."
                         ></textarea>
                     </div>
                     <div id="storyPreview" class="story-modal-preview"></div>
                     <div id="storyThumbnailSelector" class="story-thumbnail-source">
                         <label class="story-section-title">Nguồn thumbnail</label>
-                        <div style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 12px">
+                        <div class="story-thumb-row">
                             <select
                                 id="storyThumbnailVariantSelect"
                                 onchange="handleStoryModalThumbnailVariantChange(this.value)"
-                                style="padding: 8px 10px; border-radius: 10px; border: 1px solid #cbd5e1; min-width: 140px; width: auto"
+                                style="padding: 7px 9px; border-radius: 8px; min-width: 128px; width: auto"
                             >
                                 <option value="maxresdefault">maxresdefault.jpg</option>
                                 <option value="maxres1">maxres1.jpg</option>
@@ -284,21 +283,21 @@
                                 <option value="hqdefault">hqdefault.jpg</option>
                                 <option value="custom">Tải ảnh ngoài</option>
                             </select>
-                            <button type="button" class="btn-secondary" style="padding: 10px 14px; font-size: 0.9rem" onclick="document.getElementById('storyThumbnailFileInput').click()">
+                            <button type="button" class="btn-secondary" style="padding: 7px 12px; font-size: 0.85rem" onclick="document.getElementById('storyThumbnailFileInput').click()">
                                 Chọn file
                             </button>
                             <input id="storyThumbnailFileInput" type="file" accept="image/*" style="display: none" onchange="handleStoryModalThumbnailFileChange(event)" />
                         </div>
-                        <div id="storyThumbnailPreview" style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 10px">
+                        <div id="storyThumbnailPreview" class="story-thumb-row">
                             <img
                                 id="storyThumbnailPreviewImg"
                                 src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
                                 alt="Xem trước thumbnail"
-                                style="max-width: 200px; width: 100%; max-height: 120px; object-fit: contain; border-radius: 12px; border: 1px solid #cbd5e1"
+                                style="max-width: 150px; width: 100%; max-height: 84px; object-fit: contain; border-radius: 8px; border: 1px solid var(--border)"
                             />
-                            <span id="storyThumbnailPreviewLabel" style="color: #64748b; font-size: 0.95rem; min-width: 140px"></span>
+                            <span id="storyThumbnailPreviewLabel" style="color: var(--text-muted); font-size: 0.85rem"></span>
                         </div>
-                        <p style="margin-top: 10px; color: var(--text-muted); font-size: 0.95rem">
+                        <p style="margin: 8px 0 0; color: var(--text-muted); font-size: 0.85rem">
                             <a id="storyThumbnailPreviewLink" href="#" target="_blank" style="color: var(--primary); text-decoration: none">Mở ảnh thumbnail</a>
                         </p>
                     </div>
