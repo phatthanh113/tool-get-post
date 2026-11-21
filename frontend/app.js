@@ -650,7 +650,7 @@
             function buildStoryActionMarkup(index, url) {
                 return `
                                 <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-top:12px;">
-                                    <button type="button" onclick="openStoryTool(${index})" class="btn-secondary" style="padding: 10px 16px; font-size: 0.92rem;">🎬 Create</button>
+                                    <button type="button" onclick="openStoryTool(${index})" class="btn-secondary" style="padding: 8px 14px; font-size: 0.86rem;" onclick="openStoryTool(${index})">Create</button>
                                     <button type="button" onclick="retrySingle('${url}', ${index})" class="btn-secondary story-retry-btn" style="display:none; padding: 10px 16px; font-size: 0.92rem; background-color: #3b82f6; border-color: #3b82f6; color: white;">🔄</button>
                                 </div>
                             `;
@@ -684,9 +684,7 @@
                 const previewUrl = customUrl || getThumbnailVariantUrl(item.videoId, variant);
                 const variantLabel = variant === "custom" ? "Custom image loaded" : `${variant}.jpg`;
                 return `
-                                <div style="margin-bottom: 15px;">
-                                    <label style="display:block; margin-bottom:8px; color:var(--text-muted);">Thumbnail source</label>
-                                    <div style="display:none; gap:10px; flex-wrap:wrap; align-items:center; margin-bottom:10px;" >
+                                    <div style="display:none; gap:10px; flex-wrap:wrap; align-items:center;" >
                                         <select onchange="updateThumbnailVariant('${safeUrl}', this.value, ${item.index})" style="padding: 8px 10px; border-radius: 10px; border: 1px solid #cbd5e1; min-width: 180px;">
                                             <option value="maxresdefault" ${variant === "maxresdefault" ? "selected" : ""}>maxresdefault.jpg</option>
                                             <option value="maxres1" ${variant === "maxres1" ? "selected" : ""}>maxres1.jpg</option>
@@ -699,15 +697,11 @@
                                         </button>
                                         <input id="thumbnail-file-${item.index}" type="file" accept="image/*" style="display:none" onchange="handleThumbnailFileChange(this, '${safeUrl}', ${item.index})" />
                                     </div>
-                                    <div id="thumbnail-preview-${item.index}" style="display:none; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:10px;">
+                                    <div id="thumbnail-preview-${item.index}" style="display:none; align-items:center; gap:10px; flex-wrap:wrap;">
                                         <img src="${previewUrl}" alt="Thumbnail preview" style="max-width: 200px; width: 100%; max-height: 120px; object-fit: contain; border-radius: 12px; border: 1px solid #cbd5e1;" />
                                         <span style="color:#64748b; font-size:0.95rem;">${variantLabel}</span>
                                     </div>
-                                    <p style="margin-top: 10px; color: var(--text-muted); font-size: 0.95rem;">
-                                        ${customUrl ? '<span style="color:#10b981;">Custom thumbnail selected</span>' : `<a id="thumbnail-link-${item.index}" href="${previewUrl}" target="_blank" style="color: var(--primary); text-decoration: none;">Thumbnail image</a>`}
-                                    </p>
-                                </div>
-                            `;
+                                `;
             }
 
             function saveArticleToLocalStorage(index, url, title, players, videoId, article, options = {}) {
@@ -753,7 +747,6 @@
 
             function updateCardThumbnailPreview(index, item) {
                 const preview = document.getElementById(`thumbnail-preview-${index}`);
-                const link = document.getElementById(`thumbnail-link-${index}`);
                 if (!item) return;
                 const imageUrl = item.customThumbnailUrl || getThumbnailVariantUrl(item.videoId, item.thumbnailVariant);
                 const labelText = item.thumbnailVariant === "custom" ? "Custom image loaded" : `${item.thumbnailVariant || "maxresdefault"}.jpg`;
@@ -761,7 +754,6 @@
                 const label = preview?.querySelector("span");
                 if (img) img.src = imageUrl;
                 if (label) label.textContent = labelText;
-                if (link) link.href = imageUrl;
             }
 
             function syncArticleThumbnailVariant(articleHtml, videoId, variant) {
@@ -1059,13 +1051,13 @@
                                         <button class="icon-btn delete" onclick="deleteArticle(${item.index}, '${item.url}')" title="Delete article">🗑</button>
                                     </div>
                                     <div style="margin-bottom: 20px;">
-                                        <label style="display:block; margin-bottom:8px; color:var(--text-muted);">Article ${item.index + 1} Title</label>
+                                        <label class="field-label">Article ${item.index + 1} Title</label>
                                         <input type="text" class="flex-1 border" value="${item.title || ""}" style="margin-bottom:15px; width: 100%;" oninput="updateSavedArticle('${item.url}', 'title', this.value)">
 
                                         <div style="display: grid; grid-template-columns: 1fr; gap: 10px; margin-bottom: 15px;">
                                             <div>
                                                 <div style="display:flex; align-items:center; gap:6px; margin-bottom:8px;">
-                                                    <label style="color:var(--text-muted);">Thumbnail Text</label>
+                                                    <label class="field-label-inline">Thumbnail Text</label>
                                                     ${buildThumbnailTextRegenButton(item.index)}
                                                 </div>
                                                 <textarea class="player-input border" style="width: 100%; min-height: 80px; font-family: monospace; font-size: 0.85rem;" placeholder="Thumbnail text..." oninput="updateThumbnailText('${item.url}', this.value)">${item.players || ""}</textarea>
@@ -1074,7 +1066,7 @@
                                             </div>
                                         </div>
 
-                                        <label style="display:block; margin-bottom:8px; color:var(--text-muted); cursor:pointer;" ondblclick="showStoryRetryButton(${item.index})">Article ${item.index + 1} Content (HTML)</label>
+                                        <label class="field-label" ondblclick="showStoryRetryButton(${item.index})">Article ${item.index + 1} Content (HTML)</label>
                                         <textarea class="w-full min-h-52" style="min-height: 100px; font-family: ui-monospace, Consolas, monospace; font-size: 0.9rem;" oninput="updateSavedArticle('${item.url}', 'article', this.value)">${item.article}</textarea>
                                     </div>
                                 `;
@@ -1586,13 +1578,13 @@
                                         <button class="icon-btn delete" onclick="deleteArticle(${item.index}, '${item.url}')" title="Delete article">🗑</button>
                                     </div>
                                     <div style="margin-bottom: 20px;">
-                                        <label style="display:block; margin-bottom:8px; color:var(--text-muted);">Article ${item.index + 1} Title</label>
+                                        <label class="field-label">Article ${item.index + 1} Title</label>
                                         <input type="text" class="flex-1 border" value="${item.title || ""}" style="margin-bottom:15px; width: 100%;" oninput="updateSavedArticle('${item.url}', 'title', this.value)">
 
                                         <div style="display: grid; grid-template-columns: 1fr; gap: 10px; margin-bottom: 15px;">
                                             <div>
                                                 <div style="display:flex; align-items:center; gap:6px; margin-bottom:8px;">
-                                                    <label style="color:var(--text-muted);">Thumbnail Text</label>
+                                                    <label class="field-label-inline">Thumbnail Text</label>
                                                     ${buildThumbnailTextRegenButton(item.index)}
                                                 </div>
                                                 <textarea class="player-input border" style="width: 100%; min-height: 80px; font-family: monospace; font-size: 0.85rem;" placeholder="Thumbnail text..." oninput="updateThumbnailText('${item.url}', this.value)">${item.players || ""}</textarea>
@@ -1601,7 +1593,7 @@
                                             </div>
                                         </div>
 
-                                        <label style="display:block; margin-bottom:8px; color:var(--text-muted); cursor:pointer;" ondblclick="showStoryRetryButton(${item.index})">Article ${item.index + 1} Content (HTML)</label>
+                                        <label class="field-label" ondblclick="showStoryRetryButton(${item.index})">Article ${item.index + 1} Content (HTML)</label>
                                         <textarea class="w-full min-h-52" style="min-height: 100px; font-family: ui-monospace, Consolas, monospace; font-size: 0.9rem;" oninput="updateSavedArticle('${item.url}', 'article', this.value)">${item.article}</textarea>
                                     </div>
                                 `;
@@ -1711,11 +1703,11 @@
                                                     <button class="icon-btn delete" onclick="deleteArticle(${index}, '${url}')" title="Delete article">🗑</button>
                                                 </div>
                                                 <div style="margin-bottom: 20px;">
-                                                    <label style="display:block; margin-bottom:8px; color:var(--text-muted);">Article ${index + 1} Title</label>
+                                                    <label class="field-label">Article ${index + 1} Title</label>
                                                     <input type="text" class="flex-1 border" value="${(data.title || "").replace(/"/g, "&quot;")}" style="margin-bottom:15px; width: 100%;" />
                                                     <div style="display: grid; grid-template-columns: 1fr; gap: 10px; margin-bottom: 15px;">
                                                         <div>
-                                                            <label style="display:block; margin-bottom:8px; color:var(--text-muted);">Thumbnail Text</label>
+                                                            <label class="field-label">Thumbnail Text</label>
                                                             <textarea class="player-input border" style="width: 100%; min-height: 80px; font-family: monospace; font-size: 0.85rem;" placeholder="Thumbnail text..." oninput="updateThumbnailText(${index}, this.value)">${(data.players || "").replace(/</g, "&lt;").replace(/>/g, "&gt;")}</textarea>
                                                             ${buildThumbnailControls({
                                                                 index,
@@ -1729,7 +1721,7 @@
                                                             ${buildStoryActionMarkup(index, url)}
                                                         </div>
                                                     </div>
-                                                    <label style="display:block; margin-bottom:8px; color:var(--text-muted); cursor:pointer;" ondblclick="showStoryRetryButton(${index})">Article ${index + 1} Content (HTML)</label>
+                                                    <label class="field-label" ondblclick="showStoryRetryButton(${index})">Article ${index + 1} Content (HTML)</label>
                                                     <textarea class="w-full min-h-52" style="min-height: 100px; font-family: ui-monospace, Consolas, monospace; font-size: 0.9rem;">${finalArticle}</textarea>
                                                 </div>
                                             `;
@@ -2253,13 +2245,13 @@
                                                     <button class="icon-btn delete" onclick="deleteArticle(${currentIndex}, '${url}')" title="Delete article">🗑</button>
                                                 </div>
                                                 <div style="margin-bottom: 20px;">
-                                                    <label style="display:block; margin-bottom:8px; color:var(--text-muted);">Article ${currentIndex + 1} Title</label>
+                                                    <label class="field-label">Article ${currentIndex + 1} Title</label>
                                                     <input type="text" class="flex-1 border" value="${data.title || ""}" style="margin-bottom:15px; width: 100%;" oninput="updateSavedArticle(${currentIndex}, 'title', this.value)">
 
                                                     <div style="display: grid; grid-template-columns: 1fr; gap: 10px; margin-bottom: 15px;">
                                                         <div>
                                                             <div style="display:flex; align-items:center; gap:6px; margin-bottom:8px;">
-                                                                <label style="color:var(--text-muted);">Thumbnail Text</label>
+                                                                <label class="field-label-inline">Thumbnail Text</label>
                                                                 ${buildThumbnailTextRegenButton(currentIndex)}
                                                             </div>
                                                             <textarea class="player-input border" style="width: 100%; min-height: 80px; font-family: monospace; font-size: 0.85rem;" placeholder="Thumbnail text..." oninput="updateThumbnailText(${currentIndex}, this.value)">${data.players || ""}</textarea>
@@ -2268,7 +2260,7 @@
                                                         </div>
                                                     </div>
 
-                                                    <label style="display:block; margin-bottom:8px; color:var(--text-muted); cursor:pointer;" ondblclick="showStoryRetryButton(${currentIndex})">Article ${currentIndex + 1} Content (HTML)</label>
+                                                    <label class="field-label" ondblclick="showStoryRetryButton(${currentIndex})">Article ${currentIndex + 1} Content (HTML)</label>
                                                     <textarea class="w-full min-h-52" style="min-height: 100px; font-family: ui-monospace, Consolas, monospace; font-size: 0.9rem;" oninput="updateSavedArticle(${currentIndex}, 'article', this.value)">${finalArticle}</textarea>
                                                 </div>
                                             `;
@@ -2358,13 +2350,13 @@
                                             <button class="icon-btn delete" onclick="deleteArticle(${index}, '${url}')" title="Delete article">🗑</button>
                                         </div>
                                         <div style="margin-bottom: 20px;">
-                                            <label style="display:block; margin-bottom:8px; color:var(--text-muted);">Article ${index + 1} Title</label>
+                                            <label class="field-label">Article ${index + 1} Title</label>
                                             <input type="text" class="flex-1 border" value="${data.title || ""}" style="margin-bottom:15px; width: 100%;" oninput="updateSavedArticle(${index}, 'title', this.value)">
 
                                             <div style="display: grid; grid-template-columns: 1fr; gap: 10px; margin-bottom: 15px;">
                                                 <div>
                                                     <div style="display:flex; align-items:center; gap:6px; margin-bottom:8px;">
-                                                        <label style="color:var(--text-muted);">Thumbnail Text</label>
+                                                        <label class="field-label-inline">Thumbnail Text</label>
                                                         ${buildThumbnailTextRegenButton(index)}
                                                     </div>
                                                     <textarea class="player-input border" style="width: 100%; min-height: 80px; font-family: monospace; font-size: 0.85rem;" placeholder="Thumbnail text..." oninput="updateThumbnailText(${index}, this.value)">${data.players || ""}</textarea>
@@ -2373,7 +2365,7 @@
                                                 </div>
                                             </div>
 
-                                            <label style="display:block; margin-bottom:8px; color:var(--text-muted); cursor:pointer;" ondblclick="showStoryRetryButton(${index})">Article ${index + 1} Content (HTML)</label>
+                                            <label class="field-label" ondblclick="showStoryRetryButton(${index})">Article ${index + 1} Content (HTML)</label>
                                             <textarea class="w-full min-h-52" style="min-height: 100px; font-family: ui-monospace, Consolas, monospace; font-size: 0.9rem;" oninput="updateSavedArticle(${index}, 'article', this.value)">${finalArticle}</textarea>
                                         </div>
                                     `;
@@ -3508,17 +3500,17 @@
                                     <button class="icon-btn copy" onclick="copySampleArticle(${sampleArticleIndex})" title="Copy sample">📋</button>
                                 </div>
                                 <div style="margin-bottom: 20px;">
-                                    <label style="display:block; margin-bottom:8px; color:var(--text-muted);">Sample Article Title</label>
+                                    <label class="field-label">Sample Article Title</label>
                                     <input type="text" class="flex-1 border" value="${sample.title}" style="margin-bottom:15px; width: 100%;">
                                     <div style="display: grid; grid-template-columns: 1fr; gap: 10px; margin-bottom: 15px;">
                                         <div>
-                                            <label style="display:block; margin-bottom:8px; color:var(--text-muted);">Sample Thumbnail Text</label>
+                                            <label class="field-label">Sample Thumbnail Text</label>
                                             <textarea class="player-input border sample-player-text" style="width: 100%; min-height: 80px; font-family: monospace; font-size: 0.85rem;">${sample.players}</textarea>
                                             <p style="margin-top: 10px; color: var(--text-muted); font-size: 0.95rem;">Sample thumbnail information.</p>
                                             <button type="button" class="btn-secondary sample-story-btn" style="margin-top:12px; padding: 10px 16px; font-size: 0.92rem;">🎬 Create Story</button>
                                         </div>
                                     </div>
-                                    <label style="display:block; margin-bottom:8px; color:var(--text-muted);">Sample Article Content (HTML)</label>
+                                    <label class="field-label">Sample Article Content (HTML)</label>
                                     <textarea class="w-full min-h-52" style="min-height: 200px; font-family: ui-monospace, Consolas, monospace; font-size: 0.9rem;">${sample.body}</textarea>
                                 </div>
                             `;
