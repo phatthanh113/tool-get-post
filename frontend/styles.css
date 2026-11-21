@@ -476,8 +476,8 @@
                 left: 50vw;
                 margin: 0;
                 transform: translate(-50%, -50%);
-                width: min(1080px, calc(100% - 32px));
-                max-width: 1080px;
+                width: min(1000px, calc(100% - 32px));
+                max-width: 1000px;
                 max-height: min(86vh, 900px);
                 padding: 0;
                 overflow: hidden;
@@ -660,8 +660,8 @@
             }
 
             .linastory-settings-dialog {
-                width: min(720px, calc(100% - 32px));
-                max-width: 720px;
+                width: min(1000px, calc(100% - 32px));
+                max-width: 1000px;
             }
 
             .linastory-token-buttons button {

@@ -358,7 +358,7 @@
                     });
 
                     const statusCell = document.createElement("td");
-                    statusCell.textContent = article.link ? "✅ Khớp" : "⚠️ Không tìm thấy";
+                    statusCell.textContent = article.link ? "Khớp" : "Không tìm thấy";
                     statusCell.className = article.link ? "linastory-status" : "linastory-status linastory-status-missing";
                     row.appendChild(statusCell);
                     list.appendChild(row);
@@ -3349,7 +3349,7 @@
                 const selectedLanguage = document.getElementById("language-select").value;
                 if (selectedLanguage === result.language) {
                     setYoutubeLanguageStatus(
-                        `Đã nhận diện video đầu tiên là ${result.language} (theo ${source}); ngôn ngữ bài viết khớp.`,
+                        `Article language already matches ${result.language} (${source}).`,
                         "success",
                     );
                     return;
@@ -3361,7 +3361,7 @@
                     languageSelect.dispatchEvent(new Event("change", { bubbles: true }));
                 }
                 setYoutubeLanguageStatus(
-                    `Đã tự chọn ${result.language} theo ngôn ngữ video đầu tiên (theo ${source}).`,
+                    `Auto-selected ${result.language} from the first video (${source}).`,
                     "success",
                 );
             }
@@ -3620,13 +3620,17 @@
                         }
                     }
 
-                    preview.innerHTML = fullPreview || "<p style='text-align:center; color:gray;'>No content to preview</p>";
+                    preview.innerHTML = fullPreview || "<p style='text-align:center; color:var(--text-muted);'>Chưa có nội dung để xem trước.</p>";
                     btn.classList.add("view-toggle-active");
-                    resTitle.innerText = "✨ Visual Preview Mode";
+                    btn.textContent = "Code";
+                    btn.title = "Quay lại trình soạn code HTML";
+                    resTitle.innerText = "Xem trước bài viết";
                 } else {
                     editor.style.display = "block";
                     preview.style.display = "none";
                     btn.classList.remove("view-toggle-active");
-                    resTitle.innerText = "✅ HTML Editor Mode";
+                    btn.textContent = "Text";
+                    btn.title = "Chuyển sang bản xem trước văn bản";
+                    resTitle.innerText = "Bài viết";
                 }
             }

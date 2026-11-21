@@ -34,16 +34,16 @@
                     </div>
 
                     <div class="input-group">
-                        <label for="videoPrefixInput">Tiền tố tên file</label>
-                        <input id="videoPrefixInput" type="text" class="w-full" placeholder="VD: t" value="" />
+                        <label for="videoPrefixInput">File prefix</label>
+                        <input id="videoPrefixInput" type="text" class="w-full" placeholder="e.g. t" value="" />
                     </div>
                     <div class="input-group">
-                        <label for="videoStartNumberInput">Số thứ tự bắt đầu</label>
+                        <label for="videoStartNumberInput">Start number</label>
                         <input id="videoStartNumberInput" type="number" class="w-full" min="1" placeholder="1" value="1" />
                     </div>
 
                     <div class="input-group">
-                        <label for="language-select">Ngôn ngữ bài viết</label>
+                        <label for="language-select">Article language</label>
                         <select id="language-select">
                             <option value="English" selected>English</option>
                             <option value="German">Deutsch (German)</option>
@@ -105,14 +105,18 @@
                     </button>
                 </div>
                 <div class="action-bar-secondary">
-                    <button id="textModeBtn" onclick="toggleView()" class="btn-secondary" title="Chuyển giữa trình soạn HTML và bản xem trước văn bản">Chế độ văn bản</button>
-                    <button id="autoSelectImagesBtn" type="button" onclick="startAutoSelectImages()" class="btn-secondary" title="Tự tìm và gán ảnh cho từng bài">Tự chọn ảnh</button>
-                    <button onclick="restoreArticlesFromLocalStorage()" class="btn-secondary" title="Nạp lại các bài đã lưu trên máy này">Khôi phục bài</button>
-                    <button onclick="restoreBuzzUrls()" id="restoreBuzzUrlsBtn" type="button" class="btn-secondary" style="display: none" title="Điền lại các link YouTube của lần Buzz trước">Link lần trước</button>
+                    <button id="textModeBtn" onclick="toggleView()" class="btn-secondary" title="Chuyển giữa trình soạn code HTML và bản xem trước văn bản">Text</button>
+                    <button id="autoSelectImagesBtn" type="button" onclick="startAutoSelectImages()" class="btn-secondary" title="Tự tìm và gán ảnh cho từng bài">Upload</button>
+                    <details class="action-menu">
+                        <summary class="btn-secondary" role="button" aria-label="Khôi phục">Khôi phục</summary>
+                        <div class="action-menu-list">
+                            <button onclick="restoreArticlesFromLocalStorage()" class="menu-item">Khôi phục bài viết</button>
+                            <button onclick="restoreBuzzUrls()" id="restoreBuzzUrlsBtn" type="button" class="menu-item" style="display: none" title="Điền lại các link YouTube của lần Buzz trước">Điền lại link lần trước</button>
+                        </div>
+                    </details>
                     <details class="action-menu">
                         <summary class="btn-secondary" role="button" aria-label="Thêm hành động">Thêm</summary>
                         <div class="action-menu-list">
-                            <button onclick="sortResultCards()" class="menu-item">Sắp xếp bài theo thứ tự gốc</button>
                             <button onclick="generateThumbnailOnly()" class="menu-item">Chỉ tạo thumbnail</button>
                             <button onclick="stopBuzzGeneration()" id="stopBuzzBtn" type="button" class="menu-item menu-item-danger" style="display: none">Dừng tạo bài</button>
                             <button onclick="clearLocalStorageArticles()" class="menu-item menu-item-danger">Xóa dữ liệu đã lưu</button>
@@ -367,7 +371,7 @@
         <dialog id="linastoryArticlesDialog" class="linastory-dialog">
             <div class="linastory-dialog-panel">
                 <div class="linastory-dialog-header">
-                    <h2>📋 Bài viết khớp với Linastory</h2>
+                    <h2>Bài viết khớp với Linastory</h2>
                     <button type="button" class="linastory-dialog-close" onclick="closeLinastoryArticlesModal()" aria-label="Đóng">×</button>
                 </div>
                 <p id="linastoryArticlesSummary" class="linastory-dialog-summary"></p>
@@ -389,18 +393,17 @@
                     </table>
                 </div>
                 <div class="linastory-dialog-actions">
-                    <button id="copyLinastoryMatchedButton" type="button" class="btn-primary linastory-copy-action" onclick="copyMatchedLinastoryCustom()" oncontextmenu="openLinastoryCopySettings(event)">📋 Sao chép custom</button>
+                    <button id="copyLinastoryMatchedButton" type="button" class="btn-primary linastory-copy-action" onclick="copyMatchedLinastoryCustom()" oncontextmenu="openLinastoryCopySettings(event)">Sao chép custom</button>
                     <button id="pasteLinastorySheetButton" type="button" class="btn-primary linastory-copy-action" onclick="pasteLinastoryToSheet()" title="Dán theo mẫu copy vào tab Google Sheet khớp Video filename prefix (vd: B → tab bear)">Dán vào Sheet</button>
-                    <button id="openLinastoryCopySettingsButton" type="button" class="btn-secondary" onclick="openLinastoryCopySettingsFromList()">⚙️ Mẫu copy</button>
-                    <button id="closeLinastoryArticlesButton" type="button" class="btn-secondary" onclick="closeLinastoryArticlesModal()">Đóng</button>
+                    <button id="openLinastoryCopySettingsButton" type="button" class="btn-secondary" onclick="openLinastoryCopySettingsFromList()">Mẫu copy</button>
                 </div>
             </div>
         </dialog>
         <dialog id="linastoryCopyDialog" class="linastory-dialog linastory-settings-dialog">
             <div class="linastory-dialog-panel">
                 <div class="linastory-dialog-header">
-                    <h2>⚙️ Tùy chỉnh mẫu copy Linastory</h2>
-                    <button type="button" class="btn-secondary linastory-dialog-back" onclick="backToLinastoryArticles()">← Quay lại</button>
+                    <h2>Tùy chỉnh mẫu copy Linastory</h2>
+                    <button type="button" class="btn-secondary linastory-dialog-back" onclick="backToLinastoryArticles()">Quay lại</button>
                 </div>
                 <p class="linastory-dialog-summary">Chọn thẻ mẫu để áp dụng định dạng, hoặc tự điền trường dữ liệu cần sao chép.</p>
                 <p style="color: #475569; margin-bottom: 8px; font-weight: 600">Thẻ mẫu (bấm để chèn):</p>
@@ -419,9 +422,7 @@
                 <p style="color: #475569; margin-bottom: 6px; font-weight: 600">Xem trước:</p>
                 <pre id="linastoryCopyPreview" class="linastory-preview" style="margin-bottom: 16px"></pre>
                 <div class="linastory-dialog-actions" style="margin-top: 0">
-                    <button type="button" class="btn-primary" onclick="saveLinastoryCopyTemplate()">💾 Lưu mẫu</button>
-                    <button type="button" class="btn-secondary" onclick="resetLinastoryCopyTemplate()">♻️ Mặc định</button>
-                    <button type="button" class="btn-secondary" onclick="backToLinastoryArticles()">← Quay lại danh sách</button>
+                    <button type="button" class="btn-primary" onclick="saveLinastoryCopyTemplate()">Lưu mẫu</button>
                 </div>
             </div>
         </dialog>
