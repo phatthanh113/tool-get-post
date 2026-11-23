@@ -18,9 +18,24 @@ function loadTitleHashtag() {
 const titleHashtagReady = loadTitleHashtag();
 
 async function fillLinastoryPayload(message) {
-  await titleHashtagReady;
+  await Promise.all([titleHashtagReady, loadTitleHashtag()]);
   console.log("Received message in content-fill.js:", message);
   const { title, description, videoUrl, autoPublish = true } = message;
+
+  const escapeRegExp = (value) =>
+    String(value).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+  const normalizeTitleBeforeHashtag = (value) => {
+    let normalized = String(value || "").trim();
+    const oldHashtags = new Set([titleHashtag, DEFAULT_TITLE_HASHTAG]);
+
+    for (const hashtag of oldHashtags) {
+      const pattern = new RegExp(`\\s*${escapeRegExp(hashtag)}\\s*$`, "i");
+      normalized = normalized.replace(pattern, "").trim();
+    }
+
+    return normalized;
+  };
 
   const fillArticle = () => {
     const titleInput =
@@ -129,7 +144,7 @@ async function fillLinastoryPayload(message) {
     const endIcons = getRandomIcons(2);
     const rawTitle = title || "";
     const hasLeadingIcon = startsWithAttentionIcon(rawTitle);
-    const titleText = rawTitle + " " + titleHashtag;
+    const titleText = `${normalizeTitleBeforeHashtag(rawTitle)} ${titleHashtag}`.trim();
     const descriptionText = description || "";
 
     // Use direct assignments on real WordPress form fields to avoid Illegal invocation.
