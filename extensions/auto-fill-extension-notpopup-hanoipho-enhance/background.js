@@ -1,6 +1,20 @@
 // Store mapping of source tabs to their editor tabs
 const tabMapping = new Map();
 
+// Content scripts on https pages cannot reliably reach http://localhost:3000,
+// so they ask the background (extension origin) for the configured hashtag.
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  if (message && message.type === "GET_TITLE_HASHTAG") {
+    fetch("http://localhost:3000/config")
+      .then((response) => (response.ok ? response.json() : null))
+      .then((config) => {
+        sendResponse({ title_hashtag: (config && config.title_hashtag) || "" });
+      })
+      .catch(() => sendResponse({ title_hashtag: "" }));
+    return true;
+  }
+});
+
 // Function to update loading badge
 async function updateLoadingBadge(current, total) {
   if (total > 0) {

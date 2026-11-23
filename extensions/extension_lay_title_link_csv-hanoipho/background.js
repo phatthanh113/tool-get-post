@@ -1,4 +1,16 @@
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  // Content scripts on https pages cannot reliably reach http://localhost:3000,
+  // so they ask the background (extension origin) for the configured hashtag.
+  if (message.type === "GET_TITLE_HASHTAG") {
+    fetch("http://localhost:3000/config")
+      .then((response) => (response.ok ? response.json() : null))
+      .then((config) => {
+        sendResponse({ title_hashtag: (config && config.title_hashtag) || "" });
+      })
+      .catch(() => sendResponse({ title_hashtag: "" }));
+    return true;
+  }
+
   if (message.action === "closeLinastoryTabs") {
     chrome.tabs.query({}, async (tabs) => {
       const linastoryTabs = tabs.filter((tab) => {

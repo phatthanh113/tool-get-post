@@ -2,18 +2,37 @@
   const DEFAULT_TITLE_HASHTAG = "#TP";
   let titleHashtag = DEFAULT_TITLE_HASHTAG;
 
-  function loadTitleHashtag() {
+  function applyTitleHashtag(config) {
+    if (config && config.title_hashtag) {
+      titleHashtag = config.title_hashtag;
+    }
+  }
+
+  function fetchTitleHashtagDirectly() {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 1500);
     return fetch("http://localhost:3000/config", { signal: controller.signal })
       .then((response) => (response.ok ? response.json() : null))
-      .then((config) => {
-        if (config && config.title_hashtag) {
-          titleHashtag = config.title_hashtag;
-        }
-      })
+      .then(applyTitleHashtag)
       .catch(() => {})
       .finally(() => clearTimeout(timeoutId));
+  }
+
+  function loadTitleHashtag() {
+    return new Promise((resolve) => {
+      try {
+        chrome.runtime.sendMessage({ type: "GET_TITLE_HASHTAG" }, (response) => {
+          if (chrome.runtime.lastError || !response || !response.title_hashtag) {
+            fetchTitleHashtagDirectly().then(resolve);
+            return;
+          }
+          applyTitleHashtag(response);
+          resolve();
+        });
+      } catch (error) {
+        fetchTitleHashtagDirectly().then(resolve);
+      }
+    });
   }
 
   function escapeRegExp(value) {
